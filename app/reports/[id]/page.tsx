@@ -81,7 +81,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   const [bomItems, setBomItems] = useState<BomItem[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [showHeader, setShowHeader] = useState(true)
   const [uploading, setUploading] = useState<string | null>(null)
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null)
 
@@ -127,6 +126,20 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     load()
     return () => { cancelled = true }
   }, [id, fetchPhotos])
+
+  useEffect(() => {
+    window.__reportActions = {
+      exportPDF: () => {
+        if (!report) return
+        exportReportPDF(report, items.map((it) => ({ ...it, id: it.id })), bomItems, photos)
+      },
+      exportExcel: () => {
+        if (!report) return
+        exportReportExcel(report, items, bomItems)
+      },
+    }
+    return () => { delete window.__reportActions }
+  }, [report, items, bomItems, photos])
 
   function addRow() {
     setItems([
@@ -318,46 +331,16 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-bold text-gray-800">Inspection Report: {report.job_number}</h2>
           <div className="flex gap-2">
-            <button
-              onClick={() => {
-                if (!report) return
-                exportReportPDF(
-                  report,
-                  items.map((it) => ({ ...it, id: it.id })),
-                  bomItems,
-                  photos
-                )
-              }}
-              className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition"
-            >
-              Export PDF
-            </button>
-            <button
-              onClick={() => {
-                if (!report) return
-                exportReportExcel(report, items, bomItems)
-              }}
-              className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition"
-            >
-              Export Excel
-            </button>
             <Link href={`/reports/${id}/bom`} className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 transition">
               BOM
             </Link>
             <Link href={`/docs?reportId=${id}`} className="bg-teal-600 text-white px-3 py-1 rounded text-sm hover:bg-teal-700 transition">
               Documentation
             </Link>
-            <button
-              onClick={() => setShowHeader(!showHeader)}
-              className="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-300 transition"
-            >
-              {showHeader ? 'Sembunyikan' : 'Tampilkan'} Header
-            </button>
           </div>
         </div>
 
-        {showHeader && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
             {REPORT_FIELDS.map(({ key, label, type }) => (
               <div key={key} className="flex flex-col">
                 <label className="text-gray-500 text-xs">{label}:</label>
@@ -383,7 +366,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
               </div>
             ))}
           </div>
-        )}
 
         <div className="flex items-center gap-3 mt-3 pt-3 border-t">
           <span className="text-sm text-gray-500">Status:</span>
