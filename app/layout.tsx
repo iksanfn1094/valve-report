@@ -31,13 +31,15 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-gray-50">
         <header className="bg-blue-900 text-white shadow-md">
           <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-            <Link href="/" className="text-xl font-bold tracking-tight">
-              Valve Report
-            </Link>
-            <nav className="flex gap-4 text-sm">
-              <Link href="/docs" className="hover:text-blue-200 transition">
+            <div className="flex items-center gap-4">
+              <Link href="/" className="text-xl font-bold tracking-tight">
+                Valve Report
+              </Link>
+              <Link href="/docs" className="text-xl font-bold tracking-tight">
                 Documentation
               </Link>
+            </div>
+            <nav className="flex gap-4 text-sm">
               <Link href="/reports" className="hover:text-blue-200 transition">
                 Reports
               </Link>

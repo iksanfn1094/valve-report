@@ -344,6 +344,9 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
             <Link href={`/reports/${id}/bom`} className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 transition">
               BOM
             </Link>
+            <Link href={`/docs?reportId=${id}`} className="bg-teal-600 text-white px-3 py-1 rounded text-sm hover:bg-teal-700 transition">
+              Documentation
+            </Link>
             <button
               onClick={() => setShowHeader(!showHeader)}
               className="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-300 transition"
@@ -691,56 +694,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
             </div>
             <div className="text-gray-500">Replace (RE)</div>
           </div>
-        </div>
-      </div>
-
-      {/* Signature Table 2 */}
-      <div className="bg-white rounded-lg shadow border p-4">
-        <h3 className="text-lg font-bold text-gray-800 mb-3">Signatures</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="bg-blue-900 text-white">
-                <th className="border px-2 py-2 text-xs">INSPECTED BY</th>
-                <th className="border px-2 py-2 text-xs">CHECKED BY</th>
-                <th className="border px-2 py-2 text-xs">REVIEW BY</th>
-                <th className="border px-2 py-2 text-xs">ACKNOWLEDGE BY</th>
-                <th className="border px-2 py-2 text-xs">WITNESS AND APPROVED BY</th>
-              </tr>
-              <tr className="bg-gray-100">
-                <th className="border px-2 py-1 text-xs font-normal">QC INSPECTED</th>
-                <th className="border px-2 py-1 text-xs font-normal">ENGINEERING</th>
-                <th className="border px-2 py-1 text-xs font-normal">WORKSHOP CO.</th>
-                <th className="border px-2 py-1 text-xs font-normal">PROJECT MANAGER</th>
-                <th className="border px-2 py-1 text-xs font-normal">QC REP. PHE-ONWJ</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="border px-2 py-1">
-                  <input
-                    className="w-full border-0 bg-transparent text-sm text-center font-medium focus:outline-none focus:border-b focus:border-blue-500"
-                    value={report.inspector_name || ''}
-                    placeholder="Nama..."
-                    onChange={(e) => updateReportField('inspector_name', e.target.value)}
-                    onBlur={(e) => updateReportField('inspector_name', e.target.value)}
-                  />
-                </td>
-                <td className="border px-2 py-1">
-                  <input
-                    className="w-full border-0 bg-transparent text-sm text-center font-medium focus:outline-none"
-                    value={report.engineering_name || ''}
-                    placeholder="Nama..."
-                    onChange={(e) => updateReportField('engineering_name', e.target.value)}
-                    onBlur={(e) => updateReportField('engineering_name', e.target.value)}
-                  />
-                </td>
-                <td className="border px-2 py-1 text-center font-medium">WISTANTO</td>
-                <td className="border px-2 py-1 text-center font-medium">FN IKSAN</td>
-                <td className="border px-2 py-1 text-center font-medium">HERI DIAN</td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </div>
     </div>

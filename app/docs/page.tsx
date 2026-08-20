@@ -41,12 +41,15 @@ export default function DocsPage() {
   const [uploadingAfter, setUploadingAfter] = useState<number | null>(null)
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const reportId = params.get('reportId')
     supabase
       .from('report_inspection')
       .select('id, job_number, report_no, customer, valve_type')
       .order('created_at', { ascending: false })
       .then(({ data }) => {
         setReports(data ?? [])
+        if (reportId) setSelectedReport(reportId)
         setLoading(false)
       })
   }, [])
