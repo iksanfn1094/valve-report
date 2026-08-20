@@ -68,7 +68,26 @@ async function fetchImageAsBase64(url: string): Promise<string | null> {
 
 const BLUE: [number, number, number] = [25, 60, 120]
 const LIGHT_BG: [number, number, number] = [248, 248, 248]
-const LABEL_COLOR: [number, number, number] = [100, 100, 100]
+const LABEL_C: [number, number, number] = [100, 100, 100]
+const GRID: [number, number, number] = [180, 180, 180]
+
+function drawField(
+  doc: jsPDF, label: string, value: string,
+  x: number, y: number, w: number, h: number, labelW: number
+) {
+  doc.setFillColor(245, 245, 245)
+  doc.rect(x, y, w, h, 'F')
+  doc.setDrawColor(...GRID)
+  doc.setLineWidth(0.2)
+  doc.rect(x, y, w, h, 'S')
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...LABEL_C)
+  doc.text(label, x + 1.5, y + h - 1.7)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(0, 0, 0)
+  doc.text(value || '-', x + labelW, y + h - 1.7)
+}
 
 export async function exportReportPDF(
   report: ReportData,
@@ -77,10 +96,7 @@ export async function exportReportPDF(
   photos: PhotoData[]
 ) {
   const doc = new jsPDF('p', 'mm', 'a4')
-  const PW = 210
-  const PH = 297
-  const M = 15
-  const CW = PW - M * 2 // 180mm
+  const PW = 210, PH = 297, M = 10, CW = PW - M * 2
   let y = M
 
   function np(need: number) {
@@ -89,76 +105,129 @@ export async function exportReportPDF(
 
   // ========== HEADER ==========
   doc.setFillColor(...BLUE)
-  doc.rect(0, 0, PW, 28, 'F')
+  doc.rect(0, 0, PW, 20, 'F')
   doc.setTextColor(255, 255, 255)
-  doc.setFontSize(18)
+  doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
-  doc.text('INSPECTION REPORT', M, 12)
-  doc.setFontSize(10)
+  doc.text('INSPECTION REPORT', PW / 2, 9, { align: 'center' })
+  doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
-  doc.text(`Job No: ${report.job_number}`, M, 19)
-  doc.text(`Report No: ${report.report_no || '-'}`, M, 24)
+  doc.text('PT. VALVINDO MEGAH', PW / 2, 16, { align: 'center' })
 
-  const sc: Record<string, [number, number, number]> = { approved: [34, 197, 94], submitted: [234, 179, 8], draft: [156, 163, 175] }
-  const s = sc[report.status] || sc.draft
-  doc.setFillColor(...s)
-  doc.roundedRect(PW - M - 30, 8, 30, 8, 2, 2, 'F')
-  doc.setTextColor(0, 0, 0)
-  doc.setFontSize(8)
-  doc.setFont('helvetica', 'bold')
-  doc.text(report.status.toUpperCase(), PW - M - 15, 13, { align: 'center' })
+  y = 25
 
-  y = 35
-
-  // ========== VALVE DETAILS ==========
+  // ========== JOB INFORMATION ==========
   doc.setTextColor(...BLUE)
-  doc.setFontSize(11)
+  doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
-  doc.text('VALVE DETAILS', M, y)
-  y += 6
+  doc.text('JOB INFORMATION', M, y)
+  y += 3
 
-  const fields: [string, string | null][] = [
-    ['Project', report.project], ['Customer', report.customer],
-    ['Report Date', report.report_date], ['Valve Type', report.valve_type],
-    ['Manufacture', report.manufacture], ['Size', report.size],
-    ['Class', report.class], ['Serial No', report.serial_no],
-    ['End Connection', report.end_connection], ['Operated', report.operated],
-    ['Location', report.location], ['EX Station', report.ex_station],
-    ['RO No', report.ro_no], ['Inspector', report.inspector_name],
-    ['Category', report.category],
+  const thirdW = CW / 3
+  const jobRows = [
+    [
+      { l: 'EX STATION & P/F', v: report.ex_station || '' },
+      { l: 'RO NO.', v: report.ro_no || '' },
+      { l: 'REPORT NO.', v: report.report_no || '' },
+    ],
+    [
+      { l: 'PROJECT', v: report.project || '' },
+      { l: 'PROJECT NO.', v: '' },
+      { l: 'REPORT DATE', v: report.report_date || '' },
+    ],
   ]
 
-  const halfW = CW / 2
-  for (let i = 0; i < fields.length; i += 2) {
-    np(7)
-    const L = fields[i]
-    const R = fields[i + 1]
-    // left cell
-    doc.setFillColor(245, 245, 245)
-    doc.rect(M, y - 4, halfW - 2, 6, 'F')
-    doc.setFontSize(8)
+  jobRows.forEach((row) => {
+    row.forEach((f, ci) => {
+      const cx = M + ci * thirdW
+      drawField(doc, f.l, f.v, cx, y, thirdW, 5.5, thirdW / 2 + 2)
+    })
+    y += 5.5
+  })
+  y += 2
+
+  // ========== CONSTRUCTION (AS FOUND) ==========
+  doc.setTextColor(...BLUE)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'bold')
+  doc.text('CONSTRUCTION (AS FOUND)', M, y)
+  y += 3
+
+  const leftW = CW * 0.6, rightW = CW * 0.4, rightX = M + leftW
+
+  const leftFields: [string, string | null][] = [
+    ['Customer', report.customer], ['Job Number', report.job_number],
+    ['Valve Type', report.valve_type], ['Manufacture', report.manufacture],
+    ['Size', report.size], ['Class', report.class],
+    ['S/N', report.serial_no], ['End Connection', report.end_connection],
+    ['Operated', report.operated], ['Location', report.location],
+  ]
+
+  const startY = y
+  leftFields.forEach(([label, val]) => {
+    drawField(doc, label, val || '', M, y, leftW, 5.5, 35)
+    y += 5.5
+  })
+
+  // Right panel: Repair Category + Recommendation legend
+  doc.setDrawColor(...GRID)
+  doc.setLineWidth(0.3)
+  doc.rect(rightX, startY, rightW, y - startY, 'S')
+
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(0, 0, 0)
+  doc.text('Repair Category', rightX + 3, startY + 6)
+
+  doc.setFontSize(7)
+  ;['Inspection', 'Minor', 'Major'].forEach((cat, i) => {
+    const cy = startY + 12 + i * 6
+    doc.setDrawColor(150, 150, 150)
+    doc.setFillColor(255, 255, 255)
+    doc.rect(rightX + 3, cy - 3, 3.5, 3.5, 'FD')
+    const matchCat = report.category || ''
+    if (matchCat.toLowerCase().includes(cat.toLowerCase())) {
+      doc.setDrawColor(25, 60, 120)
+      doc.setLineWidth(0.4)
+      doc.line(rightX + 3.5, cy - 1.2, rightX + 4.5, cy)
+      doc.line(rightX + 4.5, cy, rightX + 6, cy - 2.5)
+      doc.setLineWidth(0.2)
+    }
+    doc.setTextColor(0, 0, 0)
     doc.setFont('helvetica', 'normal')
-    doc.setTextColor(...LABEL_COLOR)
-    doc.text(`${L[0]}:`, M + 2, y)
+    doc.text(cat, rightX + 9, cy - 0.5)
+  })
+
+  const recY = startY + 32
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(0, 0, 0)
+  doc.text('Recommendation', rightX + 3, recY)
+
+  ;[
+    { code: 'C', label: 'Cleaning' },
+    { code: 'RP', label: 'Repair' },
+    { code: 'RE', label: 'Replace' },
+  ].forEach((r, i) => {
+    const ry = recY + 6 + i * 5.5
+    doc.setFontSize(7)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(0, 0, 0)
-    doc.text(L[1] || '-', M + 28, y)
-    // right cell
-    if (R) {
-      doc.setFillColor(245, 245, 245)
-      doc.rect(M + halfW, y - 4, halfW, 6, 'F')
-      doc.setFont('helvetica', 'normal')
-      doc.setTextColor(...LABEL_COLOR)
-      doc.text(`${R[0]}:`, M + halfW + 2, y)
-      doc.setFont('helvetica', 'bold')
-      doc.setTextColor(0, 0, 0)
-      doc.text(R[1] || '-', M + halfW + 28, y)
-    }
-    y += 6
-  }
+    doc.text(r.code, rightX + 6, ry)
+    doc.setFont('helvetica', 'normal')
+    doc.text(r.label, rightX + 15, ry)
+  })
+
   y += 4
 
-  // ========== INSPECTION ITEMS ==========
+  // ========== INSPECTION ITEMS TABLE ==========
+  np(30)
+  doc.setTextColor(...BLUE)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'bold')
+  doc.text('INCOMING INSP. CHECK (CONDITION AS FOUND)', M, y)
+  y += 2
+
   const base64Map = new Map<string, string>()
   await Promise.all(photos.map(async (p) => {
     if (!p.url) return
@@ -166,51 +235,42 @@ export async function exportReportPDF(
     if (b) base64Map.set(p.item_id, b)
   }))
 
-  np(30)
-  doc.setTextColor(...BLUE)
-  doc.setFontSize(11)
-  doc.setFont('helvetica', 'bold')
-  doc.text('INSPECTION ITEMS', M, y)
-  y += 2
-
   if (items.length === 0) {
     doc.setTextColor(150, 150, 150)
-    doc.setFontSize(9)
+    doc.setFontSize(8)
     doc.text('No items recorded.', M, y + 5)
     y += 10
   } else {
-    const PHOTO_SZ = 28
-    // Column widths sum to CW (180): 8+22+8+24+30+24+36+28 = 180
-    const cols: Record<number, { cellWidth: number; halign: 'center' | 'left' | 'right'; valign?: 'middle' }> = {
-      0: { cellWidth: 8, halign: 'center' },      // No
-      1: { cellWidth: 22, halign: 'left' },        // Component
-      2: { cellWidth: 8, halign: 'center' },       // Qty
-      3: { cellWidth: 24, halign: 'left' },        // Condition
-      4: { cellWidth: 30, halign: 'center' },      // Recommendation (C / RP / RE)
-      5: { cellWidth: 24, halign: 'left' },        // Comment
-      6: { cellWidth: 36, halign: 'left' },        // Spec Material
-      7: { cellWidth: PHOTO_SZ, halign: 'center', valign: 'middle' }, // Foto
-    }
+    const PHOTO_SZ = 22
+    // 11 columns: No(6)+Comp(24)+Qty(7)+Cond(24)+C(7)+RP(7)+RE(7)+Cat(14)+Comment(38)+Foto(22)+Mat(24) = 180
+    const COL_W = [6, 24, 7, 24, 7, 7, 7, 14, 38, 22, 24]
 
     autoTable(doc, {
       startY: y,
       margin: { left: M, right: M },
-      head: [['No', 'Component', 'Qty', 'Condition', 'Recommendation', 'Comment', 'Spec Material', 'Foto']],
+      head: [[
+        'No', 'Component / Part Description', 'Qty', 'Condition',
+        'C', 'RP', 'RE', 'Repair\nCategory',
+        'Comment / Notes / Dimension', 'Foto', 'Spek Material',
+      ]],
       body: items.map((it) => [
         String(it.item_no),
         it.component_name || '-',
         it.qty != null ? String(it.qty) : '-',
         it.condition_note || '-',
-        '',
+        it.recommendation.includes('C') ? '\u2713' : '',
+        it.recommendation.includes('RP') ? '\u2713' : '',
+        it.recommendation.includes('RE') ? '\u2713' : '',
+        '-',
         it.comment || '-',
-        it.spec_material || '-',
         '',
+        it.spec_material || '-',
       ]),
       styles: {
-        fontSize: 7,
-        cellPadding: 2,
-        minCellHeight: PHOTO_SZ + 6,
-        lineColor: [220, 220, 220],
+        fontSize: 6.5,
+        cellPadding: 1.5,
+        minCellHeight: PHOTO_SZ + 4,
+        lineColor: GRID,
         lineWidth: 0.2,
         overflow: 'linebreak',
         valign: 'middle',
@@ -218,105 +278,65 @@ export async function exportReportPDF(
       headStyles: {
         fillColor: BLUE,
         textColor: [255, 255, 255],
-        fontSize: 7,
+        fontSize: 6.5,
         fontStyle: 'bold',
         halign: 'center',
         minCellHeight: 8,
-        cellPadding: 2,
+        cellPadding: 1.5,
       },
       alternateRowStyles: { fillColor: LIGHT_BG },
-      columnStyles: cols,
+      columnStyles: {
+        0: { cellWidth: COL_W[0], halign: 'center' },
+        1: { cellWidth: COL_W[1], halign: 'left' },
+        2: { cellWidth: COL_W[2], halign: 'center' },
+        3: { cellWidth: COL_W[3], halign: 'left' },
+        4: { cellWidth: COL_W[4], halign: 'center' },
+        5: { cellWidth: COL_W[5], halign: 'center' },
+        6: { cellWidth: COL_W[6], halign: 'center' },
+        7: { cellWidth: COL_W[7], halign: 'center' },
+        8: { cellWidth: COL_W[8], halign: 'left' },
+        9: { cellWidth: COL_W[9], halign: 'center', valign: 'middle' },
+        10: { cellWidth: COL_W[10], halign: 'left' },
+      },
       didDrawCell: (data) => {
         if (data.section !== 'body') return
         const c = data.cell
         const item = items[data.row.index]
+        if (!item) return
 
-        if (data.column.index === 4 && item) {
-          const recs = ['C', 'RP', 'RE']
-          const boxSize = 3
-          const labelW = 7
-          const totalW = recs.length * (boxSize + labelW)
-          let xStart = c.x + (c.width - totalW) / 2
-          const yBox = c.y + (c.height - boxSize) / 2
-
-          recs.forEach((r) => {
-            doc.setDrawColor(150, 150, 150)
-            doc.setFillColor(255, 255, 255)
-            doc.rect(xStart, yBox, boxSize, boxSize, 'FD')
-
-            if (item.recommendation.includes(r)) {
-              doc.setDrawColor(25, 60, 120)
-              doc.setLineWidth(0.4)
-              doc.line(xStart + 0.5, yBox + boxSize / 2, xStart + 1.2, yBox + boxSize - 0.7)
-              doc.line(xStart + 1.2, yBox + boxSize - 0.7, xStart + boxSize - 0.4, yBox + 0.5)
-              doc.setLineWidth(0.2)
-            }
-
-            doc.setTextColor(0, 0, 0)
-            doc.setFontSize(6)
-            doc.setFont('helvetica', 'normal')
-            doc.text(r, xStart + boxSize + 1, yBox + boxSize - 0.3)
-
-            xStart += labelW + boxSize
-          })
+        if (data.column.index >= 4 && data.column.index <= 6) {
+          const val = c.raw as string
+          if (val === '\u2713') {
+            doc.setTextColor(25, 60, 120)
+            doc.setFontSize(9)
+            doc.setFont('helvetica', 'bold')
+            doc.text('\u2713', c.x + c.width / 2, c.y + c.height / 2 + 1, { align: 'center' })
+          }
         }
 
-        if (data.column.index === 7 && item?.id) {
+        if (data.column.index === 9 && item?.id) {
           const b64 = base64Map.get(item.id)
           if (!b64) return
-          const pad = 3
-          const sz = PHOTO_SZ - pad * 2
+          const pad = 3, sz = PHOTO_SZ - pad * 2
           try {
             doc.addImage(b64, 'JPEG', c.x + (c.width - sz) / 2, c.y + (c.height - sz) / 2, sz, sz)
           } catch { /* skip */ }
         }
       },
     })
-    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
   }
-
-  // ========== SUMMARY ==========
-  np(25)
-  doc.setTextColor(...BLUE)
-  doc.setFontSize(11)
-  doc.setFont('helvetica', 'bold')
-  doc.text('SUMMARY', M, y)
-  y += 6
-
-  const cC = items.filter((i) => i.recommendation.includes('C')).length
-  const cRP = items.filter((i) => i.recommendation.includes('RP')).length
-  const cRE = items.filter((i) => i.recommendation.includes('RE')).length
-
-  autoTable(doc, {
-    startY: y,
-    margin: { left: M, right: M },
-    head: [['Item', 'Count']],
-    body: [
-      ['Total Components', String(items.length)],
-      ['Clean (C)', String(cC)],
-      ['Repair (RP)', String(cRP)],
-      ['Replace (RE)', String(cRE)],
-    ],
-    styles: { fontSize: 9, cellPadding: 3, lineColor: [220, 220, 220], lineWidth: 0.2 },
-    headStyles: { fillColor: BLUE, textColor: [255, 255, 255] },
-    columnStyles: {
-      0: { cellWidth: 60, halign: 'left' },
-      1: { cellWidth: 30, halign: 'center' },
-    },
-  })
-  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6
 
   // ========== BOM ==========
   if (bomItems.length > 0) {
     np(30)
     doc.setTextColor(...BLUE)
-    doc.setFontSize(11)
+    doc.setFontSize(9)
     doc.setFont('helvetica', 'bold')
     doc.text('BILL OF MATERIAL', M, y)
     y += 2
 
     const sL: Record<string, string> = { valve: 'Valve Parts', machining: 'Machining', coating: 'Coating' }
-    // BOM columns sum to 180: 22+8+10+12+34+28+30+36 = 180
     autoTable(doc, {
       startY: y,
       margin: { left: M, right: M },
@@ -331,8 +351,8 @@ export async function exportReportPDF(
         b.dimension || '-',
         b.keterangan || '-',
       ]),
-      styles: { fontSize: 7, cellPadding: 2, lineColor: [220, 220, 220], lineWidth: 0.2 },
-      headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 7, fontStyle: 'bold', halign: 'center' },
+      styles: { fontSize: 6.5, cellPadding: 1.5, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak' },
+      headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6.5, fontStyle: 'bold', halign: 'center' },
       alternateRowStyles: { fillColor: LIGHT_BG },
       columnStyles: {
         0: { cellWidth: 22, halign: 'left' },
@@ -345,60 +365,52 @@ export async function exportReportPDF(
         7: { cellWidth: 36, halign: 'left' },
       },
     })
-    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
   }
 
-  // ========== SIGNATURE ==========
-  np(55)
-  y += 8
-  doc.setDrawColor(180, 180, 180)
-  doc.setLineWidth(0.3)
-  doc.line(M, y, PW - M, y)
+  // ========== SIGNATURE (4 boxes) ==========
+  np(50)
   y += 6
 
-  doc.setTextColor(0, 0, 0)
-  doc.setFontSize(9)
-  doc.setFont('helvetica', 'bold')
-  doc.text('SIGNATURES', M, y)
-  y += 8
-
-  const boxW = (CW - 10) / 2
-  const boxH = 32
-  const boxes = [
-    { x: M, title: 'Disiapkan Oleh (Prepared By)', name: report.inspector_name || '-' },
-    { x: M + boxW + 10, title: 'Diketahui Oleh (Reviewed By)', name: '-' },
+  const sigBoxW = (CW - 9) / 4
+  const sigBoxH = 28
+  const sigBoxes = [
+    { title: 'CHECKED BY', role: 'ENGINEERING', name: report.inspector_name || '-' },
+    { title: 'REVIEW BY', role: 'WORKSHOP CO.', name: '-' },
+    { title: 'ACKNOWLEDGE BY', role: 'PROJECT MANAGER', name: '-' },
+    { title: 'WITNESS AND APPROVED BY', role: 'QC REP. PHE-ONWJ', name: '-' },
   ]
 
-  boxes.forEach((b) => {
-    doc.setDrawColor(180, 180, 180)
+  sigBoxes.forEach((sb, i) => {
+    const sx = M + i * (sigBoxW + 3)
+    doc.setDrawColor(...GRID)
     doc.setLineWidth(0.3)
-    doc.rect(b.x, y, boxW, boxH)
-
-    doc.setFontSize(8)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(60, 60, 60)
-    doc.text(b.title, b.x + 3, y + 6)
-
-    doc.setFontSize(8)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(0, 0, 0)
-    doc.text('Nama:', b.x + 3, y + 13)
-    doc.setFont('helvetica', 'bold')
-    doc.text(b.name, b.x + 18, y + 13)
-
-    doc.setFont('helvetica', 'normal')
-    doc.text('Tanggal:', b.x + 3, y + 19)
-    doc.text(report.report_date || '-', b.x + 20, y + 19)
-
-    doc.setDrawColor(100, 100, 100)
-    doc.setLineWidth(0.2)
-    doc.line(b.x + 3, y + 27, b.x + boxW - 3, y + 27)
+    doc.rect(sx, y, sigBoxW, sigBoxH, 'S')
 
     doc.setFontSize(6)
-    doc.setTextColor(130, 130, 130)
-    doc.text('Tanda Tangan / Signature', b.x + 3, y + 30)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(0, 0, 0)
+    doc.text(sb.title, sx + sigBoxW / 2, y + 5, { align: 'center' })
+
+    doc.setFontSize(5.5)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(80, 80, 80)
+    doc.text(sb.role, sx + sigBoxW / 2, y + 10, { align: 'center' })
+
+    doc.setFontSize(7)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(0, 0, 0)
+    doc.text(sb.name, sx + sigBoxW / 2, y + 18, { align: 'center' })
+
+    doc.setDrawColor(120, 120, 120)
+    doc.setLineWidth(0.2)
+    doc.line(sx + 3, y + sigBoxH - 5, sx + sigBoxW - 3, y + sigBoxH - 5)
+
+    doc.setFontSize(4.5)
+    doc.setTextColor(140, 140, 140)
+    doc.text('Signature', sx + sigBoxW / 2, y + sigBoxH - 2, { align: 'center' })
   })
-  y += boxH
+  y += sigBoxH
 
   // ========== FOOTER ==========
   const tp = doc.getNumberOfPages()
@@ -406,7 +418,7 @@ export async function exportReportPDF(
     doc.setPage(i)
     doc.setFontSize(7)
     doc.setTextColor(150, 150, 150)
-    doc.text(`Inspection Report - ${report.job_number} | Page ${i} of ${tp}`, PW / 2, PH - 8, { align: 'center' })
+    doc.text(`Inspection Report - ${report.job_number} | Page ${i} of ${tp}`, PW / 2, PH - 5, { align: 'center' })
   }
 
   const fn = `IR-${report.job_number}${report.report_no ? '-' + report.report_no : ''}.pdf`
