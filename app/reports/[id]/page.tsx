@@ -4,6 +4,7 @@ import { useEffect, useState, use, useCallback } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { exportReportPDF } from '@/lib/export-pdf'
+import { exportReportExcel } from '@/lib/export-excel'
 
 type Report = {
   id: string
@@ -297,6 +298,15 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
               className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition"
             >
               Export PDF
+            </button>
+            <button
+              onClick={() => {
+                if (!report) return
+                exportReportExcel(report, items, bomItems)
+              }}
+              className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition"
+            >
+              Export Excel
             </button>
             <Link href={`/reports/${id}/bom`} className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 transition">
               BOM

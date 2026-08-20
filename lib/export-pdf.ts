@@ -179,16 +179,16 @@ export async function exportReportPDF(
     doc.text('No items recorded.', M, y + 5)
     y += 10
   } else {
-    const PHOTO_SZ = 20
-    // Column widths sum to CW (180): 8+24+10+30+18+30+22+20+18 = 180
+    const PHOTO_SZ = 28
+    // Column widths sum to CW (180): 8+26+10+28+20+28+32+28 = 180
     const cols: Record<number, { cellWidth: number; halign: 'center' | 'left' | 'right'; valign?: 'middle' }> = {
       0: { cellWidth: 8, halign: 'center' },      // No
-      1: { cellWidth: 24, halign: 'left' },        // Component
+      1: { cellWidth: 26, halign: 'left' },        // Component
       2: { cellWidth: 10, halign: 'center' },      // Qty
-      3: { cellWidth: 30, halign: 'left' },        // Condition
-      4: { cellWidth: 18, halign: 'center' },      // Rec (C / RP / RE checkboxes)
-      5: { cellWidth: 30, halign: 'left' },        // Comment
-      6: { cellWidth: 22, halign: 'left' },        // Spec
+      3: { cellWidth: 28, halign: 'left' },        // Condition
+      4: { cellWidth: 20, halign: 'center' },      // Rec (C / RP / RE checkboxes)
+      5: { cellWidth: 28, halign: 'left' },        // Comment
+      6: { cellWidth: 32, halign: 'left' },        // Spec
       7: { cellWidth: PHOTO_SZ, halign: 'center', valign: 'middle' }, // Foto
     }
 
@@ -209,9 +209,10 @@ export async function exportReportPDF(
       styles: {
         fontSize: 7,
         cellPadding: 2,
-        minCellHeight: PHOTO_SZ + 4,
+        minCellHeight: PHOTO_SZ + 6,
         lineColor: [220, 220, 220],
         lineWidth: 0.2,
+        overflow: 'linebreak',
       },
       headStyles: {
         fillColor: BLUE,
@@ -239,22 +240,18 @@ export async function exportReportPDF(
           const yBox = c.y + (c.height - boxSize) / 2
 
           recs.forEach((r) => {
-            // Draw checkbox
             doc.setDrawColor(150, 150, 150)
             doc.setFillColor(255, 255, 255)
             doc.rect(xStart, yBox, boxSize, boxSize, 'FD')
 
-            // Draw checkmark if selected
             if (item.recommendation.includes(r)) {
               doc.setDrawColor(25, 60, 120)
               doc.setLineWidth(0.5)
-              // Draw checkmark (two lines forming a check)
               doc.line(xStart + 0.6, yBox + boxSize / 2, xStart + 1.4, yBox + boxSize - 0.8)
               doc.line(xStart + 1.4, yBox + boxSize - 0.8, xStart + boxSize - 0.5, yBox + 0.6)
               doc.setLineWidth(0.2)
             }
 
-            // Label
             doc.setFillColor(0, 0, 0)
             doc.setFontSize(5)
             doc.setFont('helvetica', 'normal')
@@ -268,7 +265,7 @@ export async function exportReportPDF(
         if (data.column.index === 7 && item?.id) {
           const b64 = base64Map.get(item.id)
           if (!b64) return
-          const pad = 2
+          const pad = 3
           const sz = PHOTO_SZ - pad * 2
           try {
             doc.addImage(b64, 'JPEG', c.x + (c.width - sz) / 2, c.y + (c.height - sz) / 2, sz, sz)
