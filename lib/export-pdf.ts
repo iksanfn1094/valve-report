@@ -261,7 +261,7 @@ export async function exportReportPDF(
         it.recommendation.includes('C') ? '\u2713' : '',
         it.recommendation.includes('RP') ? '\u2713' : '',
         it.recommendation.includes('RE') ? '\u2713' : '',
-        '-',
+        (it as unknown as { repair_category?: string }).repair_category || '-',
         it.comment || '-',
         '',
         it.spec_material || '-',

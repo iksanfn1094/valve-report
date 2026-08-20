@@ -35,6 +35,7 @@ type Item = {
   qty: number | null
   condition_note: string
   recommendation: string[]
+  repair_category: string
   comment: string
   spec_material: string
 }
@@ -135,6 +136,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         qty: 1,
         condition_note: '',
         recommendation: [],
+        repair_category: '',
         comment: '',
         spec_material: '',
       },
@@ -168,6 +170,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           qty: it.qty,
           condition_note: it.condition_note,
           recommendation: it.recommendation,
+          repair_category: it.repair_category,
           comment: it.comment,
           spec_material: it.spec_material,
           sort_order: items.indexOf(it),
@@ -184,6 +187,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         qty: it.qty,
         condition_note: it.condition_note,
         recommendation: it.recommendation,
+        repair_category: it.repair_category,
         comment: it.comment,
         spec_material: it.spec_material,
         sort_order: items.indexOf(it),
@@ -372,20 +376,23 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
 
       {/* Items Table */}
       <div className="bg-white rounded-lg shadow border p-4">
-        <h3 className="text-lg font-bold text-gray-800 mb-3">Komponen / Inspection Items</h3>
+        <h3 className="text-lg font-bold text-gray-800 mb-3">Incoming Insp. Check (Condition As Found)</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="bg-gray-100">
-                <th className="border px-2 py-1 w-10">No</th>
-                <th className="border px-2 py-1">Component</th>
-                <th className="border px-2 py-1 w-16">Qty</th>
-                <th className="border px-2 py-1">Condition Note</th>
-                <th className="border px-2 py-1">Recommendation</th>
-                <th className="border px-2 py-1">Comment</th>
-                <th className="border px-2 py-1">Spec Material</th>
-                <th className="border px-2 py-1">Foto</th>
-                <th className="border px-2 py-1 w-10"></th>
+                <th className="border px-1 py-1 w-8 text-xs">No</th>
+                <th className="border px-1 py-1 text-xs min-w-[140px]">Component / Part Description</th>
+                <th className="border px-1 py-1 w-12 text-xs">Qty</th>
+                <th className="border px-1 py-1 text-xs min-w-[140px]">Condition</th>
+                <th className="border px-1 py-1 w-8 text-xs">C</th>
+                <th className="border px-1 py-1 w-8 text-xs">RP</th>
+                <th className="border px-1 py-1 w-8 text-xs">RE</th>
+                <th className="border px-1 py-1 text-xs min-w-[100px]">Repair Category</th>
+                <th className="border px-1 py-1 text-xs min-w-[160px]">Comment / Notes / Dimension</th>
+                <th className="border px-1 py-1 text-xs">Foto</th>
+                <th className="border px-1 py-1 text-xs min-w-[90px]">Spek Material</th>
+                <th className="border px-1 py-1 w-8"></th>
               </tr>
             </thead>
             <tbody>
@@ -393,10 +400,10 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 const itemPhotos = item.id ? getPhotosForItem(item.id) : []
                 return (
                   <tr key={idx} className="hover:bg-gray-50">
-                    <td className="border px-2 py-1 text-center text-gray-500">{idx + 1}</td>
-                    <td className="border px-2 py-1">
+                    <td className="border px-1 py-1 text-center text-gray-500 text-xs">{idx + 1}</td>
+                    <td className="border px-1 py-1">
                       <select
-                        className="w-full border-0 bg-transparent text-sm focus:outline-none"
+                        className="w-full border-0 bg-transparent text-xs focus:outline-none"
                         value={item.component_name}
                         onChange={(e) => updateRow(idx, 'component_name', e.target.value)}
                       >
@@ -406,60 +413,83 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                         ))}
                       </select>
                     </td>
-                    <td className="border px-2 py-1">
+                    <td className="border px-1 py-1">
                       <input
                         type="number"
                         min={0}
-                        className="w-full border-0 bg-transparent text-sm text-center focus:outline-none"
+                        className="w-full border-0 bg-transparent text-xs text-center focus:outline-none"
                         value={item.qty ?? ''}
                         onChange={(e) => updateRow(idx, 'qty', Number(e.target.value) || null)}
                       />
                     </td>
-                    <td className="border px-2 py-1">
+                    <td className="border px-1 py-1">
                       <input
-                        className="w-full border-0 bg-transparent text-sm focus:outline-none"
+                        className="w-full border-0 bg-transparent text-xs focus:outline-none"
                         value={item.condition_note}
-                        placeholder="Contoh: ada karat, bocor, aus..."
+                        placeholder="Condition description..."
                         onChange={(e) => updateRow(idx, 'condition_note', e.target.value)}
                       />
                     </td>
-                    <td className="border px-2 py-1">
-                      <div className="flex gap-1 flex-wrap">
-                        {RECS.map((r) => (
-                          <label key={r.value} className="inline-flex items-center gap-1 text-xs cursor-pointer" title={r.desc}>
-                            <input
-                              type="checkbox"
-                              checked={item.recommendation.includes(r.value)}
-                              onChange={(e) => {
-                                const next = e.target.checked
-                                  ? [...item.recommendation, r.value]
-                                  : item.recommendation.filter((x) => x !== r.value)
-                                updateRow(idx, 'recommendation', next)
-                              }}
-                              className="rounded"
-                            />
-                            {r.value}
-                          </label>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="border px-2 py-1">
+                    <td className="border px-1 py-1 text-center">
                       <input
-                        className="w-full border-0 bg-transparent text-sm focus:outline-none"
+                        type="checkbox"
+                        checked={item.recommendation.includes('C')}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...item.recommendation, 'C']
+                            : item.recommendation.filter((x) => x !== 'C')
+                          updateRow(idx, 'recommendation', next)
+                        }}
+                        className="rounded"
+                      />
+                    </td>
+                    <td className="border px-1 py-1 text-center">
+                      <input
+                        type="checkbox"
+                        checked={item.recommendation.includes('RP')}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...item.recommendation, 'RP']
+                            : item.recommendation.filter((x) => x !== 'RP')
+                          updateRow(idx, 'recommendation', next)
+                        }}
+                        className="rounded"
+                      />
+                    </td>
+                    <td className="border px-1 py-1 text-center">
+                      <input
+                        type="checkbox"
+                        checked={item.recommendation.includes('RE')}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...item.recommendation, 'RE']
+                            : item.recommendation.filter((x) => x !== 'RE')
+                          updateRow(idx, 'recommendation', next)
+                        }}
+                        className="rounded"
+                      />
+                    </td>
+                    <td className="border px-1 py-1">
+                      <select
+                        className="w-full border-0 bg-transparent text-xs focus:outline-none"
+                        value={item.repair_category || ''}
+                        onChange={(e) => updateRow(idx, 'repair_category', e.target.value)}
+                      >
+                        <option value="">--</option>
+                        <option value="Inspection">Inspection</option>
+                        <option value="Minor">Minor</option>
+                        <option value="Major">Major</option>
+                      </select>
+                    </td>
+                    <td className="border px-1 py-1">
+                      <input
+                        className="w-full border-0 bg-transparent text-xs focus:outline-none"
                         value={item.comment}
                         onChange={(e) => updateRow(idx, 'comment', e.target.value)}
                       />
                     </td>
-                    <td className="border px-2 py-1">
-                      <input
-                        className="w-full border-0 bg-transparent text-sm focus:outline-none"
-                        value={item.spec_material}
-                        onChange={(e) => updateRow(idx, 'spec_material', e.target.value)}
-                      />
-                    </td>
-                    <td className="border px-2 py-1">
+                    <td className="border px-1 py-1">
                       <div className="flex flex-col gap-1">
-                        {/* Thumbnails */}
                         {itemPhotos.length > 0 && (
                           <div className="flex gap-1 flex-wrap">
                             {itemPhotos.map((p) => (
@@ -467,12 +497,12 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                                 <img
                                   src={p.url}
                                   alt={p.caption || ''}
-                                  className="w-10 h-10 object-cover rounded cursor-pointer border hover:border-blue-400"
+                                  className="w-8 h-8 object-cover rounded cursor-pointer border hover:border-blue-400"
                                   onClick={() => p.url && setPreviewPhoto(p.url)}
                                 />
                                 <button
                                   onClick={() => deletePhoto(p.id, p.storage_path)}
-                                  className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-xs leading-none opacity-0 group-hover:opacity-100 transition flex items-center justify-center"
+                                  className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-3 h-3 text-[8px] leading-none opacity-0 group-hover:opacity-100 transition flex items-center justify-center"
                                 >
                                   x
                                 </button>
@@ -480,9 +510,8 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                             ))}
                           </div>
                         )}
-                        {/* Upload button */}
                         {item.id ? (
-                          <label className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 cursor-pointer">
+                          <label className="inline-flex items-center gap-1 text-[10px] text-blue-600 hover:text-blue-800 cursor-pointer">
                             <input
                               type="file"
                               accept="image/*"
@@ -500,14 +529,21 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                             )}
                           </label>
                         ) : (
-                          <span className="text-xs text-gray-400">Simpan dulu</span>
+                          <span className="text-[10px] text-gray-400">Simpan dulu</span>
                         )}
                       </div>
                     </td>
-                    <td className="border px-2 py-1 text-center">
+                    <td className="border px-1 py-1">
+                      <input
+                        className="w-full border-0 bg-transparent text-xs focus:outline-none"
+                        value={item.spec_material}
+                        onChange={(e) => updateRow(idx, 'spec_material', e.target.value)}
+                      />
+                    </td>
+                    <td className="border px-1 py-1 text-center">
                       <button
                         onClick={() => removeRow(idx)}
-                        className="text-red-500 hover:text-red-700 font-bold"
+                        className="text-red-500 hover:text-red-700 font-bold text-xs"
                         title="Hapus baris"
                       >
                         x
@@ -518,7 +554,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="border px-2 py-6 text-center text-gray-400">
+                  <td colSpan={12} className="border px-2 py-6 text-center text-gray-400">
                     Belum ada komponen. Klik &quot;+ Tambah Baris&quot; untuk menambah.
                   </td>
                 </tr>
