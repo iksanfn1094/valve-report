@@ -180,22 +180,22 @@ export async function exportReportPDF(
     y += 10
   } else {
     const PHOTO_SZ = 28
-    // Column widths sum to CW (180): 8+26+10+28+20+28+32+28 = 180
+    // Column widths sum to CW (180): 8+22+8+24+30+24+36+28 = 180
     const cols: Record<number, { cellWidth: number; halign: 'center' | 'left' | 'right'; valign?: 'middle' }> = {
       0: { cellWidth: 8, halign: 'center' },      // No
-      1: { cellWidth: 26, halign: 'left' },        // Component
-      2: { cellWidth: 10, halign: 'center' },      // Qty
-      3: { cellWidth: 28, halign: 'left' },        // Condition
-      4: { cellWidth: 20, halign: 'center' },      // Rec (C / RP / RE checkboxes)
-      5: { cellWidth: 28, halign: 'left' },        // Comment
-      6: { cellWidth: 32, halign: 'left' },        // Spec
+      1: { cellWidth: 22, halign: 'left' },        // Component
+      2: { cellWidth: 8, halign: 'center' },       // Qty
+      3: { cellWidth: 24, halign: 'left' },        // Condition
+      4: { cellWidth: 30, halign: 'center' },      // Recommendation (C / RP / RE)
+      5: { cellWidth: 24, halign: 'left' },        // Comment
+      6: { cellWidth: 36, halign: 'left' },        // Spec Material
       7: { cellWidth: PHOTO_SZ, halign: 'center', valign: 'middle' }, // Foto
     }
 
     autoTable(doc, {
       startY: y,
       margin: { left: M, right: M },
-      head: [['No', 'Component', 'Qty', 'Condition', 'Rec.', 'Comment', 'Spec Material', 'Foto']],
+      head: [['No', 'Component', 'Qty', 'Condition', 'Recommendation', 'Comment', 'Spec Material', 'Foto']],
       body: items.map((it) => [
         String(it.item_no),
         it.component_name || '-',
@@ -213,6 +213,7 @@ export async function exportReportPDF(
         lineColor: [220, 220, 220],
         lineWidth: 0.2,
         overflow: 'linebreak',
+        valign: 'middle',
       },
       headStyles: {
         fillColor: BLUE,
@@ -230,12 +231,11 @@ export async function exportReportPDF(
         const c = data.cell
         const item = items[data.row.index]
 
-        // Rec column (index 4) - draw checkboxes
         if (data.column.index === 4 && item) {
           const recs = ['C', 'RP', 'RE']
-          const boxSize = 3.2
-          const gap = 1.5
-          const totalW = recs.length * (boxSize + 6) + gap * (recs.length - 1)
+          const boxSize = 3
+          const labelW = 7
+          const totalW = recs.length * (boxSize + labelW)
           let xStart = c.x + (c.width - totalW) / 2
           const yBox = c.y + (c.height - boxSize) / 2
 
@@ -246,22 +246,21 @@ export async function exportReportPDF(
 
             if (item.recommendation.includes(r)) {
               doc.setDrawColor(25, 60, 120)
-              doc.setLineWidth(0.5)
-              doc.line(xStart + 0.6, yBox + boxSize / 2, xStart + 1.4, yBox + boxSize - 0.8)
-              doc.line(xStart + 1.4, yBox + boxSize - 0.8, xStart + boxSize - 0.5, yBox + 0.6)
+              doc.setLineWidth(0.4)
+              doc.line(xStart + 0.5, yBox + boxSize / 2, xStart + 1.2, yBox + boxSize - 0.7)
+              doc.line(xStart + 1.2, yBox + boxSize - 0.7, xStart + boxSize - 0.4, yBox + 0.5)
               doc.setLineWidth(0.2)
             }
 
-            doc.setFillColor(0, 0, 0)
-            doc.setFontSize(5)
+            doc.setTextColor(0, 0, 0)
+            doc.setFontSize(6)
             doc.setFont('helvetica', 'normal')
-            doc.text(r, xStart + boxSize + 0.8, yBox + boxSize - 0.5)
+            doc.text(r, xStart + boxSize + 1, yBox + boxSize - 0.3)
 
-            xStart += boxSize + 6 + gap
+            xStart += labelW + boxSize
           })
         }
 
-        // Foto column (index 7) - draw image
         if (data.column.index === 7 && item?.id) {
           const b64 = base64Map.get(item.id)
           if (!b64) return
@@ -350,35 +349,56 @@ export async function exportReportPDF(
   }
 
   // ========== SIGNATURE ==========
-  np(40)
-  y += 5
+  np(55)
+  y += 8
   doc.setDrawColor(180, 180, 180)
+  doc.setLineWidth(0.3)
   doc.line(M, y, PW - M, y)
-  y += 10
+  y += 6
 
   doc.setTextColor(0, 0, 0)
   doc.setFontSize(9)
-
-  // Row 1: Inspector + Date
   doc.setFont('helvetica', 'bold')
-  doc.text('Inspector:', M, y)
-  doc.setFont('helvetica', 'normal')
-  doc.text(report.inspector_name || '-', M + 28, y)
+  doc.text('SIGNATURES', M, y)
+  y += 8
 
-  doc.setFont('helvetica', 'bold')
-  doc.text('Date:', PW / 2 + 10, y)
-  doc.setFont('helvetica', 'normal')
-  doc.text(report.report_date || '-', PW / 2 + 25, y)
-  y += 14
+  const boxW = (CW - 10) / 2
+  const boxH = 32
+  const boxes = [
+    { x: M, title: 'Disiapkan Oleh (Prepared By)', name: report.inspector_name || '-' },
+    { x: M + boxW + 10, title: 'Diketahui Oleh (Reviewed By)', name: '-' },
+  ]
 
-  // Row 2: Signature lines side by side
-  const sigW = (CW - 20) / 2
-  doc.setFont('helvetica', 'bold')
-  doc.text('Inspector Signature:', M, y)
-  doc.line(M, y + 3, M + sigW - 10, y + 3)
+  boxes.forEach((b) => {
+    doc.setDrawColor(180, 180, 180)
+    doc.setLineWidth(0.3)
+    doc.rect(b.x, y, boxW, boxH)
 
-  doc.text('Approved By:', PW / 2 + 10, y)
-  doc.line(PW / 2 + 10, y + 3, PW - M, y + 3)
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(60, 60, 60)
+    doc.text(b.title, b.x + 3, y + 6)
+
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(0, 0, 0)
+    doc.text('Nama:', b.x + 3, y + 13)
+    doc.setFont('helvetica', 'bold')
+    doc.text(b.name, b.x + 18, y + 13)
+
+    doc.setFont('helvetica', 'normal')
+    doc.text('Tanggal:', b.x + 3, y + 19)
+    doc.text(report.report_date || '-', b.x + 20, y + 19)
+
+    doc.setDrawColor(100, 100, 100)
+    doc.setLineWidth(0.2)
+    doc.line(b.x + 3, y + 27, b.x + boxW - 3, y + 27)
+
+    doc.setFontSize(6)
+    doc.setTextColor(130, 130, 130)
+    doc.text('Tanda Tangan / Signature', b.x + 3, y + 30)
+  })
+  y += boxH
 
   // ========== FOOTER ==========
   const tp = doc.getNumberOfPages()
