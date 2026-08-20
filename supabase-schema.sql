@@ -65,11 +65,25 @@ create table report_photos (
   uploaded_at timestamptz default now()
 );
 
+create table report_documentation (
+  id uuid primary key default gen_random_uuid(),
+  report_id uuid references report_inspection(id) on delete cascade,
+  component_name text,
+  condition_before text,
+  condition_after text,
+  photo_before_url text,
+  photo_after_url text,
+  notes text,
+  sort_order int,
+  created_at timestamptz default now()
+);
+
 -- Indexes untuk performance
 create index idx_items_report on report_inspection_items(report_id);
 create index idx_bom_report on report_bom_items(report_id);
 create index idx_photos_report on report_photos(report_id);
 create index idx_photos_item on report_photos(item_id);
+create index idx_docs_report on report_documentation(report_id);
 
 -- Auto-update updated_at
 create or replace function update_updated_at()
