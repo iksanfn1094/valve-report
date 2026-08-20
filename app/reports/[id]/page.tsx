@@ -422,7 +422,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 <th className="border px-1 py-1 text-xs" rowSpan={2}>Spek Material</th>
                 <th className="border px-1 py-1 text-xs" rowSpan={2}></th>
               </tr>
-              <tr className="bg-gray-100">
+              <tr className="bg-blue-900 text-white">
                 <th className="border px-1 py-1 w-8 text-xs">C</th>
                 <th className="border px-1 py-1 w-8 text-xs">RP</th>
                 <th className="border px-1 py-1 w-8 text-xs">RE</th>
