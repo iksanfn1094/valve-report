@@ -35,6 +35,9 @@ export default function RootLayout({
               Valve Report
             </Link>
             <nav className="flex gap-4 text-sm">
+              <Link href="/docs" className="hover:text-blue-200 transition">
+                Documentation
+              </Link>
               <Link href="/reports" className="hover:text-blue-200 transition">
                 Reports
               </Link>
