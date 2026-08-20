@@ -368,17 +368,18 @@ export async function exportReportPDF(
     y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
   }
 
-  // ========== SIGNATURE (4 boxes) ==========
-  np(50)
+  // ========== SIGNATURE (5 boxes) ==========
+  np(55)
   y += 6
 
-  const sigBoxW = (CW - 9) / 4
+  const sigBoxW = (CW - 12) / 5
   const sigBoxH = 28
   const sigBoxes = [
-    { title: 'CHECKED BY', role: 'ENGINEERING', name: report.inspector_name || '-' },
-    { title: 'REVIEW BY', role: 'WORKSHOP CO.', name: '-' },
-    { title: 'ACKNOWLEDGE BY', role: 'PROJECT MANAGER', name: '-' },
-    { title: 'WITNESS AND APPROVED BY', role: 'QC REP. PHE-ONWJ', name: '-' },
+    { title: 'INSPECTED BY', role: 'QC INSPECTED', name: report.inspector_name || '-' },
+    { title: 'CHECKED BY', role: 'ENGINEERING', name: (report as unknown as { engineering_name?: string }).engineering_name || '-' },
+    { title: 'REVIEW BY', role: 'WORKSHOP CO.', name: 'WISTANTO' },
+    { title: 'ACKNOWLEDGE BY', role: 'PROJECT MANAGER', name: 'FN IKSAN' },
+    { title: 'WITNESS AND APPROVED BY', role: 'QC REP. PHE-ONWJ', name: 'HERI DIAN' },
   ]
 
   sigBoxes.forEach((sb, i) => {
@@ -387,26 +388,26 @@ export async function exportReportPDF(
     doc.setLineWidth(0.3)
     doc.rect(sx, y, sigBoxW, sigBoxH, 'S')
 
-    doc.setFontSize(6)
+    doc.setFontSize(5.5)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(0, 0, 0)
     doc.text(sb.title, sx + sigBoxW / 2, y + 5, { align: 'center' })
 
-    doc.setFontSize(5.5)
+    doc.setFontSize(5)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(80, 80, 80)
     doc.text(sb.role, sx + sigBoxW / 2, y + 10, { align: 'center' })
 
-    doc.setFontSize(7)
+    doc.setFontSize(6.5)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(0, 0, 0)
     doc.text(sb.name, sx + sigBoxW / 2, y + 18, { align: 'center' })
 
     doc.setDrawColor(120, 120, 120)
     doc.setLineWidth(0.2)
-    doc.line(sx + 3, y + sigBoxH - 5, sx + sigBoxW - 3, y + sigBoxH - 5)
+    doc.line(sx + 2, y + sigBoxH - 5, sx + sigBoxW - 2, y + sigBoxH - 5)
 
-    doc.setFontSize(4.5)
+    doc.setFontSize(4)
     doc.setTextColor(140, 140, 140)
     doc.text('Signature', sx + sigBoxW / 2, y + sigBoxH - 2, { align: 'center' })
   })

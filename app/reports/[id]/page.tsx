@@ -24,6 +24,7 @@ type Report = {
   ex_station: string | null
   ro_no: string | null
   inspector_name: string | null
+  engineering_name: string | null
   category: string | null
   status: string
 }
@@ -264,7 +265,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     setReport((prev) => prev ? { ...prev, [field]: value } : prev)
   }
 
-  const REPORT_FIELDS: { key: keyof Report; label: string }[] = [
+  const REPORT_FIELDS: { key: keyof Report; label: string; type?: string }[] = [
     { key: 'report_no', label: 'Report No' },
     { key: 'report_date', label: 'Date' },
     { key: 'project', label: 'Project' },
@@ -280,7 +281,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     { key: 'ex_station', label: 'EX Station' },
     { key: 'ro_no', label: 'RO No' },
     { key: 'inspector_name', label: 'Inspector' },
-    { key: 'category', label: 'Category' },
+    { key: 'category', label: 'Category', type: 'select' },
   ]
 
   function getPhotosForItem(itemId: string) {
@@ -354,15 +355,28 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
 
         {showHeader && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-            {REPORT_FIELDS.map(({ key, label }) => (
+            {REPORT_FIELDS.map(({ key, label, type }) => (
               <div key={key} className="flex flex-col">
                 <label className="text-gray-500 text-xs">{label}:</label>
-                <input
-                  className="border-b border-gray-300 bg-transparent text-sm font-medium focus:outline-none focus:border-blue-500 px-1 py-0.5"
-                  value={(report[key] as string) || ''}
-                  onChange={(e) => updateReportField(key, e.target.value)}
-                  onBlur={(e) => updateReportField(key, e.target.value)}
-                />
+                {type === 'select' ? (
+                  <select
+                    className="border-b border-gray-300 bg-transparent text-sm font-medium focus:outline-none focus:border-blue-500 px-1 py-0.5"
+                    value={(report[key] as string) || ''}
+                    onChange={(e) => updateReportField(key, e.target.value)}
+                  >
+                    <option value="">--</option>
+                    <option value="inspection">Inspection</option>
+                    <option value="minor">Minor</option>
+                    <option value="major">Major</option>
+                  </select>
+                ) : (
+                  <input
+                    className="border-b border-gray-300 bg-transparent text-sm font-medium focus:outline-none focus:border-blue-500 px-1 py-0.5"
+                    value={(report[key] as string) || ''}
+                    onChange={(e) => updateReportField(key, e.target.value)}
+                    onBlur={(e) => updateReportField(key, e.target.value)}
+                  />
+                )}
               </div>
             ))}
           </div>
@@ -449,7 +463,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                         onChange={(e) => updateRow(idx, 'condition_note', e.target.value)}
                       />
                     </td>
-                    <td className="border px-1 py-1 text-center">
+                    <td className={`border px-1 py-1 text-center ${item.recommendation.includes('C') ? 'bg-green-100' : ''}`}>
                       <input
                         type="checkbox"
                         checked={item.recommendation.includes('C')}
@@ -459,10 +473,10 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                             : item.recommendation.filter((x) => x !== 'C')
                           updateRow(idx, 'recommendation', next)
                         }}
-                        className="rounded"
+                        className="rounded accent-green-600"
                       />
                     </td>
-                    <td className="border px-1 py-1 text-center">
+                    <td className={`border px-1 py-1 text-center ${item.recommendation.includes('RP') ? 'bg-yellow-100' : ''}`}>
                       <input
                         type="checkbox"
                         checked={item.recommendation.includes('RP')}
@@ -472,10 +486,10 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                             : item.recommendation.filter((x) => x !== 'RP')
                           updateRow(idx, 'recommendation', next)
                         }}
-                        className="rounded"
+                        className="rounded accent-yellow-500"
                       />
                     </td>
-                    <td className="border px-1 py-1 text-center">
+                    <td className={`border px-1 py-1 text-center ${item.recommendation.includes('RE') ? 'bg-red-100' : ''}`}>
                       <input
                         type="checkbox"
                         checked={item.recommendation.includes('RE')}
@@ -485,7 +499,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                             : item.recommendation.filter((x) => x !== 'RE')
                           updateRow(idx, 'recommendation', next)
                         }}
-                        className="rounded"
+                        className="rounded accent-red-600"
                       />
                     </td>
                     <td className="border px-1 py-1">
@@ -599,6 +613,56 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         <p className="text-xs text-gray-400 mt-2">
           * Klik &quot;+ Foto&quot; untuk upload foto per komponen. Baris harus disimpan dulu sebelum bisa upload foto.
         </p>
+      </div>
+
+      {/* Signature Table */}
+      <div className="bg-white rounded-lg shadow border p-4">
+        <h3 className="text-lg font-bold text-gray-800 mb-3">Signatures</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="bg-blue-900 text-white">
+                <th className="border px-2 py-2 text-xs">INSPECTED BY</th>
+                <th className="border px-2 py-2 text-xs">CHECKED BY</th>
+                <th className="border px-2 py-2 text-xs">REVIEW BY</th>
+                <th className="border px-2 py-2 text-xs">ACKNOWLEDGE BY</th>
+                <th className="border px-2 py-2 text-xs">WITNESS AND APPROVED BY</th>
+              </tr>
+              <tr className="bg-gray-100">
+                <th className="border px-2 py-1 text-xs font-normal">QC INSPECTED</th>
+                <th className="border px-2 py-1 text-xs font-normal">ENGINEERING</th>
+                <th className="border px-2 py-1 text-xs font-normal">WORKSHOP CO.</th>
+                <th className="border px-2 py-1 text-xs font-normal">PROJECT MANAGER</th>
+                <th className="border px-2 py-1 text-xs font-normal">QC REP. PHE-ONWJ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="border px-2 py-1">
+                  <input
+                    className="w-full border-0 bg-transparent text-sm text-center font-medium focus:outline-none focus:border-b focus:border-blue-500"
+                    value={report.inspector_name || ''}
+                    placeholder="Nama..."
+                    onChange={(e) => updateReportField('inspector_name', e.target.value)}
+                    onBlur={(e) => updateReportField('inspector_name', e.target.value)}
+                  />
+                </td>
+                <td className="border px-2 py-1">
+                  <input
+                    className="w-full border-0 bg-transparent text-sm text-center font-medium focus:outline-none"
+                    value={report.engineering_name || ''}
+                    placeholder="Nama..."
+                    onChange={(e) => updateReportField('engineering_name', e.target.value)}
+                    onBlur={(e) => updateReportField('engineering_name', e.target.value)}
+                  />
+                </td>
+                <td className="border px-2 py-1 text-center font-medium">WISTANTO</td>
+                <td className="border px-2 py-1 text-center font-medium">FN IKSAN</td>
+                <td className="border px-2 py-1 text-center font-medium">HERI DIAN</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Quick Summary */}
