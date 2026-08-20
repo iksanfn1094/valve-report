@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Valve Inspection Report",
-  description: "Sistem Inspection Report Pekerjaan Valve Maintenance",
+  title: "Valve Report",
+  description: "Sistem pencatatan report untuk pekerjaan valve maintenance & repair",
 };
 
 export default function RootLayout({
@@ -32,7 +32,7 @@ export default function RootLayout({
         <header className="bg-blue-900 text-white shadow-md">
           <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
             <Link href="/" className="text-xl font-bold tracking-tight">
-              Valve Inspection Report
+              Valve Report
             </Link>
             <nav className="flex gap-4 text-sm">
               <Link href="/reports" className="hover:text-blue-200 transition">
