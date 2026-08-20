@@ -539,7 +539,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       {/* Quick Summary */}
       <div className="bg-white rounded-lg shadow border p-4">
         <h3 className="text-lg font-bold text-gray-800 mb-3">Ringkasan</h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div className="bg-blue-50 rounded-lg p-3 text-center">
             <div className="text-2xl font-bold text-blue-600">{items.length}</div>
             <div className="text-gray-500">Total Komponen</div>
@@ -562,56 +562,8 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
             </div>
             <div className="text-gray-500">Replace (RE)</div>
           </div>
-          <div className="bg-purple-50 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold text-purple-600">{photos.length}</div>
-            <div className="text-gray-500">Total Foto</div>
-          </div>
         </div>
       </div>
-
-      {/* Photo Gallery */}
-      {photos.length > 0 && (
-        <div className="bg-white rounded-lg shadow border p-4">
-          <h3 className="text-lg font-bold text-gray-800 mb-3">Galeri Foto</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {photos.map((p) => {
-              const item = items.find((it) => it.id === p.item_id)
-              return (
-                <div
-                  key={p.id}
-                  className="relative group border rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition"
-                  onClick={() => p.url && setPreviewPhoto(p.url)}
-                >
-                  <div className="aspect-square">
-                    <img
-                      src={p.url}
-                      alt={p.caption || ''}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="p-1.5 bg-gray-50 border-t">
-                    <p className="text-[10px] text-gray-500 truncate">
-                      {item?.component_name || 'Component'}
-                    </p>
-                    <p className="text-[9px] text-gray-400 truncate">
-                      {p.caption || ''}
-                    </p>
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      deletePhoto(p.id, p.storage_path)
-                    }}
-                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs opacity-0 group-hover:opacity-100 transition flex items-center justify-center"
-                  >
-                    x
-                  </button>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

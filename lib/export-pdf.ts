@@ -180,14 +180,14 @@ export async function exportReportPDF(
     y += 10
   } else {
     const PHOTO_SZ = 20
-    // Column widths sum to CW (180): 8+24+10+30+16+32+22+20+18 = 180
+    // Column widths sum to CW (180): 8+24+10+30+18+30+22+20+18 = 180
     const cols: Record<number, { cellWidth: number; halign: 'center' | 'left' | 'right'; valign?: 'middle' }> = {
       0: { cellWidth: 8, halign: 'center' },      // No
       1: { cellWidth: 24, halign: 'left' },        // Component
       2: { cellWidth: 10, halign: 'center' },      // Qty
       3: { cellWidth: 30, halign: 'left' },        // Condition
-      4: { cellWidth: 16, halign: 'center' },      // Rec
-      5: { cellWidth: 32, halign: 'left' },        // Comment
+      4: { cellWidth: 18, halign: 'center' },      // Rec (C / RP / RE checkboxes)
+      5: { cellWidth: 30, halign: 'left' },        // Comment
       6: { cellWidth: 22, halign: 'left' },        // Spec
       7: { cellWidth: PHOTO_SZ, halign: 'center', valign: 'middle' }, // Foto
     }
@@ -201,7 +201,7 @@ export async function exportReportPDF(
         it.component_name || '-',
         it.qty != null ? String(it.qty) : '-',
         it.condition_note || '-',
-        it.recommendation.join(', ') || '-',
+        '',
         it.comment || '-',
         it.spec_material || '-',
         '',
@@ -225,17 +225,55 @@ export async function exportReportPDF(
       alternateRowStyles: { fillColor: LIGHT_BG },
       columnStyles: cols,
       didDrawCell: (data) => {
-        if (data.section !== 'body' || data.column.index !== 7) return
-        const item = items[data.row.index]
-        if (!item?.id) return
-        const b64 = base64Map.get(item.id)
-        if (!b64) return
+        if (data.section !== 'body') return
         const c = data.cell
-        const pad = 2
-        const sz = PHOTO_SZ - pad * 2
-        try {
-          doc.addImage(b64, 'JPEG', c.x + (c.width - sz) / 2, c.y + (c.height - sz) / 2, sz, sz)
-        } catch { /* skip */ }
+        const item = items[data.row.index]
+
+        // Rec column (index 4) - draw checkboxes
+        if (data.column.index === 4 && item) {
+          const recs = ['C', 'RP', 'RE']
+          const boxSize = 3.2
+          const gap = 1.5
+          const totalW = recs.length * (boxSize + 6) + gap * (recs.length - 1)
+          let xStart = c.x + (c.width - totalW) / 2
+          const yBox = c.y + (c.height - boxSize) / 2
+
+          recs.forEach((r) => {
+            // Draw checkbox
+            doc.setDrawColor(150, 150, 150)
+            doc.setFillColor(255, 255, 255)
+            doc.rect(xStart, yBox, boxSize, boxSize, 'FD')
+
+            // Draw checkmark if selected
+            if (item.recommendation.includes(r)) {
+              doc.setDrawColor(25, 60, 120)
+              doc.setLineWidth(0.5)
+              // Draw checkmark (two lines forming a check)
+              doc.line(xStart + 0.6, yBox + boxSize / 2, xStart + 1.4, yBox + boxSize - 0.8)
+              doc.line(xStart + 1.4, yBox + boxSize - 0.8, xStart + boxSize - 0.5, yBox + 0.6)
+              doc.setLineWidth(0.2)
+            }
+
+            // Label
+            doc.setFillColor(0, 0, 0)
+            doc.setFontSize(5)
+            doc.setFont('helvetica', 'normal')
+            doc.text(r, xStart + boxSize + 0.8, yBox + boxSize - 0.5)
+
+            xStart += boxSize + 6 + gap
+          })
+        }
+
+        // Foto column (index 7) - draw image
+        if (data.column.index === 7 && item?.id) {
+          const b64 = base64Map.get(item.id)
+          if (!b64) return
+          const pad = 2
+          const sz = PHOTO_SZ - pad * 2
+          try {
+            doc.addImage(b64, 'JPEG', c.x + (c.width - sz) / 2, c.y + (c.height - sz) / 2, sz, sz)
+          } catch { /* skip */ }
+        }
       },
     })
     y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6
@@ -262,7 +300,6 @@ export async function exportReportPDF(
       ['Clean (C)', String(cC)],
       ['Repair (RP)', String(cRP)],
       ['Replace (RE)', String(cRE)],
-      ['Total Photos', String(photos.length)],
     ],
     styles: { fontSize: 9, cellPadding: 3, lineColor: [220, 220, 220], lineWidth: 0.2 },
     headStyles: { fillColor: BLUE, textColor: [255, 255, 255] },

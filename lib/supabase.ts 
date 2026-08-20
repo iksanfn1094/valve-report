@@ -1,0 +1,6 @@
+import { createBrowserClient } from '@supabase/ssr'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://xfbxarvsckygplcmtbrl.supabase.co'
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_VBFcbDslzihgtVrrHk908A_WfsDnQ_J'
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey))
