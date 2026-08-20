@@ -35,6 +35,13 @@ export default function ReportsList() {
       })
   }, [])
 
+  async function deleteReport(reportId: string) {
+    if (!confirm('Hapus report ini? Semua data terkait (items, BOM, foto) akan ikut terhapus.')) return
+    const { error } = await supabase.from('report_inspection').delete().eq('id', reportId)
+    if (error) return alert('Gagal hapus: ' + error.message)
+    setReports(reports.filter((r) => r.id !== reportId))
+  }
+
   const filtered = reports.filter((r) => {
     const q = search.toLowerCase()
     return (
@@ -125,9 +132,17 @@ export default function ReportsList() {
                     </span>
                   </td>
                   <td className="border px-3 py-2">
-                    <Link href={`/reports/${r.id}`} className="text-blue-600 hover:underline">
-                      Buka
-                    </Link>
+                    <div className="flex gap-2">
+                      <Link href={`/reports/${r.id}`} className="text-blue-600 hover:underline text-sm">
+                        Buka
+                      </Link>
+                      <button
+                        onClick={() => deleteReport(r.id)}
+                        className="text-red-500 hover:text-red-700 text-sm"
+                      >
+                        Hapus
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

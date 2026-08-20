@@ -255,6 +255,34 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     setReport((prev) => prev ? { ...prev, status } : prev)
   }
 
+  async function updateReportField(field: keyof Report, value: string) {
+    const { error } = await supabase
+      .from('report_inspection')
+      .update({ [field]: value })
+      .eq('id', id)
+    if (error) return alert(error.message)
+    setReport((prev) => prev ? { ...prev, [field]: value } : prev)
+  }
+
+  const REPORT_FIELDS: { key: keyof Report; label: string }[] = [
+    { key: 'report_no', label: 'Report No' },
+    { key: 'report_date', label: 'Date' },
+    { key: 'project', label: 'Project' },
+    { key: 'customer', label: 'Customer' },
+    { key: 'valve_type', label: 'Valve Type' },
+    { key: 'manufacture', label: 'Manufacture' },
+    { key: 'size', label: 'Size' },
+    { key: 'class', label: 'Class' },
+    { key: 'serial_no', label: 'Serial No' },
+    { key: 'end_connection', label: 'End Connection' },
+    { key: 'operated', label: 'Operated' },
+    { key: 'location', label: 'Location' },
+    { key: 'ex_station', label: 'EX Station' },
+    { key: 'ro_no', label: 'RO No' },
+    { key: 'inspector_name', label: 'Inspector' },
+    { key: 'category', label: 'Category' },
+  ]
+
   function getPhotosForItem(itemId: string) {
     return photos.filter((p) => p.item_id === itemId)
   }
@@ -326,27 +354,15 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
 
         {showHeader && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-            {[
-              ['Report No', report.report_no],
-              ['Date', report.report_date],
-              ['Project', report.project],
-              ['Customer', report.customer],
-              ['Valve Type', report.valve_type],
-              ['Manufacture', report.manufacture],
-              ['Size', report.size],
-              ['Class', report.class],
-              ['Serial No', report.serial_no],
-              ['End Connection', report.end_connection],
-              ['Operated', report.operated],
-              ['Location', report.location],
-              ['EX Station', report.ex_station],
-              ['RO No', report.ro_no],
-              ['Inspector', report.inspector_name],
-              ['Category', report.category],
-            ].map(([label, val]) => (
-              <div key={label}>
-                <span className="text-gray-500">{label}:</span>{' '}
-                <span className="font-medium">{val || '-'}</span>
+            {REPORT_FIELDS.map(({ key, label }) => (
+              <div key={key} className="flex flex-col">
+                <label className="text-gray-500 text-xs">{label}:</label>
+                <input
+                  className="border-b border-gray-300 bg-transparent text-sm font-medium focus:outline-none focus:border-blue-500 px-1 py-0.5"
+                  value={(report[key] as string) || ''}
+                  onChange={(e) => updateReportField(key, e.target.value)}
+                  onBlur={(e) => updateReportField(key, e.target.value)}
+                />
               </div>
             ))}
           </div>
@@ -380,19 +396,22 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
+              <tr className="bg-blue-900 text-white">
+                <th className="border px-1 py-1 text-xs" rowSpan={2}>No</th>
+                <th className="border px-1 py-1 text-xs" rowSpan={2}>Component / Part Description</th>
+                <th className="border px-1 py-1 text-xs" rowSpan={2}>Qty</th>
+                <th className="border px-1 py-1 text-xs" rowSpan={2}>Condition</th>
+                <th className="border px-1 py-1 text-xs" colSpan={3}>Recommendation</th>
+                <th className="border px-1 py-1 text-xs" rowSpan={2}>Repair Category</th>
+                <th className="border px-1 py-1 text-xs" rowSpan={2}>Comment / Notes / Dimension</th>
+                <th className="border px-1 py-1 text-xs" rowSpan={2}>Foto</th>
+                <th className="border px-1 py-1 text-xs" rowSpan={2}>Spek Material</th>
+                <th className="border px-1 py-1 text-xs" rowSpan={2}></th>
+              </tr>
               <tr className="bg-gray-100">
-                <th className="border px-1 py-1 w-8 text-xs">No</th>
-                <th className="border px-1 py-1 text-xs min-w-[140px]">Component / Part Description</th>
-                <th className="border px-1 py-1 w-12 text-xs">Qty</th>
-                <th className="border px-1 py-1 text-xs min-w-[140px]">Condition</th>
                 <th className="border px-1 py-1 w-8 text-xs">C</th>
                 <th className="border px-1 py-1 w-8 text-xs">RP</th>
                 <th className="border px-1 py-1 w-8 text-xs">RE</th>
-                <th className="border px-1 py-1 text-xs min-w-[100px]">Repair Category</th>
-                <th className="border px-1 py-1 text-xs min-w-[160px]">Comment / Notes / Dimension</th>
-                <th className="border px-1 py-1 text-xs">Foto</th>
-                <th className="border px-1 py-1 text-xs min-w-[90px]">Spek Material</th>
-                <th className="border px-1 py-1 w-8"></th>
               </tr>
             </thead>
             <tbody>
