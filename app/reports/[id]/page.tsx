@@ -316,7 +316,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       {/* Header Info */}
       <div className="bg-white rounded-lg shadow border p-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold text-gray-800">Report: {report.job_number}</h2>
+          <h2 className="text-lg font-bold text-gray-800">Inspection Report: {report.job_number}</h2>
           <div className="flex gap-2">
             <button
               onClick={() => {
@@ -343,6 +343,9 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
             </button>
             <Link href={`/reports/${id}/bom`} className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 transition">
               BOM
+            </Link>
+            <Link href="/docs" className="bg-teal-600 text-white px-3 py-1 rounded text-sm hover:bg-teal-700 transition">
+              Documentation
             </Link>
             <button
               onClick={() => setShowHeader(!showHeader)}
