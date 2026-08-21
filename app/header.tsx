@@ -17,8 +17,8 @@ export default function Header() {
     <header className="bg-blue-900 text-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/reports" className="text-xl font-bold tracking-tight">
-            Valve Report
+          <Link href="/" className="text-xl font-bold tracking-tight">
+            Home
           </Link>
           <Link href="/docs" className="text-xl font-bold tracking-tight">
             Documentation

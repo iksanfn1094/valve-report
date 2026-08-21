@@ -37,7 +37,7 @@ export default function Home() {
   return (
     <div className="space-y-8 py-8">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-blue-900">Site Survei Report</h1>
+        <h1 className="text-3xl font-bold text-blue-900">Project &amp; Service Transformation</h1>
         <p className="text-gray-600 mt-2">
           Sistem pencatatan report untuk pekerjaan site survei, timesheet &amp; maintenance.
         </p>
