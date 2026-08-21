@@ -114,9 +114,9 @@ export async function exportReportPDF(
   doc.setFont('helvetica', 'normal')
   doc.text('PT. VALVINDO MEGAH', PW / 2, 16, { align: 'center' })
 
-  // Logo di kiri atas
+  // Logo di kiri atas (lancip, agak lebar)
   try {
-    doc.addImage('/logo.png', 'PNG', 3, 2, 16, 16)
+    doc.addImage('/logo.png', 'PNG', 2, 1, 22, 18)
   } catch { /* ignore if logo not found */ }
 
   y = 25
@@ -131,13 +131,13 @@ export async function exportReportPDF(
   const thirdW = CW / 3
   const jobRows = [
     [
-      { l: 'EX STATION & P/F', v: report.ex_station || '' },
+      { l: 'CUSTOMER', v: report.customer || '' },
       { l: 'RO NO.', v: report.ro_no || '' },
       { l: 'REPORT NO.', v: report.report_no || '' },
     ],
     [
       { l: 'PROJECT', v: report.project || '' },
-      { l: 'PROJECT NO.', v: '' },
+      { l: 'EX STATION & P/F', v: report.ex_station || '' },
       { l: 'REPORT DATE', v: report.report_date || '' },
     ],
   ]
@@ -165,7 +165,7 @@ export async function exportReportPDF(
     ['Valve Type', report.valve_type], ['Manufacture', report.manufacture],
     ['Size (in.)', report.size], ['Class', report.class],
     ['S/N', report.serial_no], ['End Connection', report.end_connection],
-    ['Operated', report.operated], ['Location', report.location],
+    ['Operated', report.operated],
   ]
 
   const startY = y
