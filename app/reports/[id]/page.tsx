@@ -81,7 +81,7 @@ function formatDateEN(val: string | null): string {
 const COMPONENTS = [
   'Actuator', 'Ball', 'Backseat', 'Bolt', 'Bonnet', 'Body',
   'Diaphragm', 'Disc', 'Flange And RF', 'Frame', 'Graphite Packing Body Bonnet',
-  'Guide', 'Handwheel', 'Holder Valve', 'Levert Arm',
+  'Guide', 'Handwheel',   'Holder Valve', 'Lever Arm',
   'Nut', 'O-Ring Body Bonnet', 'O-Ring Stem', 'Other',
   'Packing', 'Plug', 'Retainer', 'Seat', 'Seat Pocket',
   'Spring', 'Stopper', 'Stem', 'Stud Bolt Body Bonnet', 'Stud Bolt Mounting Adaptor',
