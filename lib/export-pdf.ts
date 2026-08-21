@@ -158,7 +158,7 @@ export async function exportReportPDF(
   const leftFields: [string, string | null][] = [
     ['Customer', report.customer], ['Valve Id', report.job_number],
     ['Valve Type', report.valve_type], ['Manufacture', report.manufacture],
-    ['Size', report.size], ['Class', report.class],
+    ['Size (in.)', report.size], ['Class', report.class],
     ['S/N', report.serial_no], ['End Connection', report.end_connection],
     ['Operated', report.operated], ['Location', report.location],
   ]

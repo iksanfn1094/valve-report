@@ -41,9 +41,6 @@ export default function Header() {
               </button>
             </>
           )}
-          <Link href="/reports" className="hover:text-blue-200 transition">
-            Reports
-          </Link>
         </nav>
       </div>
     </header>

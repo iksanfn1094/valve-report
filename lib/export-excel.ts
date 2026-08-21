@@ -59,7 +59,7 @@ export function exportReportExcel(
     ['Customer', report.customer || '-'],
     ['Valve Type', report.valve_type || '-'],
     ['Manufacture', report.manufacture || '-'],
-    ['Size', report.size || '-'],
+    ['Size (in.)', report.size || '-'],
     ['Class', report.class || '-'],
     ['Serial No', report.serial_no || '-'],
     ['End Connection', report.end_connection || '-'],

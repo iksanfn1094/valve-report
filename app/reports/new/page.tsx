@@ -14,7 +14,7 @@ const FIELDS = [
   { key: 'ex_station', label: 'EX Station' },
   { key: 'valve_type', label: 'Valve Type' },
   { key: 'manufacture', label: 'Manufacture' },
-  { key: 'size', label: 'Size' },
+  { key: 'size', label: 'Size (in.)' },
   { key: 'class', label: 'Class' },
   { key: 'serial_no', label: 'Serial No' },
   { key: 'end_connection', label: 'End Connection' },

@@ -158,7 +158,7 @@ export default function ReportsList() {
                 <th className="border px-3 py-2">Project</th>
                 <th className="border px-3 py-2">Customer</th>
                 <th className="border px-3 py-2">Valve Type</th>
-                <th className="border px-3 py-2">Size</th>
+                <th className="border px-3 py-2">Size (in.)</th>
                 <th className="border px-3 py-2">Class</th>
                 <th className="border px-3 py-2">Category</th>
                 <th className="border px-3 py-2">Status</th>
