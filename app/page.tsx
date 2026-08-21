@@ -2,7 +2,7 @@ import Link from "next/link";
 
 const menus = [
   {
-    title: "Site Survei",
+    title: "Site Survey",
     desc: "Form site survey untuk pekerjaan di lapangan",
     href: "/site-survey",
     color: "bg-blue-600 hover:bg-blue-700",
