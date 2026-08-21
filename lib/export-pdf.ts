@@ -232,7 +232,7 @@ export async function exportReportPDF(
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
   doc.text('INCOMING INSP. CHECK (CONDITION AS FOUND)', M, y)
-  y += 5
+  y += 3
 
   const base64Map = new Map<string, string>()
   await Promise.all(photos.map(async (p) => {
@@ -247,33 +247,34 @@ export async function exportReportPDF(
     doc.text('No items recorded.', M, y + 5)
     y += 10
   } else {
-    const PHOTO_SZ = 36
-    const COL_W = [6, 24, 7, 20, 8, 8, 8, 14, 22, 40, 29]
+    const PHOTO_SZ = 40
+    const COL_W = [6, 24, 7, 20, 8, 8, 8, 14, 22, 44, 29]
 
     autoTable(doc, {
       startY: y,
       margin: { left: M, right: M },
       head: [
         [
-          'No', 'Component / Part Description', 'Qty', 'Condition',
+          { content: 'No', rowSpan: 2 },
+          { content: 'Component / Part Description', rowSpan: 2 },
+          { content: 'Qty', rowSpan: 2 },
+          { content: 'Condition', rowSpan: 2 },
           { content: 'Recommendation', colSpan: 3, styles: { halign: 'center' as const } },
-          'Repair\nCategory',
-          'Comment / Notes / Dimension', 'Foto', 'Spek Material',
+          { content: 'Repair\nCategory', rowSpan: 2 },
+          { content: 'Comment / Notes / Dimension', rowSpan: 2 },
+          { content: 'Foto', rowSpan: 2 },
+          { content: 'Spek Material', rowSpan: 2 },
         ],
-        [
-          '', '', '', '',
-          'C', 'RP', 'RE',
-          '', '', '', '',
-        ],
+        ['C', 'RP', 'RE'],
       ],
       body: items.map((it) => [
         String(it.item_no),
         it.component_name || '-',
         it.qty != null ? String(it.qty) : '-',
         it.condition_note || '-',
-        it.recommendation.includes('C') ? 'V' : '',
-        it.recommendation.includes('RP') ? 'V' : '',
-        it.recommendation.includes('RE') ? 'V' : '',
+        it.recommendation.includes('C') ? '\u2713' : '',
+        it.recommendation.includes('RP') ? '\u2713' : '',
+        it.recommendation.includes('RE') ? '\u2713' : '',
         (it as unknown as { repair_category?: string }).repair_category || '-',
         it.comment || '-',
         '',
@@ -317,14 +318,14 @@ export async function exportReportPDF(
         const item = items[data.row.index]
         if (!item) return
 
-        // C/RP/RE checkmarks - V besar
+        // C/RP/RE checkmarks - checklist ✓
         if (data.column.index >= 4 && data.column.index <= 6) {
           const val = c.raw as string
-          if (val === 'V') {
+          if (val === '\u2713') {
             doc.setTextColor(25, 60, 120)
-            doc.setFontSize(14)
+            doc.setFontSize(9)
             doc.setFont('helvetica', 'bold')
-            doc.text('V', c.x + c.width / 2, c.y + c.height / 2 + 2, { align: 'center' })
+            doc.text('\u2713', c.x + c.width / 2, c.y + c.height / 2 + 1, { align: 'center' })
           }
         }
 
@@ -388,7 +389,7 @@ export async function exportReportPDF(
   y += 6
 
   const sigBoxW = (CW - 12) / 5
-  const sigBoxH = 28
+  const sigBoxH = 32
   const sigBoxes = [
     { title: 'INSPECTED BY', role: 'QC INSPECTED', name: report.inspector_name || '-' },
     { title: 'CHECKED BY', role: 'ENGINEERING', name: (report as unknown as { engineering_name?: string }).engineering_name || '-' },
@@ -409,11 +410,11 @@ export async function exportReportPDF(
     doc.setTextColor(0, 0, 0)
     doc.text(sb.title, sx + sigBoxW / 2, y + 5, { align: 'center' })
 
-    // Nama (signature) - di atas garis
+    // Nama (signature) - tepat di atas garis
     doc.setFontSize(6.5)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(0, 0, 0)
-    doc.text(sb.name, sx + sigBoxW / 2, y + 17, { align: 'center' })
+    doc.text(sb.name, sx + sigBoxW / 2, y + sigBoxH - 9, { align: 'center' })
 
     // Garis tanda tangan
     doc.setDrawColor(120, 120, 120)
