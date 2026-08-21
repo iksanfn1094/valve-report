@@ -51,7 +51,7 @@ export function exportReportExcel(
 
   // Sheet 1: Valve Details
   const detailRows = [
-    ['Job Number', report.job_number],
+    ['Valve Id', report.job_number],
     ['Report No', report.report_no || '-'],
     ['Report Date', report.report_date || '-'],
     ['Status', report.status.toUpperCase()],

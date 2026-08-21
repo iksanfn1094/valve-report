@@ -44,9 +44,6 @@ export default function Header() {
           <Link href="/reports" className="hover:text-blue-200 transition">
             Reports
           </Link>
-          <Link href="/reports/new" className="hover:text-blue-200 transition">
-            + New Report
-          </Link>
         </nav>
       </div>
     </header>

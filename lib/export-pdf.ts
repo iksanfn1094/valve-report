@@ -156,7 +156,7 @@ export async function exportReportPDF(
   const leftW = CW * 0.6, rightW = CW * 0.4, rightX = M + leftW
 
   const leftFields: [string, string | null][] = [
-    ['Customer', report.customer], ['Job Number', report.job_number],
+    ['Customer', report.customer], ['Valve Id', report.job_number],
     ['Valve Type', report.valve_type], ['Manufacture', report.manufacture],
     ['Size', report.size], ['Class', report.class],
     ['S/N', report.serial_no], ['End Connection', report.end_connection],

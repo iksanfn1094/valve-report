@@ -99,7 +99,7 @@ export default function ReportsList() {
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="bg-gray-100 text-left">
-                <th className="border px-3 py-2">Job No</th>
+                <th className="border px-3 py-2">Valve Id</th>
                 <th className="border px-3 py-2">Report No</th>
                 <th className="border px-3 py-2">Date</th>
                 <th className="border px-3 py-2">Project</th>

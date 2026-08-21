@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 const FIELDS = [
-  { key: 'job_number', label: 'Job Number', required: true },
+  { key: 'job_number', label: 'Valve Id', required: true },
   { key: 'report_no', label: 'Report No' },
   { key: 'report_date', label: 'Report Date', type: 'date' },
   { key: 'project', label: 'Project' },
