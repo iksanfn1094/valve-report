@@ -85,7 +85,7 @@ const COMPONENTS = [
   'Nut', 'O-Ring Body Bonnet', 'O-Ring Stem', 'Other',
   'Packing', 'Plug', 'Retainer', 'Seat', 'Seat Pocket',
   'Spring', 'Stopper', 'Stem', 'Stud Bolt Body Bonnet', 'Stud Bolt Mounting Adaptor',
-  'Thrust Bearing', 'Washer Stem', 'Yoke',
+  'Thrust Bearing', 'Valve Unit', 'Washer Stem', 'Yoke',
 ]
 
 export default function ReportDetail({ params }: { params: Promise<{ id: string }> }) {
