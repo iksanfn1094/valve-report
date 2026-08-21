@@ -74,7 +74,6 @@ export default function NewReport() {
             end_connection: match.end_connection || prev.end_connection,
             manufacture: match.manufacture || prev.manufacture,
             serial_no: match.serial_no || prev.serial_no,
-            location: match.location || prev.location,
             ex_station: match.ex_station || prev.ex_station,
             project: match.project || prev.project,
             ro_no: match.ro_no || prev.ro_no,
