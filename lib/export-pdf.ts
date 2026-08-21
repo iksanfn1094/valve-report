@@ -71,6 +71,19 @@ const LIGHT_BG: [number, number, number] = [248, 248, 248]
 const LABEL_C: [number, number, number] = [100, 100, 100]
 const GRID: [number, number, number] = [180, 180, 180]
 
+const BULAN = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+]
+
+function formatTanggal(val: string | null): string {
+  if (!val) return ''
+  // coba parse "YYYY-MM-DD" atau format lain
+  const d = new Date(val)
+  if (isNaN(d.getTime())) return val
+  return `${d.getDate()} ${BULAN[d.getMonth()]} ${d.getFullYear()}`
+}
+
 function drawField(
   doc: jsPDF, label: string, value: string,
   x: number, y: number, w: number, h: number, labelW: number
@@ -138,7 +151,7 @@ export async function exportReportPDF(
     [
       { l: 'PROJECT', v: report.project || '' },
       { l: 'EX STATION & P/F', v: report.ex_station || '' },
-      { l: 'REPORT DATE', v: report.report_date || '' },
+      { l: 'REPORT DATE', v: formatTanggal(report.report_date) },
     ],
   ]
 
@@ -323,7 +336,7 @@ export async function exportReportPDF(
           const val = c.raw as string
           if (val === '\u2713') {
             doc.setTextColor(25, 60, 120)
-            doc.setFontSize(9)
+            doc.setFontSize(12)
             doc.setFont('helvetica', 'bold')
             doc.text('\u2713', c.x + c.width / 2, c.y + c.height / 2 + 1, { align: 'center' })
           }
@@ -375,10 +388,10 @@ export async function exportReportPDF(
         1: { cellWidth: 8, halign: 'center' },
         2: { cellWidth: 10, halign: 'center' },
         3: { cellWidth: 12, halign: 'center' },
-        4: { cellWidth: 34, halign: 'left' },
-        5: { cellWidth: 28, halign: 'left' },
-        6: { cellWidth: 30, halign: 'left' },
-        7: { cellWidth: 36, halign: 'left' },
+        4: { cellWidth: 38, halign: 'left' },
+        5: { cellWidth: 32, halign: 'left' },
+        6: { cellWidth: 34, halign: 'left' },
+        7: { cellWidth: 34, halign: 'left' },
       },
     })
     y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
