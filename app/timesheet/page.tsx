@@ -6,89 +6,134 @@ import { supabase } from '@/lib/supabase'
 
 type Timesheet = {
   id: string
-  customer: string
-  service_person: string
-  assign_date: string
-  location: string
+  customer: string | null
+  service_person: string | null
+  assign_date: string | null
+  location: string | null
+  end_user_project: string | null
+  internal_so_no: string | null
+  assign_role: string | null
   status: string
   created_at: string
 }
 
-export default function TimesheetListPage() {
+export default function TimesheetList() {
   const [list, setList] = useState<Timesheet[]>([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
-    async function load() {
-      const { data } = await supabase
-        .from('timesheet')
-        .select('id, customer, service_person, assign_date, location, status, created_at')
-        .order('created_at', { ascending: false })
-      if (data) setList(data)
-      setLoading(false)
-    }
-    load()
+    supabase
+      .from('timesheet')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (!error) setList(data ?? [])
+        setLoading(false)
+      })
   }, [])
 
   async function deleteTs(id: string) {
-    if (!confirm('Hapus timesheet ini?')) return
-    await supabase.from('timesheet_entries').delete().eq('timesheet_id', id)
-    await supabase.from('timesheet').delete().eq('id', id)
-    setList((prev) => prev.filter((t) => t.id !== id))
+    if (!confirm('Hapus timesheet ini? Semua data terkait akan ikut terhapus.')) return
+    const { error } = await supabase.from('timesheet').delete().eq('id', id)
+    if (error) return alert('Gagal hapus: ' + error.message)
+    setList(list.filter((t) => t.id !== id))
   }
 
-  if (loading) return <p className="text-gray-500 py-10 text-center">Loading...</p>
+  const filtered = list.filter((t) => {
+    const q = search.toLowerCase()
+    return (
+      !q ||
+      t.customer?.toLowerCase().includes(q) ||
+      t.service_person?.toLowerCase().includes(q) ||
+      t.location?.toLowerCase().includes(q) ||
+      t.end_user_project?.toLowerCase().includes(q) ||
+      t.internal_so_no?.toLowerCase().includes(q)
+    )
+  })
+
+  const statusColor = (s: string) => {
+    switch (s) {
+      case 'approved': return 'bg-green-100 text-green-700'
+      case 'submitted': return 'bg-yellow-100 text-yellow-700'
+      default: return 'bg-gray-100 text-gray-600'
+    }
+  }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-800">Daftar Timesheet</h1>
-        <Link href="/timesheet/new"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition font-medium">
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Daftar Timesheet</h1>
+        <Link
+          href="/timesheet/new"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+        >
           + New Timesheet
         </Link>
       </div>
-      <div className="bg-white rounded-lg shadow border overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-gray-100 text-left text-xs text-gray-600">
-              <th className="px-3 py-2">Customer</th>
-              <th className="px-3 py-2">Service Person</th>
-              <th className="px-3 py-2">Date</th>
-              <th className="px-3 py-2">Location</th>
-              <th className="px-3 py-2">Status</th>
-              <th className="px-3 py-2"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.length === 0 && (
-              <tr><td colSpan={6} className="px-3 py-8 text-center text-gray-400">Belum ada timesheet.</td></tr>
-            )}
-            {list.map((t) => (
-              <tr key={t.id} className="border-t hover:bg-gray-50">
-                <td className="px-3 py-2">
-                  <Link href={`/timesheet/${t.id}`} className="text-blue-600 hover:underline font-medium">
-                    {t.customer || '-'}
-                  </Link>
-                </td>
-                <td className="px-3 py-2 text-gray-600">{t.service_person || '-'}</td>
-                <td className="px-3 py-2 text-gray-600">{t.assign_date || '-'}</td>
-                <td className="px-3 py-2 text-gray-600">{t.location || '-'}</td>
-                <td className="px-3 py-2">
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                    t.status === 'approved' ? 'bg-green-100 text-green-700' :
-                    t.status === 'submitted' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-gray-100 text-gray-600'
-                  }`}>{t.status}</span>
-                </td>
-                <td className="px-3 py-2 text-right">
-                  <button onClick={() => deleteTs(t.id)} className="text-red-400 hover:text-red-600 text-xs">Hapus</button>
-                </td>
+
+      <input
+        type="text"
+        placeholder="Cari berdasarkan customer, service person, location, project..."
+        className="w-full border rounded-lg px-4 py-2 mb-4 text-sm"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
+      {loading ? (
+        <p className="text-gray-500">Loading...</p>
+      ) : filtered.length === 0 ? (
+        <p className="text-gray-500 text-center py-10">Belum ada timesheet. Klik &quot;+ New Timesheet&quot; untuk membuat.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="bg-gray-100 text-left">
+                <th className="border px-3 py-2">Customer</th>
+                <th className="border px-3 py-2">S/O No.</th>
+                <th className="border px-3 py-2">Date</th>
+                <th className="border px-3 py-2">Project</th>
+                <th className="border px-3 py-2">Service Person</th>
+                <th className="border px-3 py-2">Location</th>
+                <th className="border px-3 py-2">Role</th>
+                <th className="border px-3 py-2">Status</th>
+                <th className="border px-3 py-2">Aksi</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filtered.map((t) => (
+                <tr key={t.id} className="hover:bg-gray-50">
+                  <td className="border px-3 py-2 font-medium">{t.customer || '-'}</td>
+                  <td className="border px-3 py-2">{t.internal_so_no || '-'}</td>
+                  <td className="border px-3 py-2">{t.assign_date || '-'}</td>
+                  <td className="border px-3 py-2">{t.end_user_project || '-'}</td>
+                  <td className="border px-3 py-2">{t.service_person || '-'}</td>
+                  <td className="border px-3 py-2">{t.location || '-'}</td>
+                  <td className="border px-3 py-2">{t.assign_role || '-'}</td>
+                  <td className="border px-3 py-2">
+                    <span className={`text-xs px-2 py-1 rounded-full ${statusColor(t.status)}`}>
+                      {t.status}
+                    </span>
+                  </td>
+                  <td className="border px-3 py-2">
+                    <div className="flex gap-2">
+                      <Link href={`/timesheet/${t.id}`} className="text-blue-600 hover:underline text-sm">
+                        Buka
+                      </Link>
+                      <button
+                        onClick={() => deleteTs(t.id)}
+                        className="text-red-500 hover:text-red-700 text-sm"
+                      >
+                        Hapus
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }
