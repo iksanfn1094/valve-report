@@ -331,22 +331,16 @@ export async function exportReportPDF(
         const item = items[data.row.index]
         if (!item) return
 
-        // C/RP/RE checkmarks - checkbox style seperti Repair Category
+        // C/RP/RE checkmarks - centang biru kecil
         if (data.column.index >= 4 && data.column.index <= 6) {
           const val = c.raw as string
-          const bx = c.x + c.width / 2 - 2.5
-          const by = c.y + c.height / 2 - 1.5
-          // Kotak checkbox putih + border
-          doc.setDrawColor(150, 150, 150)
-          doc.setFillColor(255, 255, 255)
-          doc.setLineWidth(0.3)
-          doc.rect(bx, by, 5, 5, 'FD')
-          // Centang biru
           if (val === '\u2713') {
+            const cx = c.x + c.width / 2
+            const cy = c.y + c.height / 2
             doc.setDrawColor(25, 60, 120)
-            doc.setLineWidth(0.5)
-            doc.line(bx + 1, by + 2.8, bx + 2.2, by + 4)
-            doc.line(bx + 2.2, by + 4, bx + 4, by + 1)
+            doc.setLineWidth(0.4)
+            doc.line(cx - 2, cy, cx - 0.5, cy + 1.5)
+            doc.line(cx - 0.5, cy + 1.5, cx + 2, cy - 1.5)
             doc.setLineWidth(0.2)
           }
         }
