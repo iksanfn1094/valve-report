@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -29,9 +29,14 @@ const CATEGORIES = [
   { value: 'major', label: 'Major Repair' },
 ]
 
+type ValveLookup = Record<string, { valve_type: string; size: string; class: string }>
+
 export default function NewReport() {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
+  const [valveData, setValveData] = useState<ValveLookup>({})
+  const [autoFilled, setAutoFilled] = useState(false)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [form, setForm] = useState<Record<string, string>>({
     job_number: '',
     report_no: '',
@@ -51,6 +56,33 @@ export default function NewReport() {
     inspector_name: '',
     category: 'inspection',
   })
+
+  useEffect(() => {
+    fetch('/api/valve-lookup')
+      .then((r) => r.json())
+      .then((data) => setValveData(data))
+      .catch(() => {})
+  }, [])
+
+  function handleValveIdChange(value: string) {
+    updateField('job_number', value)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      const key = value.trim().toUpperCase()
+      const match = valveData[key]
+      if (match) {
+        setForm((prev) => ({
+          ...prev,
+          valve_type: match.valve_type || prev.valve_type,
+          size: match.size || prev.size,
+          class: match.class || prev.class,
+        }))
+        setAutoFilled(true)
+      } else {
+        setAutoFilled(false)
+      }
+    }, 300)
+  }
 
   function updateField(key: string, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -106,9 +138,12 @@ export default function NewReport() {
                 type={f.type || 'text'}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={form[f.key] || ''}
-                onChange={(e) => updateField(f.key, e.target.value)}
+                onChange={(e) => f.key === 'job_number' ? handleValveIdChange(e.target.value) : updateField(f.key, e.target.value)}
                 required={f.required}
               />
+              {f.key === 'job_number' && autoFilled && (
+                <p className="text-xs text-green-600 mt-1">Valve Type, Size, Class terisi otomatis</p>
+              )}
             </div>
           ))}
           <div>

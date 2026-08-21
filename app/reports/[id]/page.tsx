@@ -83,6 +83,11 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState<string | null>(null)
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null)
+  const [valveData, setValveData] = useState<Record<string, { valve_type: string; size: string; class: string }>>({})
+
+  useEffect(() => {
+    fetch('/api/valve-lookup').then(r => r.json()).then(setValveData).catch(() => {})
+  }, [])
 
   const fetchPhotos = useCallback(async () => {
     const { data } = await supabase
@@ -270,12 +275,22 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   }
 
   async function updateReportField(field: keyof Report, value: string) {
+    const updates: Record<string, string | null> = { [field]: value }
+    if (field === 'job_number') {
+      const key = value.trim().toUpperCase()
+      const match = valveData[key]
+      if (match) {
+        if (match.valve_type) updates.valve_type = match.valve_type
+        if (match.size) updates.size = match.size
+        if (match.class) updates.class = match.class
+      }
+    }
     const { error } = await supabase
       .from('report_inspection')
-      .update({ [field]: value })
+      .update(updates)
       .eq('id', id)
     if (error) return alert(error.message)
-    setReport((prev) => prev ? { ...prev, [field]: value } : prev)
+    setReport((prev) => prev ? { ...prev, ...updates } : prev)
   }
 
   const REPORT_FIELDS: { key: keyof Report; label: string; type?: string }[] = [
