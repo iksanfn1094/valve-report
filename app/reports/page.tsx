@@ -13,10 +13,17 @@ type Report = {
   customer: string | null
   valve_type: string | null
   size: string | null
+  class: string | null
   category: string | null
   status: string
   report_date: string | null
   created_at: string
+  end_connection: string | null
+  manufacture: string | null
+  serial_no: string | null
+  location: string | null
+  ex_station: string | null
+  ro_no: string | null
 }
 
 export default function ReportsList() {
@@ -36,29 +43,39 @@ export default function ReportsList() {
         if (!error && data && data.length > 0) {
           try {
             const res = await fetch('/api/valve-lookup')
-            const valveData: Record<string, { valve_type: string; size: string; class: string }> = await res.json()
+            const valveData: Record<string, { valve_type: string; size: string; class: string; end_connection: string; manufacture: string; serial_no: string; location: string; ex_station: string; project: string; ro_no: string }> = await res.json()
             let hasUpdate = false
             const updates = data.map((r) => {
               const key = (r.job_number || '').trim().toUpperCase()
               const match = valveData[key]
-              if (match && (r.valve_type !== match.valve_type || r.size !== match.size || r.class !== match.class)) {
-                hasUpdate = true
-                return { id: r.id, valve_type: match.valve_type, size: match.size, class: match.class }
+              if (!match) return null
+              const patch: Record<string, string> = {}
+              const fieldMap: [string, string, string | null][] = [
+                ['valve_type', match.valve_type, r.valve_type],
+                ['size', match.size, r.size],
+                ['class', match.class, r.class],
+                ['end_connection', match.end_connection, r.end_connection],
+                ['manufacture', match.manufacture, r.manufacture],
+                ['serial_no', match.serial_no, r.serial_no],
+                ['location', match.location, r.location],
+                ['ex_station', match.ex_station, r.ex_station],
+                ['project', match.project, r.project],
+                ['ro_no', match.ro_no, r.ro_no],
+              ]
+              for (const [field, sheetVal, dbVal] of fieldMap) {
+                if (sheetVal && dbVal !== sheetVal) { hasUpdate = true; patch[field] = sheetVal }
               }
-              return null
-            }).filter(Boolean)
+              return Object.keys(patch).length > 0 ? { id: r.id, ...patch } : null
+            }).filter(Boolean) as { id: string }[]
 
             if (hasUpdate && updates.length > 0) {
               for (const u of updates) {
-                await supabase.from('report_inspection').update({
-                  valve_type: u!.valve_type,
-                  size: u!.size,
-                  class: u!.class,
-                }).eq('id', u!.id)
+                const { id: uid, ...fields } = u
+                await supabase.from('report_inspection').update(fields).eq('id', uid)
               }
               setReports((prev) => prev.map((r) => {
-                const u = updates.find((x) => x!.id === r.id)
-                return u ? { ...r, valve_type: u.valve_type, size: u.size, class: u.class } : r
+                const u = updates.find((x) => x.id === r.id)
+                return u ? { ...r, ...u } : r
               }))
             }
           } catch { /* ignore sync error */ }
@@ -137,6 +154,7 @@ export default function ReportsList() {
                 <th className="border px-3 py-2">Customer</th>
                 <th className="border px-3 py-2">Valve Type</th>
                 <th className="border px-3 py-2">Size</th>
+                <th className="border px-3 py-2">Class</th>
                 <th className="border px-3 py-2">Category</th>
                 <th className="border px-3 py-2">Status</th>
                 <th className="border px-3 py-2">Aksi</th>
@@ -152,6 +170,7 @@ export default function ReportsList() {
                   <td className="border px-3 py-2">{r.customer || '-'}</td>
                   <td className="border px-3 py-2">{r.valve_type || '-'}</td>
                   <td className="border px-3 py-2">{r.size || '-'}</td>
+                  <td className="border px-3 py-2">{r.class || '-'}</td>
                   <td className="border px-3 py-2">
                     <span className={`text-xs px-2 py-1 rounded-full ${catColor(r.category)}`}>
                       {r.category || '-'}

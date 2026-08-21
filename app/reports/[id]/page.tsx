@@ -129,15 +129,31 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           const key = (r.job_number || '').trim().toUpperCase()
           if (key) {
             const res = await fetch('/api/valve-lookup')
-            const valveData: Record<string, { valve_type: string; size: string; class: string }> = await res.json()
+            const valveData: Record<string, { valve_type: string; size: string; class: string; end_connection: string; manufacture: string; serial_no: string; location: string; ex_station: string; project: string; ro_no: string }> = await res.json()
             const match = valveData[key]
-            if (match && (r.valve_type !== match.valve_type || r.size !== match.size || r.class !== match.class)) {
-              await supabase.from('report_inspection').update({
-                valve_type: match.valve_type,
-                size: match.size,
-                class: match.class,
-              }).eq('id', id)
-              setReport((prev) => prev ? { ...prev, valve_type: match.valve_type, size: match.size, class: match.class } : prev)
+            if (match) {
+              const patch: Record<string, string | null> = {}
+              const fieldMap: [string, string][] = [
+                ['valve_type', match.valve_type],
+                ['size', match.size],
+                ['class', match.class],
+                ['end_connection', match.end_connection],
+                ['manufacture', match.manufacture],
+                ['serial_no', match.serial_no],
+                ['location', match.location],
+                ['ex_station', match.ex_station],
+                ['project', match.project],
+                ['ro_no', match.ro_no],
+              ]
+              for (const [field, sheetVal] of fieldMap) {
+                if (sheetVal && (r as Record<string, string>)[field] !== sheetVal) {
+                  patch[field] = sheetVal
+                }
+              }
+              if (Object.keys(patch).length > 0) {
+                await supabase.from('report_inspection').update(patch).eq('id', id)
+                setReport((prev) => prev ? { ...prev, ...patch } : prev)
+              }
             }
           }
         } catch { /* ignore sync error */ }
@@ -295,14 +311,26 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       const key = value.trim().toUpperCase()
       try {
         const res = await fetch('/api/valve-lookup')
-        const freshData: Record<string, { valve_type: string; size: string; class: string }> = await res.json()
+        const freshData: Record<string, { valve_type: string; size: string; class: string; end_connection: string; manufacture: string; serial_no: string; location: string; ex_station: string; project: string; ro_no: string }> = await res.json()
         const match = freshData[key]
         if (match) {
-          if (match.valve_type) updates.valve_type = match.valve_type
-          if (match.size) updates.size = match.size
-          if (match.class) updates.class = match.class
+          const fieldMap: [string, string][] = [
+            ['valve_type', match.valve_type],
+            ['size', match.size],
+            ['class', match.class],
+            ['end_connection', match.end_connection],
+            ['manufacture', match.manufacture],
+            ['serial_no', match.serial_no],
+            ['location', match.location],
+            ['ex_station', match.ex_station],
+            ['project', match.project],
+            ['ro_no', match.ro_no],
+          ]
+          for (const [f, v] of fieldMap) {
+            if (v) updates[f] = v
+          }
         }
-      } catch { /* ignore fetch error, just save the valve id */ }
+      } catch { /* ignore fetch error */ }
     }
     const { error } = await supabase
       .from('report_inspection')

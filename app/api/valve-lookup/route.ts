@@ -2,6 +2,19 @@ import { NextResponse } from 'next/server'
 
 const SHEETS_URL = 'https://docs.google.com/spreadsheets/d/1xBsjNoPVCxRLDnr_HXX1c6hIzLNKVqjcopJNJ2NhrjM/export?format=csv&gid=1991402545'
 
+export type ValveInfo = {
+  valve_type: string
+  size: string
+  class: string
+  end_connection: string
+  manufacture: string
+  serial_no: string
+  location: string
+  ex_station: string
+  project: string
+  ro_no: string
+}
+
 export async function GET() {
   try {
     const res = await fetch(SHEETS_URL, { next: { revalidate: 300 } })
@@ -9,16 +22,23 @@ export async function GET() {
     const csv = await res.text()
     const rows = parseCSV(csv)
 
-    const valves: Record<string, { valve_type: string; size: string; class: string }> = {}
+    const valves: Record<string, ValveInfo> = {}
 
     for (const row of rows) {
       const newId = (row[5] || '').trim().toUpperCase()
       if (!newId || newId === 'NEW VALVE ID' || newId === 'NEW ID VALVE' || newId === 'OLD ID') continue
-      const vt = (row[8] || '').trim()
-      const sz = (row[9] || '').trim()
-      const cl = (row[10] || '').trim()
-      if (vt || sz || cl) {
-        valves[newId] = { valve_type: vt, size: sz, class: cl }
+
+      valves[newId] = {
+        valve_type: (row[8] || '').trim(),
+        size: (row[9] || '').trim(),
+        class: (row[10] || '').trim(),
+        end_connection: (row[11] || '').trim(),
+        manufacture: (row[12] || '').trim(),
+        serial_no: (row[14] || '').trim(),
+        location: (row[17] || '').trim(),
+        ex_station: (row[23] || '').trim(),
+        project: (row[25] || '').trim(),
+        ro_no: (row[32] || '').trim(),
       }
     }
 

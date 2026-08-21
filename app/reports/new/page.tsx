@@ -29,7 +29,7 @@ const CATEGORIES = [
   { value: 'major', label: 'Major Repair' },
 ]
 
-type ValveLookup = Record<string, { valve_type: string; size: string; class: string }>
+type ValveLookup = Record<string, { valve_type: string; size: string; class: string; end_connection: string; manufacture: string; serial_no: string; location: string; ex_station: string; project: string; ro_no: string }>
 
 export default function NewReport() {
   const router = useRouter()
@@ -41,7 +41,7 @@ export default function NewReport() {
     report_no: '',
     report_date: new Date().toISOString().split('T')[0],
     project: '',
-    customer: '',
+    customer: 'PHE ONWJ',
     ro_no: '',
     ex_station: '',
     valve_type: '',
@@ -71,6 +71,13 @@ export default function NewReport() {
             valve_type: match.valve_type || prev.valve_type,
             size: match.size || prev.size,
             class: match.class || prev.class,
+            end_connection: match.end_connection || prev.end_connection,
+            manufacture: match.manufacture || prev.manufacture,
+            serial_no: match.serial_no || prev.serial_no,
+            location: match.location || prev.location,
+            ex_station: match.ex_station || prev.ex_station,
+            project: match.project || prev.project,
+            ro_no: match.ro_no || prev.ro_no,
           }))
           setAutoFilled(true)
         } else {
