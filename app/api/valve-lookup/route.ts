@@ -7,55 +7,76 @@ export async function GET() {
     const res = await fetch(SHEETS_URL, { next: { revalidate: 300 } })
     if (!res.ok) return NextResponse.json({ error: 'Failed to fetch spreadsheet' }, { status: 502 })
     const csv = await res.text()
-    const lines = csv.split('\n')
+    const rows = parseCSV(csv)
 
-    // Header row is line 3 (0-indexed): No, Palette Member, ..., New Valve ID (col4), ..., Valve Type (col7), Size (col8), Class (col9)
     const valves: Record<string, { valve_type: string; size: string; class: string }> = {}
 
-    for (const line of lines) {
-      const cols = parseCSVLine(line)
-      const newId = (cols[4] || '').trim().toUpperCase()
-      if (!newId || newId === 'NEW VALVE ID' || newId === 'NEW ID VALVE') continue
-      const vt = (cols[7] || '').trim()
-      const sz = (cols[8] || '').trim()
-      const cl = (cols[9] || '').trim()
+    for (const row of rows) {
+      const newId = (row[5] || '').trim().toUpperCase()
+      if (!newId || newId === 'NEW VALVE ID' || newId === 'NEW ID VALVE' || newId === 'OLD ID') continue
+      const vt = (row[8] || '').trim()
+      const sz = (row[9] || '').trim()
+      const cl = (row[10] || '').trim()
       if (vt || sz || cl) {
         valves[newId] = { valve_type: vt, size: sz, class: cl }
       }
     }
 
     return NextResponse.json(valves)
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
 
-function parseCSVLine(line: string): string[] {
-  const result: string[] = []
-  let current = ''
+function parseCSV(text: string): string[][] {
+  const rows: string[][] = []
+  let current: string[] = []
+  let field = ''
   let inQuotes = false
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i]
+  let i = 0
+
+  while (i < text.length) {
+    const ch = text[i]
     if (inQuotes) {
       if (ch === '"') {
-        if (i + 1 < line.length && line[i + 1] === '"') {
-          current += '"'; i++
-        } else {
-          inQuotes = false
+        if (i + 1 < text.length && text[i + 1] === '"') {
+          field += '"'
+          i += 2
+          continue
         }
-      } else {
-        current += ch
+        inQuotes = false
+        i++
+        continue
       }
+      field += ch
+      i++
     } else {
       if (ch === '"') {
         inQuotes = true
-      } else if (ch === ',') {
-        result.push(current); current = ''
-      } else {
-        current += ch
+        i++
+        continue
       }
+      if (ch === ',') {
+        current.push(field)
+        field = ''
+        i++
+        continue
+      }
+      if (ch === '\n' || ch === '\r') {
+        if (ch === '\r' && i + 1 < text.length && text[i + 1] === '\n') i++
+        current.push(field)
+        field = ''
+        rows.push(current)
+        current = []
+        i++
+        continue
+      }
+      field += ch
+      i++
     }
   }
-  result.push(current)
-  return result
+  current.push(field)
+  if (current.length > 1 || current[0]) rows.push(current)
+
+  return rows
 }
