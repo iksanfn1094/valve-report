@@ -428,7 +428,12 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                     <option value="major">Major</option>
                   </select>
                 ) : key === 'report_date' ? (
-                  <span className="text-sm font-medium px-1 py-0.5 text-gray-800">{formatDateEN(report[key])}</span>
+                  <input
+                    className="border-b border-gray-300 bg-transparent text-sm font-medium focus:outline-none focus:border-blue-500 px-1 py-0.5"
+                    value={(report[key] as string) || ''}
+                    onChange={(e) => updateReportField(key, e.target.value)}
+                    onBlur={(e) => updateReportField(key, e.target.value)}
+                  />
                 ) : (
                   <input
                     className="border-b border-gray-300 bg-transparent text-sm font-medium focus:outline-none focus:border-blue-500 px-1 py-0.5"
@@ -471,9 +476,9 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
             <thead>
               <tr className="bg-blue-900 text-white">
                 <th className="border px-1 py-1 text-xs w-10" rowSpan={2}>No</th>
-                <th className="border px-1 py-1 text-xs" rowSpan={2}>Component / Part Description</th>
+                <th className="border px-1 py-1 text-xs w-40" rowSpan={2}>Component / Part Description</th>
                 <th className="border px-1 py-1 text-xs w-14" rowSpan={2}>Qty</th>
-                <th className="border px-1 py-1 text-xs w-40" rowSpan={2}>Condition</th>
+                <th className="border px-1 py-1 text-xs w-56" rowSpan={2}>Condition</th>
                 <th className="border px-1 py-1 text-xs" colSpan={3}>Recommendation</th>
                 <th className="border px-1 py-1 text-xs w-28" rowSpan={2}>Repair Category</th>
                 <th className="border px-1 py-1 text-xs" rowSpan={2}>Comment / Notes / Dimension</th>
@@ -493,7 +498,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 return (
                   <tr key={idx} className="hover:bg-gray-50">
                     <td className="border px-1 py-1 text-center text-gray-500 text-xs w-10">{idx + 1}</td>
-                    <td className="border px-1 py-1">
+                    <td className="border px-1 py-1 w-40">
                       <select
                         className="w-full border-0 bg-transparent text-xs focus:outline-none"
                         value={item.component_name}
@@ -514,9 +519,10 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                         onChange={(e) => updateRow(idx, 'qty', Number(e.target.value) || null)}
                       />
                     </td>
-                    <td className="border px-1 py-1 w-40">
+                    <td className="border px-1 py-1 w-56">
                       <input
-                        className="w-full border-0 bg-transparent text-xs focus:outline-none whitespace-pre-wrap"
+                        className="w-full border-0 bg-transparent text-xs focus:outline-none"
+                        style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}
                         value={item.condition_note}
                         placeholder="Condition description..."
                         onChange={(e) => updateRow(idx, 'condition_note', e.target.value)}
