@@ -105,6 +105,9 @@ export default function TimesheetDetailPage({ params }: { params: Promise<{ id: 
     setSaving(true)
     const payload = { ...ts }
     delete (payload as Record<string, unknown>).id
+    for (const k of ['assign_date', 'mobilization_date', 'demobilization_date']) {
+      if ((payload as unknown as Record<string, string>)[k] === '') (payload as unknown as Record<string, string | null>)[k] = null
+    }
 
     let id = tsId
     if (id) {
@@ -134,6 +137,13 @@ export default function TimesheetDetailPage({ params }: { params: Promise<{ id: 
     setSaving(false)
     alert('Tersimpan!')
   }
+
+  useEffect(() => {
+    window.__timesheetActions = {
+      exportPDF: () => exportTimesheetPDF(ts, entries),
+    }
+    return () => { delete window.__timesheetActions }
+  }, [ts, entries])
 
   if (loading) return <p className="text-gray-500 py-10 text-center">Loading...</p>
 

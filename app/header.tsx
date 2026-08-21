@@ -2,16 +2,24 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 export default function Header() {
   const [hasActions, setHasActions] = useState(false)
+  const [hasTsActions, setHasTsActions] = useState(false)
+  const pathname = usePathname()
 
   useEffect(() => {
-    const check = () => setHasActions(!!window.__reportActions)
+    const check = () => {
+      setHasActions(!!window.__reportActions)
+      setHasTsActions(!!window.__timesheetActions)
+    }
     check()
     const interval = setInterval(check, 500)
     return () => clearInterval(interval)
   }, [])
+
+  const isTimesheetPage = pathname.startsWith('/timesheet/')
 
   return (
     <header className="bg-blue-900 text-white shadow-md">
@@ -37,6 +45,14 @@ export default function Header() {
                 Export Excel
               </button>
             </>
+          )}
+          {hasTsActions && isTimesheetPage && (
+            <button
+              onClick={() => window.__timesheetActions?.exportPDF()}
+              className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition"
+            >
+              Export PDF
+            </button>
           )}
         </nav>
       </div>

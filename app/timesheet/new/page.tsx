@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { exportTimesheetPDF } from '@/lib/export-timesheet-pdf'
 
@@ -87,6 +87,10 @@ export default function TimesheetPage() {
     setSaving(true)
     const payload = { ...ts }
     delete (payload as Record<string, unknown>).id
+    // Convert empty date strings to null
+    for (const k of ['assign_date', 'mobilization_date', 'demobilization_date']) {
+      if ((payload as unknown as Record<string, string>)[k] === '') (payload as unknown as Record<string, string | null>)[k] = null
+    }
 
     let id = tsId
     if (id) {
@@ -118,6 +122,13 @@ export default function TimesheetPage() {
     setSaving(false)
     alert('Tersimpan!')
   }
+
+  useEffect(() => {
+    window.__timesheetActions = {
+      exportPDF: () => exportTimesheetPDF(ts, entries),
+    }
+    return () => { delete window.__timesheetActions }
+  }, [ts, entries])
 
   if (loading) return <p className="text-gray-500 py-10 text-center">Loading...</p>
 
