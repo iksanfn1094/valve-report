@@ -97,3 +97,67 @@ $$ language plpgsql;
 create trigger trigger_report_updated
   before update on report_inspection
   for each row execute function update_updated_at();
+
+-- ============================================
+-- TIMESHEET DATABASE SCHEMA
+-- ============================================
+
+create table timesheet (
+  id uuid primary key default gen_random_uuid(),
+  -- Header
+  customer text,
+  internal_so_no text,
+  customer_po text,
+  letter_of_assignment text,
+  end_user_project text,
+  allowance text check (allowance in ('chargeable','non_chargeable')),
+  assign_date date default current_date,
+  assign_role text,
+  location text,
+  service_person text,
+  attachment text,
+  mobilization_date date,
+  -- Worksite & Service type
+  worksite_office boolean default false,
+  worksite_plant boolean default false,
+  worksite_onshore boolean default false,
+  worksite_offshore boolean default false,
+  brief_scope text,
+  service_workshop boolean default false,
+  service_field boolean default false,
+  service_eng boolean default false,
+  service_other boolean default false,
+  service_other_text text,
+  -- Summary
+  summary_of_service text,
+  status_service text check (status_service in ('close','followup')),
+  nonconformance boolean,
+  incident_spill boolean,
+  tools_damage boolean,
+  packing_list_no text,
+  demobilization_date date,
+  -- Statement
+  service_person_name text,
+  customer_rep_name text,
+  -- Meta
+  status text default 'draft' check (status in ('draft','submitted','approved')),
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create table timesheet_entries (
+  id uuid primary key default gen_random_uuid(),
+  timesheet_id uuid references timesheet(id) on delete cascade,
+  entry_date date,
+  time_start text,
+  time_end text,
+  overtime text,
+  description text,
+  sort_order int
+);
+
+create index idx_ts_entries on timesheet_entries(timesheet_id);
+
+create trigger trigger_timesheet_updated
+  before update on timesheet
+  for each row execute function update_updated_at();
