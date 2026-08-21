@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, use } from 'react'
 import { supabase } from '@/lib/supabase'
+import { exportTimesheetPDF } from '@/lib/export-timesheet-pdf'
 
 type TimesheetEntry = {
   id?: string
@@ -286,6 +287,10 @@ export default function TimesheetDetailPage({ params }: { params: Promise<{ id: 
         <button onClick={save} disabled={saving}
           className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-blue-700 transition font-medium disabled:opacity-50">
           {saving ? 'Menyimpan...' : 'Simpan'}
+        </button>
+        <button onClick={() => exportTimesheetPDF(ts, entries)}
+          className="bg-red-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-red-700 transition font-medium">
+          Export PDF
         </button>
       </div>
     </div>

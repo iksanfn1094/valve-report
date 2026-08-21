@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { exportTimesheetPDF } from '@/lib/export-timesheet-pdf'
 
 type TimesheetEntry = {
   id?: string
@@ -89,9 +90,11 @@ export default function TimesheetPage() {
 
     let id = tsId
     if (id) {
-      await supabase.from('timesheet').update(payload).eq('id', id)
+      const { error } = await supabase.from('timesheet').update(payload).eq('id', id)
+      if (error) { setSaving(false); alert('Error update: ' + error.message); return }
     } else {
-      const { data } = await supabase.from('timesheet').insert(payload).select().single()
+      const { data, error } = await supabase.from('timesheet').insert(payload).select().single()
+      if (error) { setSaving(false); alert('Error insert: ' + error.message); return }
       if (data) { id = data.id; setTsId(data.id) }
     }
     if (!id) { setSaving(false); return }
@@ -268,6 +271,10 @@ export default function TimesheetPage() {
         <button onClick={save} disabled={saving}
           className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-blue-700 transition font-medium disabled:opacity-50">
           {saving ? 'Menyimpan...' : 'Simpan'}
+        </button>
+        <button onClick={() => exportTimesheetPDF(ts, entries)}
+          className="bg-red-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-red-700 transition font-medium">
+          Export PDF
         </button>
       </div>
     </div>
