@@ -114,6 +114,11 @@ export async function exportReportPDF(
   doc.setFont('helvetica', 'normal')
   doc.text('PT. VALVINDO MEGAH', PW / 2, 16, { align: 'center' })
 
+  // Logo di kanan atas
+  try {
+    doc.addImage('/logo.png', 'PNG', PW - 25, 3, 20, 18)
+  } catch { /* ignore if logo not found */ }
+
   y = 25
 
   // ========== JOB INFORMATION ==========
