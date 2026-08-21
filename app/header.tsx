@@ -23,9 +23,6 @@ export default function Header() {
           <Link href="/docs" className="text-xl font-bold tracking-tight">
             Documentation
           </Link>
-          <Link href="/timesheet" className="text-xl font-bold tracking-tight">
-            Timesheet
-          </Link>
         </div>
         <nav className="flex gap-3 text-sm items-center">
           {hasActions && (
