@@ -122,6 +122,26 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       if (bomRes.data) setBomItems(bomRes.data)
       setLoading(false)
       await fetchPhotos()
+
+      if (reportRes.data) {
+        try {
+          const r = reportRes.data
+          const key = (r.job_number || '').trim().toUpperCase()
+          if (key) {
+            const res = await fetch('/api/valve-lookup')
+            const valveData: Record<string, { valve_type: string; size: string; class: string }> = await res.json()
+            const match = valveData[key]
+            if (match && (r.valve_type !== match.valve_type || r.size !== match.size || r.class !== match.class)) {
+              await supabase.from('report_inspection').update({
+                valve_type: match.valve_type,
+                size: match.size,
+                class: match.class,
+              }).eq('id', id)
+              setReport((prev) => prev ? { ...prev, valve_type: match.valve_type, size: match.size, class: match.class } : prev)
+            }
+          }
+        } catch { /* ignore sync error */ }
+      }
     }
     load()
     return () => { cancelled = true }
