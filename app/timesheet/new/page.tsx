@@ -88,9 +88,11 @@ export default function TimesheetPage() {
     const payload = { ...ts }
     delete (payload as Record<string, unknown>).id
     // Convert empty date strings to null
+    // Convert empty strings to null for constrained fields
     for (const k of ['assign_date', 'mobilization_date', 'demobilization_date']) {
       if ((payload as unknown as Record<string, string>)[k] === '') (payload as unknown as Record<string, string | null>)[k] = null
     }
+    if (payload.allowance === '') (payload as unknown as Record<string, string | null>).allowance = null
 
     let id = tsId
     if (id) {
@@ -282,10 +284,6 @@ export default function TimesheetPage() {
         <button onClick={save} disabled={saving}
           className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-blue-700 transition font-medium disabled:opacity-50">
           {saving ? 'Menyimpan...' : 'Simpan'}
-        </button>
-        <button onClick={() => exportTimesheetPDF(ts, entries)}
-          className="bg-red-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-red-700 transition font-medium">
-          Export PDF
         </button>
       </div>
     </div>
