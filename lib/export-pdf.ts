@@ -276,7 +276,7 @@ export async function exportReportPDF(
           { content: 'Repair\nCategory', rowSpan: 2 },
           { content: 'Comment / Notes / Dimension', rowSpan: 2 },
           { content: 'Foto', rowSpan: 2 },
-          { content: 'Spek Material', rowSpan: 2 },
+          { content: 'Material Specification', rowSpan: 2 },
         ],
         ['C', 'RP', 'RE'],
       ],

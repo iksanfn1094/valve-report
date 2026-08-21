@@ -483,7 +483,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 <th className="border px-1 py-1 text-xs w-28" rowSpan={2}>Repair Category</th>
                 <th className="border px-1 py-1 text-xs" rowSpan={2}>Comment / Notes / Dimension</th>
                 <th className="border px-1 py-1 text-xs w-24" rowSpan={2}>Foto</th>
-                <th className="border px-1 py-1 text-xs w-32" rowSpan={2}>Spek Material</th>
+                <th className="border px-1 py-1 text-xs w-32" rowSpan={2}>Material Specification</th>
                 <th className="border px-1 py-1 text-xs w-8" rowSpan={2}></th>
               </tr>
               <tr className="bg-blue-900 text-white">
