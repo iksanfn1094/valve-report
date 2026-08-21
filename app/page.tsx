@@ -2,7 +2,7 @@ import Link from "next/link";
 
 const menus = [
   {
-    title: "Site Survei",
+    title: "Site Survey",
     desc: "Form site survei untuk pekerjaan di lapangan",
     href: "/site-survey",
     color: "bg-blue-600 hover:bg-blue-700",
@@ -39,7 +39,7 @@ export default function Home() {
       <div className="text-center">
         <h1 className="text-3xl font-bold text-blue-900">Project &amp; Service Transformation</h1>
         <p className="text-gray-600 mt-2">
-          Sistem pencatatan report untuk pekerjaan site survei, timesheet &amp; maintenance.
+          Transform. Execute. Elevate.
         </p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
