@@ -79,10 +79,13 @@ function formatDateEN(val: string | null): string {
 }
 
 const COMPONENTS = [
-  'Body', 'Bonnet', 'Stem', 'Seat', 'Disc', 'Ball', 'Plug',
-  'Packing', 'Gasket', 'Bolt', 'Nut', 'Spring', 'Diaphragm',
-  'Actuator', 'Handwheel', 'Yoke', 'Backseat', 'Guide',
-  'Thrust Bearing', 'Retainer', 'O-Ring', 'Other'
+  'Actuator', 'Ball', 'Backseat', 'Bolt', 'Bonnet', 'Body',
+  'Diaphragm', 'Disc', 'Flange And RF', 'Frame', 'Graphite Packing Body Bonnet',
+  'Guide', 'Handwheel', 'Holder Valve', 'Levert Arm',
+  'Nut', 'O-Ring Body Bonnet', 'O-Ring Stem', 'Other',
+  'Packing', 'Plug', 'Retainer', 'Seat', 'Seat Pocket',
+  'Spring', 'Stopper', 'Stem', 'Stud Bolt Body Bonnet', 'Stud Bolt Mounting Adaptor',
+  'Thrust Bearing', 'Washer Stem', 'Yoke',
 ]
 
 export default function ReportDetail({ params }: { params: Promise<{ id: string }> }) {
