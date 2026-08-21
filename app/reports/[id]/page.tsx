@@ -582,6 +582,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                     <td className="border px-1 py-1">
                       <input
                         className="w-full border-0 bg-transparent text-xs focus:outline-none"
+                        style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}
                         value={item.comment}
                         onChange={(e) => updateRow(idx, 'comment', e.target.value)}
                       />
