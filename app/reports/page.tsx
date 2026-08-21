@@ -29,9 +29,40 @@ export default function ReportsList() {
       .from('report_inspection')
       .select('*')
       .order('created_at', { ascending: false })
-      .then(({ data, error }) => {
+      .then(async ({ data, error }) => {
         if (!error) setReports(data ?? [])
         setLoading(false)
+
+        if (!error && data && data.length > 0) {
+          try {
+            const res = await fetch('/api/valve-lookup')
+            const valveData: Record<string, { valve_type: string; size: string; class: string }> = await res.json()
+            let hasUpdate = false
+            const updates = data.map((r) => {
+              const key = (r.job_number || '').trim().toUpperCase()
+              const match = valveData[key]
+              if (match && (r.valve_type !== match.valve_type || r.size !== match.size || r.class !== match.class)) {
+                hasUpdate = true
+                return { id: r.id, valve_type: match.valve_type, size: match.size, class: match.class }
+              }
+              return null
+            }).filter(Boolean)
+
+            if (hasUpdate && updates.length > 0) {
+              for (const u of updates) {
+                await supabase.from('report_inspection').update({
+                  valve_type: u!.valve_type,
+                  size: u!.size,
+                  class: u!.class,
+                }).eq('id', u!.id)
+              }
+              setReports((prev) => prev.map((r) => {
+                const u = updates.find((x) => x!.id === r.id)
+                return u ? { ...r, valve_type: u.valve_type, size: u.size, class: u.class } : r
+              }))
+            }
+          } catch { /* ignore sync error */ }
+        }
       })
   }, [])
 
