@@ -285,9 +285,7 @@ export async function exportReportPDF(
         it.component_name || '-',
         it.qty != null ? String(it.qty) : '-',
         it.condition_note || '-',
-        it.recommendation.includes('C') ? '\u2713' : '',
-        it.recommendation.includes('RP') ? '\u2713' : '',
-        it.recommendation.includes('RE') ? '\u2713' : '',
+        '', '', '',
         (it as unknown as { repair_category?: string }).repair_category || '-',
         it.comment || '-',
         '',
@@ -331,16 +329,16 @@ export async function exportReportPDF(
         const item = items[data.row.index]
         if (!item) return
 
-        // C/RP/RE checkmarks - centang biru kecil
+        // C/RP/RE - centang biru kecil tanpa teks
         if (data.column.index >= 4 && data.column.index <= 6) {
-          const val = c.raw as string
-          if (val === '\u2713') {
+          const codes = ['C', 'RP', 'RE']
+          if (item.recommendation.includes(codes[data.column.index - 4])) {
             const cx = c.x + c.width / 2
             const cy = c.y + c.height / 2
             doc.setDrawColor(25, 60, 120)
-            doc.setLineWidth(0.4)
-            doc.line(cx - 2, cy, cx - 0.5, cy + 1.5)
-            doc.line(cx - 0.5, cy + 1.5, cx + 2, cy - 1.5)
+            doc.setLineWidth(0.35)
+            doc.line(cx - 1.5, cy, cx - 0.3, cy + 1.2)
+            doc.line(cx - 0.3, cy + 1.2, cx + 1.5, cy - 1.2)
             doc.setLineWidth(0.2)
           }
         }
