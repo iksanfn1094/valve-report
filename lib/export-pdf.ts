@@ -224,7 +224,7 @@ export async function exportReportPDF(
     doc.text(r.label, rightX + 13, ry)
   })
 
-  y += 4
+  y += 5
 
   // ========== INSPECTION ITEMS TABLE ==========
   np(30)
@@ -232,7 +232,7 @@ export async function exportReportPDF(
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
   doc.text('INCOMING INSP. CHECK (CONDITION AS FOUND)', M, y)
-  y += 2
+  y += 5
 
   const base64Map = new Map<string, string>()
   await Promise.all(photos.map(async (p) => {
@@ -247,9 +247,8 @@ export async function exportReportPDF(
     doc.text('No items recorded.', M, y + 5)
     y += 10
   } else {
-    const PHOTO_SZ = 28
-    // 11 columns: No(6)+Comp(24)+Qty(7)+Cond(24)+C(8)+RP(8)+RE(8)+Cat(14)+Comment(34)+Foto(28)+Mat(24) = 185 -> adjust
-    const COL_W = [6, 24, 7, 22, 8, 8, 8, 14, 30, 28, 24]
+    const PHOTO_SZ = 36
+    const COL_W = [6, 24, 7, 20, 8, 8, 8, 14, 22, 40, 29]
 
     autoTable(doc, {
       startY: y,
@@ -257,12 +256,13 @@ export async function exportReportPDF(
       head: [
         [
           'No', 'Component / Part Description', 'Qty', 'Condition',
-          'C', 'RP', 'RE', 'Repair\nCategory',
+          { content: 'Recommendation', colSpan: 3, styles: { halign: 'center' as const } },
+          'Repair\nCategory',
           'Comment / Notes / Dimension', 'Foto', 'Spek Material',
         ],
         [
           '', '', '', '',
-          { content: 'Recommendation', colSpan: 3, styles: { halign: 'center' as const } },
+          'C', 'RP', 'RE',
           '', '', '', '',
         ],
       ],
@@ -271,9 +271,9 @@ export async function exportReportPDF(
         it.component_name || '-',
         it.qty != null ? String(it.qty) : '-',
         it.condition_note || '-',
-        it.recommendation.includes('C') ? '\u2713' : '',
-        it.recommendation.includes('RP') ? '\u2713' : '',
-        it.recommendation.includes('RE') ? '\u2713' : '',
+        it.recommendation.includes('C') ? 'V' : '',
+        it.recommendation.includes('RP') ? 'V' : '',
+        it.recommendation.includes('RE') ? 'V' : '',
         (it as unknown as { repair_category?: string }).repair_category || '-',
         it.comment || '-',
         '',
@@ -317,14 +317,14 @@ export async function exportReportPDF(
         const item = items[data.row.index]
         if (!item) return
 
-        // C/RP/RE checkmarks - diperbesar
+        // C/RP/RE checkmarks - V besar
         if (data.column.index >= 4 && data.column.index <= 6) {
           const val = c.raw as string
-          if (val === '\u2713') {
+          if (val === 'V') {
             doc.setTextColor(25, 60, 120)
-            doc.setFontSize(12)
+            doc.setFontSize(14)
             doc.setFont('helvetica', 'bold')
-            doc.text('\u2713', c.x + c.width / 2, c.y + c.height / 2 + 1.5, { align: 'center' })
+            doc.text('V', c.x + c.width / 2, c.y + c.height / 2 + 2, { align: 'center' })
           }
         }
 
@@ -392,7 +392,7 @@ export async function exportReportPDF(
   const sigBoxes = [
     { title: 'INSPECTED BY', role: 'QC INSPECTED', name: report.inspector_name || '-' },
     { title: 'CHECKED BY', role: 'ENGINEERING', name: (report as unknown as { engineering_name?: string }).engineering_name || '-' },
-    { title: 'REVIEW BY', role: 'WORKSHOP CO.', name: 'WISTANTO' },
+    { title: 'REVIEW BY', role: 'WORKSHOP COORDINATOR', name: 'WISTANTO' },
     { title: 'ACKNOWLEDGE BY', role: 'PROJECT MANAGER', name: 'FN IKSAN' },
     { title: 'WITNESS AND APPROVED BY', role: 'QC REP. PHE-ONWJ', name: 'HERI DIAN' },
   ]
@@ -409,22 +409,22 @@ export async function exportReportPDF(
     doc.setTextColor(0, 0, 0)
     doc.text(sb.title, sx + sigBoxW / 2, y + 5, { align: 'center' })
 
-    // Nama (signature)
+    // Nama (signature) - di atas garis
     doc.setFontSize(6.5)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(0, 0, 0)
-    doc.text(sb.name, sx + sigBoxW / 2, y + 13, { align: 'center' })
+    doc.text(sb.name, sx + sigBoxW / 2, y + 17, { align: 'center' })
 
     // Garis tanda tangan
     doc.setDrawColor(120, 120, 120)
     doc.setLineWidth(0.2)
-    doc.line(sx + 2, y + sigBoxH - 9, sx + sigBoxW - 2, y + sigBoxH - 9)
+    doc.line(sx + 2, y + sigBoxH - 7, sx + sigBoxW - 2, y + sigBoxH - 7)
 
     // Jabatan di bawah garis
     doc.setFontSize(5)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(80, 80, 80)
-    doc.text(sb.role, sx + sigBoxW / 2, y + sigBoxH - 5, { align: 'center' })
+    doc.text(sb.role, sx + sigBoxW / 2, y + sigBoxH - 3, { align: 'center' })
   })
   y += sigBoxH
 
