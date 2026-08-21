@@ -114,7 +114,7 @@ export async function exportReportPDF(
   doc.setFont('helvetica', 'normal')
   doc.text('PT. VALVINDO MEGAH', PW / 2, 16, { align: 'center' })
 
-  // Logo di kiri atas (lancip, agak lebar)
+  // Logo di kiri atas
   try {
     doc.addImage('/logo.png', 'PNG', 2, 1, 22, 18)
   } catch { /* ignore if logo not found */ }
@@ -149,7 +149,7 @@ export async function exportReportPDF(
     })
     y += 5.5
   })
-  y += 2
+  y += 5
 
   // ========== CONSTRUCTION (AS FOUND) ==========
   doc.setTextColor(...BLUE)
@@ -160,8 +160,9 @@ export async function exportReportPDF(
 
   const leftW = CW * 0.6, rightW = CW * 0.4, rightX = M + leftW
 
+  // Customer dihapus dari sini
   const leftFields: [string, string | null][] = [
-    ['Customer', report.customer], ['Valve Id', report.job_number],
+    ['Valve Id', report.job_number],
     ['Valve Type', report.valve_type], ['Manufacture', report.manufacture],
     ['Size (in.)', report.size], ['Class', report.class],
     ['S/N', report.serial_no], ['End Connection', report.end_connection],
@@ -174,7 +175,7 @@ export async function exportReportPDF(
     y += 5.5
   })
 
-  // Right panel: Repair Category + Recommendation legend
+  // Right panel: Repair Category + Recommendation legend (compact)
   doc.setDrawColor(...GRID)
   doc.setLineWidth(0.3)
   doc.rect(rightX, startY, rightW, y - startY, 'S')
@@ -182,28 +183,28 @@ export async function exportReportPDF(
   doc.setFontSize(8)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(0, 0, 0)
-  doc.text('Repair Category', rightX + 3, startY + 6)
+  doc.text('Repair Category', rightX + 3, startY + 5)
 
   doc.setFontSize(7)
   ;['Inspection', 'Minor', 'Major'].forEach((cat, i) => {
-    const cy = startY + 12 + i * 6
+    const cy = startY + 9 + i * 5
     doc.setDrawColor(150, 150, 150)
     doc.setFillColor(255, 255, 255)
-    doc.rect(rightX + 3, cy - 3, 3.5, 3.5, 'FD')
+    doc.rect(rightX + 3, cy - 3, 3, 3, 'FD')
     const matchCat = report.category || ''
     if (matchCat.toLowerCase().includes(cat.toLowerCase())) {
       doc.setDrawColor(25, 60, 120)
       doc.setLineWidth(0.4)
       doc.line(rightX + 3.5, cy - 1.2, rightX + 4.5, cy)
-      doc.line(rightX + 4.5, cy, rightX + 6, cy - 2.5)
+      doc.line(rightX + 4.5, cy, rightX + 5.5, cy - 2.5)
       doc.setLineWidth(0.2)
     }
     doc.setTextColor(0, 0, 0)
     doc.setFont('helvetica', 'normal')
-    doc.text(cat, rightX + 9, cy - 0.5)
+    doc.text(cat, rightX + 8, cy - 0.5)
   })
 
-  const recY = startY + 32
+  const recY = startY + 25
   doc.setFontSize(8)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(0, 0, 0)
@@ -214,13 +215,13 @@ export async function exportReportPDF(
     { code: 'RP', label: 'Repair' },
     { code: 'RE', label: 'Replace' },
   ].forEach((r, i) => {
-    const ry = recY + 6 + i * 5.5
+    const ry = recY + 5 + i * 4.5
     doc.setFontSize(7)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(0, 0, 0)
     doc.text(r.code, rightX + 6, ry)
     doc.setFont('helvetica', 'normal')
-    doc.text(r.label, rightX + 15, ry)
+    doc.text(r.label, rightX + 13, ry)
   })
 
   y += 4
@@ -246,18 +247,25 @@ export async function exportReportPDF(
     doc.text('No items recorded.', M, y + 5)
     y += 10
   } else {
-    const PHOTO_SZ = 22
-    // 11 columns: No(6)+Comp(24)+Qty(7)+Cond(24)+C(7)+RP(7)+RE(7)+Cat(14)+Comment(38)+Foto(22)+Mat(24) = 180
-    const COL_W = [6, 24, 7, 24, 7, 7, 7, 14, 38, 22, 24]
+    const PHOTO_SZ = 28
+    // 11 columns: No(6)+Comp(24)+Qty(7)+Cond(24)+C(8)+RP(8)+RE(8)+Cat(14)+Comment(34)+Foto(28)+Mat(24) = 185 -> adjust
+    const COL_W = [6, 24, 7, 22, 8, 8, 8, 14, 30, 28, 24]
 
     autoTable(doc, {
       startY: y,
       margin: { left: M, right: M },
-      head: [[
-        'No', 'Component / Part Description', 'Qty', 'Condition',
-        'C', 'RP', 'RE', 'Repair\nCategory',
-        'Comment / Notes / Dimension', 'Foto', 'Spek Material',
-      ]],
+      head: [
+        [
+          'No', 'Component / Part Description', 'Qty', 'Condition',
+          'C', 'RP', 'RE', 'Repair\nCategory',
+          'Comment / Notes / Dimension', 'Foto', 'Spek Material',
+        ],
+        [
+          '', '', '', '',
+          { content: 'Recommendation', colSpan: 3, styles: { halign: 'center' as const } },
+          '', '', '', '',
+        ],
+      ],
       body: items.map((it) => [
         String(it.item_no),
         it.component_name || '-',
@@ -286,8 +294,8 @@ export async function exportReportPDF(
         fontSize: 6.5,
         fontStyle: 'bold',
         halign: 'center',
-        minCellHeight: 8,
-        cellPadding: 1.5,
+        minCellHeight: 6,
+        cellPadding: 1,
       },
       alternateRowStyles: { fillColor: LIGHT_BG },
       columnStyles: {
@@ -309,16 +317,18 @@ export async function exportReportPDF(
         const item = items[data.row.index]
         if (!item) return
 
+        // C/RP/RE checkmarks - diperbesar
         if (data.column.index >= 4 && data.column.index <= 6) {
           const val = c.raw as string
           if (val === '\u2713') {
             doc.setTextColor(25, 60, 120)
-            doc.setFontSize(9)
+            doc.setFontSize(12)
             doc.setFont('helvetica', 'bold')
-            doc.text('\u2713', c.x + c.width / 2, c.y + c.height / 2 + 1, { align: 'center' })
+            doc.text('\u2713', c.x + c.width / 2, c.y + c.height / 2 + 1.5, { align: 'center' })
           }
         }
 
+        // Foto - diperbesar
         if (data.column.index === 9 && item?.id) {
           const b64 = base64Map.get(item.id)
           if (!b64) return
@@ -393,28 +403,28 @@ export async function exportReportPDF(
     doc.setLineWidth(0.3)
     doc.rect(sx, y, sigBoxW, sigBoxH, 'S')
 
+    // Title
     doc.setFontSize(5.5)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(0, 0, 0)
     doc.text(sb.title, sx + sigBoxW / 2, y + 5, { align: 'center' })
 
-    doc.setFontSize(5)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(80, 80, 80)
-    doc.text(sb.role, sx + sigBoxW / 2, y + 10, { align: 'center' })
-
+    // Nama (signature)
     doc.setFontSize(6.5)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(0, 0, 0)
-    doc.text(sb.name, sx + sigBoxW / 2, y + 18, { align: 'center' })
+    doc.text(sb.name, sx + sigBoxW / 2, y + 13, { align: 'center' })
 
+    // Garis tanda tangan
     doc.setDrawColor(120, 120, 120)
     doc.setLineWidth(0.2)
-    doc.line(sx + 2, y + sigBoxH - 5, sx + sigBoxW - 2, y + sigBoxH - 5)
+    doc.line(sx + 2, y + sigBoxH - 9, sx + sigBoxW - 2, y + sigBoxH - 9)
 
-    doc.setFontSize(4)
-    doc.setTextColor(140, 140, 140)
-    doc.text('Signature', sx + sigBoxW / 2, y + sigBoxH - 2, { align: 'center' })
+    // Jabatan di bawah garis
+    doc.setFontSize(5)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(80, 80, 80)
+    doc.text(sb.role, sx + sigBoxW / 2, y + sigBoxH - 5, { align: 'center' })
   })
   y += sigBoxH
 
