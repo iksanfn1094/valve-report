@@ -204,7 +204,19 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     ])
   }
 
-  function removeRow(idx: number) {
+  async function removeRow(idx: number) {
+    const item = items[idx]
+    if (item?.id) {
+      // Hapus foto terkait dari storage
+      const itemPhotos = photos.filter((p) => p.item_id === item.id)
+      for (const p of itemPhotos) {
+        await supabase.storage.from('report-photos').remove([p.storage_path])
+        await supabase.from('report_photos').delete().eq('id', p.id)
+      }
+      // Hapus item dari database
+      await supabase.from('report_inspection_items').delete().eq('id', item.id)
+      setPhotos((prev) => prev.filter((p) => p.item_id !== item.id))
+    }
     setItems(items.filter((_, i) => i !== idx))
   }
 
