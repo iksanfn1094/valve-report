@@ -142,9 +142,9 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.setTextColor(...LABEL_C)
   doc.text('Allowance', M + colW + 1.5, y + FH - 1.7)
   doc.setTextColor(0, 0, 0)
-  cb(doc, M + colW + LW_R, y + FH - 1.5, ts.allowance === 'chargeable')
+  cb(doc, M + colW + LW_R, y + FH - 1.5, false)
   doc.text('Chargeable', M + colW + LW_R + 4, y + FH - 1.8)
-  cb(doc, M + colW + LW_R + 30, y + FH - 1.5, ts.allowance === 'non_chargeable')
+  cb(doc, M + colW + LW_R + 30, y + FH - 1.5, false)
   doc.text('Non Chargeable', M + colW + LW_R + 34, y + FH - 1.8)
   y += FH
 
