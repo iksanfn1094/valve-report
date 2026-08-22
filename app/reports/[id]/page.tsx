@@ -388,7 +388,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     window.__reportActions = {
       exportPDF: () => {
         if (!report) return
-        exportReportPDF(report, items.map((it) => ({ ...it, id: it.id })), bomItems, photos)
+        exportReportPDF(report, items.map((it) => ({ ...it, id: it.id })), bomItems, photos, activeTab, valveTest)
       },
       exportExcel: () => {
         if (!report) return
@@ -396,7 +396,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       },
     }
     return () => { delete window.__reportActions }
-  }, [report, items, bomItems, photos])
+  }, [report, items, bomItems, photos, activeTab, valveTest])
 
   function addRow() {
     setItems([

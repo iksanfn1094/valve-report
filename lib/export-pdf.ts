@@ -50,6 +50,29 @@ type PhotoData = {
   url?: string
 }
 
+type ValveTestData = {
+  spec_api6d: boolean; spec_api598: boolean; spec_fci70_2: boolean; spec_3_15_psi: boolean
+  spec_sop_no: string; spec_others: string; spec_cv: string
+  shell_pressure_psi: string; shell_duration_min: string; shell_acceptance: string; shell_start_test: string; shell_finish_test: string; shell_result: string; shell_remark: string
+  hp_seat_pressure_psi: string; hp_seat_duration_min: string; hp_seat_acceptance: string; hp_seat_start_test: string; hp_seat_finish_test: string; hp_seat_result: string; hp_seat_remark: string
+  hp_closure_a_pressure_psi: string; hp_closure_a_duration_min: string; hp_closure_a_acceptance: string; hp_closure_a_start_test: string; hp_closure_a_finish_test: string; hp_closure_a_result: string; hp_closure_a_remark: string
+  lp_closure_b_pressure_psi: string; lp_closure_b_duration_min: string; lp_closure_b_acceptance: string; lp_closure_b_start_test: string; lp_closure_b_finish_test: string; lp_closure_b_result: string; lp_closure_b_remark: string
+  seat_pressure_psi: string; seat_duration_min: string; seat_acceptance: string; seat_start_test: string; seat_finish_test: string; seat_result: string; seat_remark: string
+  func0_pressure_psi: string; func0_duration_min: string; func0_acceptance: string; func0_start_test: string; func0_finish_test: string; func0_result: string; func0_remark: string
+  func25_pressure_psi: string; func25_duration_min: string; func25_acceptance: string; func25_start_test: string; func25_finish_test: string; func25_result: string; func25_remark: string
+  func50_pressure_psi: string; func50_duration_min: string; func50_acceptance: string; func50_start_test: string; func50_finish_test: string; func50_result: string; func50_remark: string
+  func75_pressure_psi: string; func75_duration_min: string; func75_acceptance: string; func75_start_test: string; func75_finish_test: string; func75_result: string; func75_remark: string
+  func100_pressure_psi: string; func100_duration_min: string; func100_acceptance: string; func100_start_test: string; func100_finish_test: string; func100_result: string; func100_remark: string
+  test_rows: string; test_photos: string
+}
+
+const TEST_LABELS: Record<string, string> = {
+  actuator: 'ACTUATOR LEAK TEST', shell: 'HYDROSTATIC SHELL TEST', hp_seat: 'HIGH-PRESSURE SEAT TEST',
+  hp_closure_a: 'HIGH PRESSURE CLOSURE TEST A', lp_closure_b: 'LOW PRESSURE CLOSURE TEST B',
+  seat: 'LOW-PRESSURE SEAT LEAK TEST', func0: 'FUNCTION TEST 0%', func25: 'FUNCTION TEST 25%',
+  func50: 'FUNCTION TEST 50%', func75: 'FUNCTION TEST 75%', func100: 'FUNCTION TEST 100%',
+}
+
 async function fetchImageAsBase64(url: string): Promise<string | null> {
   try {
     const res = await fetch(url)
@@ -106,7 +129,9 @@ export async function exportReportPDF(
   report: ReportData,
   items: ItemData[],
   bomItems: BomData[],
-  photos: PhotoData[]
+  photos: PhotoData[],
+  tab: string = 'all',
+  valveTest?: ValveTestData
 ) {
   const doc = new jsPDF('p', 'mm', 'a4')
   const PW = 210, PH = 297, M = 10, CW = PW - M * 2
@@ -240,6 +265,7 @@ export async function exportReportPDF(
   y += 5
 
   // ========== INSPECTION ITEMS TABLE ==========
+  if (tab === 'all' || tab === 'inspection') {
   np(30)
   doc.setTextColor(...BLUE)
   doc.setFontSize(9)
@@ -356,9 +382,136 @@ export async function exportReportPDF(
     })
     y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 7
   }
+  } // end inspection tab
+
+  // ========== VALVE TEST ==========
+  if ((tab === 'all' || tab === 'test') && valveTest) {
+    let testRows: string[] = []
+    try { testRows = JSON.parse(valveTest.test_rows || '[]') } catch { /* empty */ }
+    if (testRows.length > 0) {
+      np(20)
+      doc.setTextColor(...BLUE)
+      doc.setFontSize(9)
+      doc.setFont('helvetica', 'bold')
+      doc.text('VALVE TESTED ACCORDANCE WITH', M, y)
+      y += 4
+
+      const specs: string[] = []
+      if (valveTest.spec_api6d) specs.push('API 6D')
+      if (valveTest.spec_api598) specs.push('API 598')
+      if (valveTest.spec_fci70_2) specs.push('FCI-70-2')
+      if (valveTest.spec_3_15_psi) specs.push('3-15 PSI')
+      if (valveTest.spec_cv) specs.push(`CV: ${valveTest.spec_cv}`)
+      if (valveTest.spec_sop_no) specs.push(`SOP NO: ${valveTest.spec_sop_no}`)
+      if (valveTest.spec_others) specs.push(`OTHERS: ${valveTest.spec_others}`)
+
+      doc.setFontSize(7)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(0, 0, 0)
+      doc.text(specs.join('  |  ') || '-', M, y)
+      y += 6
+
+      doc.setTextColor(...BLUE)
+      doc.setFontSize(9)
+      doc.setFont('helvetica', 'bold')
+      doc.text('ACCEPTANCE STANDARD', M, y)
+      y += 3
+
+      const testColW = [40, 20, 16, 50, 20, 20, 16, 26]
+      const testHeaders = ['DESCRIPTION TEST', 'PRESSURE (Psi)', 'TIME (Min)', 'ACCEPTANCE CRITERIA', 'START', 'FINISH', 'RESULT', 'REMARK']
+
+      const testBody = testRows.map(key => {
+        const p = (field: string) => ((valveTest as unknown as Record<string, string>)[`${key}_${field}`]) || '-'
+        return [
+          TEST_LABELS[key] || key,
+          p('pressure_psi'), p('duration_min'), p('acceptance'),
+          p('start_test'), p('finish_test'), p('result'), p('remark'),
+        ]
+      })
+
+      autoTable(doc, {
+        startY: y,
+        margin: { left: M, right: M },
+        head: [testHeaders],
+        body: testBody,
+        styles: { fontSize: 6.5, cellPadding: 1.5, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak' },
+        headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6.5, fontStyle: 'bold', halign: 'center' },
+        alternateRowStyles: { fillColor: LIGHT_BG },
+        columnStyles: {
+          0: { cellWidth: testColW[0], halign: 'left' },
+          1: { cellWidth: testColW[1], halign: 'center' },
+          2: { cellWidth: testColW[2], halign: 'center' },
+          3: { cellWidth: testColW[3], halign: 'left' },
+          4: { cellWidth: testColW[4], halign: 'center' },
+          5: { cellWidth: testColW[5], halign: 'center' },
+          6: { cellWidth: testColW[6], halign: 'center' },
+          7: { cellWidth: testColW[7], halign: 'left' },
+        },
+      })
+      y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 7
+    }
+
+    // Valve Test Photo Records
+    let testPhotos: { test_type: string; description: string; photos: string[] }[] = []
+    try { testPhotos = JSON.parse(valveTest.test_photos || '[]') } catch { /* empty */ }
+    if (testPhotos.length > 0) {
+      np(20)
+      doc.setTextColor(...BLUE)
+      doc.setFontSize(9)
+      doc.setFont('helvetica', 'bold')
+      doc.text('VALVE TEST PHOTO RECORDS', M, y)
+      y += 3
+
+      const photoColW = [8, 40, 50, 100]
+      autoTable(doc, {
+        startY: y,
+        margin: { left: M, right: M },
+        head: [['No', 'Test Type', 'Description', 'Photos']],
+        body: testPhotos.map((p, i) => [
+          String(i + 1),
+          TEST_LABELS[p.test_type] || p.test_type || '-',
+          p.description || '-',
+          p.photos.length > 0 ? `${p.photos.length} foto` : '-',
+        ]),
+        styles: { fontSize: 6.5, cellPadding: 1.5, lineColor: GRID, lineWidth: 0.2 },
+        headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6.5, fontStyle: 'bold', halign: 'center' },
+        alternateRowStyles: { fillColor: LIGHT_BG },
+        columnStyles: {
+          0: { cellWidth: photoColW[0], halign: 'center' },
+          1: { cellWidth: photoColW[1], halign: 'left' },
+          2: { cellWidth: photoColW[2], halign: 'left' },
+          3: { cellWidth: photoColW[3], halign: 'left' },
+        },
+      })
+      y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 7
+
+      // Download first photo per row as preview
+      for (const row of testPhotos) {
+        if (row.photos.length > 0 && row.photos[0]) {
+          np(55)
+          doc.setFontSize(7)
+          doc.setFont('helvetica', 'normal')
+          doc.setTextColor(0, 0, 0)
+          doc.text(`${TEST_LABELS[row.test_type] || row.test_type}${row.description ? ' - ' + row.description : ''}`, M, y)
+          y += 2
+          for (const url of row.photos) {
+            const b64 = await fetchImageAsBase64(url)
+            if (b64) {
+              np(55)
+              try {
+                const imgW = 50, imgH = 50
+                doc.addImage(b64, 'JPEG', M, y, imgW, imgH)
+                y += imgH + 3
+              } catch { /* skip */ }
+            }
+          }
+        }
+      }
+    }
+  } // end test tab
 
   // ========== BOM ==========
-  if (bomItems.length > 0) {
+  if ((tab === 'all' || tab === 'bom') && bomItems.length > 0) {
     np(30)
     doc.setTextColor(...BLUE)
     doc.setFontSize(9)
@@ -449,7 +602,8 @@ export async function exportReportPDF(
     doc.setPage(i)
     doc.setFontSize(7)
     doc.setTextColor(150, 150, 150)
-    doc.text(`Inspection Report - ${report.job_number} | Page ${i} of ${tp}`, PW / 2, PH - 5, { align: 'center' })
+    const tabLabel = tab === 'all' ? 'Full Report' : tab.charAt(0).toUpperCase() + tab.slice(1)
+    doc.text(`${tabLabel} - ${report.job_number} | Page ${i} of ${tp}`, PW / 2, PH - 5, { align: 'center' })
   }
 
   const fn = `IR-${report.job_number}${report.report_no ? '-' + report.report_no : ''}.pdf`
