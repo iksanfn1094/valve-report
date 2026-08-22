@@ -128,7 +128,7 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   drawField(doc, 'Assign Role', ts.assign_role, M + colW, y, colW, FH, LW_R)
   y += FH
 
-  // Row 5: Location (taller, word wrap) | Service Person
+  // Row 5: Location (taller, word wrap) | Service Person (aligned top)
   const locH = FH + 4
   doc.setFillColor(245, 245, 245)
   doc.rect(M, y, colW, locH, 'F')
@@ -143,12 +143,25 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.setTextColor(0, 0, 0)
   const locLines = doc.splitTextToSize(ts.location || '', colW - LW_L - 3)
   doc.text(locLines, M + LW_L, y + 4)
-  drawField(doc, 'Service Person', ts.service_person, M + colW, y, colW, locH, LW_R)
+
+  // Service Person - aligned top
+  doc.setFillColor(245, 245, 245)
+  doc.rect(M + colW, y, colW, locH, 'F')
+  doc.setDrawColor(...GRID)
+  doc.setLineWidth(0.2)
+  doc.rect(M + colW, y, colW, locH, 'S')
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...LABEL_C)
+  doc.text('Service Person', M + colW + 1.5, y + 4)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(0, 0, 0)
+  doc.text(ts.service_person || '', M + colW + LW_R, y + 4)
+
   y += locH
 
-  // Row 6: Attachment | Mobilization Date
-  drawField(doc, 'Attachment', ts.attachment, M, y, colW, FH, LW_L)
-  drawField(doc, 'Mobilization Date', ts.mobilization_date, M + colW, y, colW, FH, LW_R)
+  // Row 6: Mobilization Date (full width, Attachment removed)
+  drawField(doc, 'Mobilization Date', ts.mobilization_date, M, y, CW, FH, 35)
   y += FH
 
   // Row 7: Type of Worksite (left) | Brief Scope of Work (right, spanning 2 rows)
@@ -283,8 +296,8 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.text(summaryLines, M + 2, y)
   const summaryBottom = y + summaryLines.length * 3
 
-  // Right side: Status checkboxes
-  const rsx = M + CW * 0.50
+  // Right side: Status checkboxes (pinned to right edge)
+  const rsx = M + CW - 65
   const rsy = y - 3
 
   doc.setFontSize(7)
@@ -361,10 +374,10 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.text(ts.service_person_name || '-', sigX + sigBoxW / 2, sigY + 8, { align: 'center' })
   doc.setDrawColor(120, 120, 120)
   doc.setLineWidth(0.2)
-  doc.line(sigX + 3, sigY + sigH - 4, sigX + sigBoxW - 3, sigY + sigH - 4)
+  doc.line(sigX + 3, sigY + sigH - 2.5, sigX + sigBoxW - 3, sigY + sigH - 2.5)
   doc.setFontSize(4.5)
   doc.setTextColor(140, 140, 140)
-  doc.text('(name/sign/date)', sigX + sigBoxW / 2, sigY + sigH - 2, { align: 'center' })
+  doc.text('(name/sign/date)', sigX + sigBoxW / 2, sigY + sigH - 0.5, { align: 'center' })
 
   // Customer Rep sig
   const crSigX = sigX + sigBoxW + 2
@@ -379,10 +392,10 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.text(ts.customer_rep_name || '-', crSigX + sigBoxW / 2, sigY + 8, { align: 'center' })
   doc.setDrawColor(120, 120, 120)
   doc.setLineWidth(0.2)
-  doc.line(crSigX + 3, sigY + sigH - 4, crSigX + sigBoxW - 3, sigY + sigH - 4)
+  doc.line(crSigX + 3, sigY + sigH - 2.5, crSigX + sigBoxW - 3, sigY + sigH - 2.5)
   doc.setFontSize(4.5)
   doc.setTextColor(140, 140, 140)
-  doc.text('(name/sign/date)', crSigX + sigBoxW / 2, sigY + sigH - 2, { align: 'center' })
+  doc.text('(name/sign/date)', crSigX + sigBoxW / 2, sigY + sigH - 0.5, { align: 'center' })
 
   y = Math.max(stmtBottom, sigY + sigH) + 6
 
