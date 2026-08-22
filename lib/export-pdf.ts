@@ -302,7 +302,7 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
     doc.setFont('helvetica', 'normal')
     doc.text(label, rightX + 10, cy + 1.5)
   })
-  return Math.max(y, startY2 + boxH + 3)
+  return Math.max(y, startY2 + boxH + 8)
 }
 
 function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: number, CW: number, startY: number): number {
@@ -344,9 +344,9 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
         it.component_name || '-',
         it.qty?.toString() || '-',
         it.condition_note || '-',
-        it.recommendation.includes('C') ? 'x' : '',
-        it.recommendation.includes('RP') ? 'x' : '',
-        it.recommendation.includes('RE') ? 'x' : '',
+        it.recommendation.includes('C') ? '' : '',
+        it.recommendation.includes('RP') ? '' : '',
+        it.recommendation.includes('RE') ? '' : '',
         it.repair_category || '-',
         '',
         it.spec_material || '-',
@@ -372,19 +372,33 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
       const item = items[data.row.index]
       if (!item) return
 
-      // Draw checkmark for C/RP/RE columns (4,5,6) - flipped, smaller
-      const checkCols = [4, 5, 6]
-      if (checkCols.includes(data.column.index)) {
-        const val = data.cell.raw as string
-        if (val === 'x') {
-          const cx = data.cell.x + data.cell.width / 2
-          const cy = data.cell.y + data.cell.height / 2
-          doc.setDrawColor(0)
-          doc.setLineWidth(0.5)
-          doc.line(cx - 2, cy - 0.5, cx - 0.5, cy + 1)
-          doc.line(cx - 0.5, cy + 1, cx + 2.5, cy - 1.5)
-          doc.setLineWidth(0.2)
-        }
+      // Draw checkmark for C/RP/RE columns (4,5,6) - smaller, flipped
+      if (data.column.index === 4 && item.recommendation.includes('C')) {
+        const cx = data.cell.x + data.cell.width / 2
+        const cy = data.cell.y + data.cell.height / 2
+        doc.setDrawColor(0)
+        doc.setLineWidth(0.4)
+        doc.line(cx - 1.5, cy - 0.3, cx - 0.3, cy + 0.8)
+        doc.line(cx - 0.3, cy + 0.8, cx + 2, cy - 1.2)
+        doc.setLineWidth(0.2)
+      }
+      if (data.column.index === 5 && item.recommendation.includes('RP')) {
+        const cx = data.cell.x + data.cell.width / 2
+        const cy = data.cell.y + data.cell.height / 2
+        doc.setDrawColor(0)
+        doc.setLineWidth(0.4)
+        doc.line(cx - 1.5, cy - 0.3, cx - 0.3, cy + 0.8)
+        doc.line(cx - 0.3, cy + 0.8, cx + 2, cy - 1.2)
+        doc.setLineWidth(0.2)
+      }
+      if (data.column.index === 6 && item.recommendation.includes('RE')) {
+        const cx = data.cell.x + data.cell.width / 2
+        const cy = data.cell.y + data.cell.height / 2
+        doc.setDrawColor(0)
+        doc.setLineWidth(0.4)
+        doc.line(cx - 1.5, cy - 0.3, cx - 0.3, cy + 0.8)
+        doc.line(cx - 0.3, cy + 0.8, cx + 2, cy - 1.2)
+        doc.setLineWidth(0.2)
       }
 
       // Repair Category (7) - just text, no checkbox
