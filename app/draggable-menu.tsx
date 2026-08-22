@@ -55,6 +55,13 @@ const DEFAULT_MENUS: MenuItem[] = [
     href: '/engineering-hub',
     color: 'bg-teal-600 hover:bg-teal-700',
   },
+  {
+    title: 'AI ASSISTANT',
+    tagline: 'Think. Analyze. Solve.',
+    desc: 'AI-powered insights, smart analysis & decision support.',
+    href: '/ai',
+    color: 'bg-indigo-600 hover:bg-indigo-700',
+  },
 ]
 
 const STORAGE_KEY = 'menu_order'
@@ -114,14 +121,17 @@ export default function DraggableMenuGrid() {
                   >
                     <div
                       {...prov.dragHandleProps}
-                      className={`${m.color} text-white rounded-xl p-6 shadow-lg transition ${
+                      className={`${m.color} text-white rounded-xl p-5 shadow-lg transition ${
                         snap.isDragging ? 'scale-105 shadow-2xl z-50 rotate-1' : 'hover:scale-105'
-                      } flex flex-col min-h-[160px] cursor-grab active:cursor-grabbing relative`}
+                      } flex flex-col h-[170px] cursor-grab active:cursor-grabbing relative overflow-hidden`}
                     >
-                      <div className="absolute top-2 right-3 opacity-40 text-lg select-none">⣿</div>
-                      <h2 className="text-lg font-bold tracking-wide">{m.title}</h2>
-                      <p className="text-xs text-white/70 mt-1 italic">{m.tagline}</p>
-                      <p className="text-sm mt-3 text-white/90 leading-relaxed flex-1">{m.desc}</p>
+                      <div className="absolute top-2 right-3 opacity-30 text-lg select-none">⣿</div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h2 className="text-sm font-bold tracking-wide leading-tight">{m.title}</h2>
+                      </div>
+                      <p className="text-[10px] text-white/60 italic">{m.tagline}</p>
+                      <div className="flex-1" />
+                      <p className="text-xs text-white/80 leading-relaxed">{m.desc}</p>
                       <Link href={m.href} className="absolute inset-0 z-10" tabIndex={-1} />
                     </div>
                   </div>
