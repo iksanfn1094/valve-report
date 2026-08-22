@@ -162,7 +162,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   const [valveTest, setValveTest] = useState<ValveTest>({
     spec_api6d: false, spec_api598: false, spec_fci70_2: false, spec_3_15_psi: false, spec_sop_no: '', spec_others: '', spec_cv: '',
     shell_pressure_psi: '', shell_duration_min: '', shell_acceptance: 'NO VISIBLE LEAKAGE & PRESSURE DROP', shell_start_test: '', shell_finish_test: '', shell_result: '', shell_remark: '',
-    seat_pressure_psi: '', seat_duration_min: '', seat_acceptance: 'ALLOWABLE LEAK 0.25 SCFH', seat_start_test: '', seat_finish_test: '', seat_result: '', seat_remark: '',
+    seat_pressure_psi: '', seat_duration_min: '', seat_acceptance: 'ALLOWABLE LEAK 0.00 SCFH', seat_start_test: '', seat_finish_test: '', seat_result: '', seat_remark: '',
     func0_pressure_psi: '', func0_duration_min: '', func0_acceptance: 'SMOOTH and LINEAR', func0_start_test: '', func0_finish_test: '', func0_result: '', func0_remark: '',
     func25_pressure_psi: '', func25_duration_min: '', func25_acceptance: '', func25_start_test: '', func25_finish_test: '', func25_result: '', func25_remark: '',
     func50_pressure_psi: '', func50_duration_min: '', func50_acceptance: 'SMOOTH and LINEAR', func50_start_test: '', func50_finish_test: '', func50_result: '', func50_remark: '',
@@ -213,7 +213,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         setValveTest({
           spec_api6d: t.spec_api6d ?? false, spec_api598: t.spec_api598 ?? false, spec_fci70_2: t.spec_fci70_2 ?? false, spec_3_15_psi: t.spec_3_15_psi ?? false, spec_sop_no: t.spec_sop_no ?? '', spec_others: t.spec_others ?? '', spec_cv: t.spec_cv?.toString() ?? '',
           shell_pressure_psi: t.shell_pressure_psi?.toString() ?? '', shell_duration_min: t.shell_duration_min?.toString() ?? '', shell_acceptance: t.shell_acceptance ?? 'NO VISIBLE LEAKAGE & PRESSURE DROP', shell_start_test: t.shell_start_test ?? '', shell_finish_test: t.shell_finish_test ?? '', shell_result: t.shell_result ?? '', shell_remark: t.shell_remark ?? '',
-          seat_pressure_psi: t.seat_pressure_psi?.toString() ?? '', seat_duration_min: t.seat_duration_min?.toString() ?? '', seat_acceptance: t.seat_acceptance ?? 'ALLOWABLE LEAK 0.25 SCFH', seat_start_test: t.seat_start_test ?? '', seat_finish_test: t.seat_finish_test ?? '', seat_result: t.seat_result ?? '', seat_remark: t.seat_remark ?? '',
+          seat_pressure_psi: t.seat_pressure_psi?.toString() ?? '', seat_duration_min: t.seat_duration_min?.toString() ?? '', seat_acceptance: t.seat_acceptance ?? 'ALLOWABLE LEAK 0.00 SCFH', seat_start_test: t.seat_start_test ?? '', seat_finish_test: t.seat_finish_test ?? '', seat_result: t.seat_result ?? '', seat_remark: t.seat_remark ?? '',
           func0_pressure_psi: t.func0_pressure_psi?.toString() ?? '', func0_duration_min: t.func0_duration_min?.toString() ?? '', func0_acceptance: t.func0_acceptance ?? 'SMOOTH and LINEAR', func0_start_test: t.func0_start_test ?? '', func0_finish_test: t.func0_finish_test ?? '', func0_result: t.func0_result ?? '', func0_remark: t.func0_remark ?? '',
           func25_pressure_psi: t.func25_pressure_psi?.toString() ?? '', func25_duration_min: t.func25_duration_min?.toString() ?? '', func25_acceptance: t.func25_acceptance ?? '', func25_start_test: t.func25_start_test ?? '', func25_finish_test: t.func25_finish_test ?? '', func25_result: t.func25_result ?? '', func25_remark: t.func25_remark ?? '',
           func50_pressure_psi: t.func50_pressure_psi?.toString() ?? '', func50_duration_min: t.func50_duration_min?.toString() ?? '', func50_acceptance: t.func50_acceptance ?? 'SMOOTH and LINEAR', func50_start_test: t.func50_start_test ?? '', func50_finish_test: t.func50_finish_test ?? '', func50_result: t.func50_result ?? '', func50_remark: t.func50_remark ?? '',
@@ -1093,7 +1093,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
             <tbody>
               {([
                 { label: 'HYDROSTATIC SHELL TEST', prefix: 'shell', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
-                { label: 'SEAT LEAK TEST', prefix: 'seat', criteria: valveTest.spec_cv ? `ALLOWABLE LEAK ${(Number(valveTest.spec_cv) * 0.186).toFixed(2)} SCFH` : 'ALLOWABLE LEAK 0.25 SCFH' },
+                { label: 'SEAT LEAK TEST', prefix: 'seat', criteria: valveTest.spec_cv ? `ALLOWABLE LEAK ${(Number(valveTest.spec_cv) * 0.186).toFixed(2)} SCFH` : 'ALLOWABLE LEAK 0.00 SCFH' },
                 { label: 'FUNCTION TEST 0%', prefix: 'func0', criteria: 'SMOOTH and LINEAR' },
                 { label: 'FUNCTION TEST 25%', prefix: 'func25', criteria: '' },
                 { label: 'FUNCTION TEST 50%', prefix: 'func50', criteria: 'SMOOTH and LINEAR' },
