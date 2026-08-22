@@ -592,6 +592,13 @@ export async function exportReportPDF(
     doc.text('DOCUMENTATION', M, y)
     y += 3
 
+    const beforeB64: (string | null)[] = []
+    const afterB64: (string | null)[] = []
+    for (const d of docItems) {
+      beforeB64.push(d.photo_before ? await fetchImageAsBase64(d.photo_before) : null)
+      afterB64.push(d.photo_after ? await fetchImageAsBase64(d.photo_after) : null)
+    }
+
     autoTable(doc, {
       startY: y,
       margin: { left: M, right: M },
@@ -600,47 +607,33 @@ export async function exportReportPDF(
         String(i + 1),
         d.component_name || '-',
         d.description || '-',
-        d.photo_before ? '✓' : '-',
-        d.photo_after ? '✓' : '-',
+        beforeB64[i] || '-',
+        afterB64[i] || '-',
       ]),
-      styles: { fontSize: 6.5, cellPadding: 1.5, lineColor: GRID, lineWidth: 0.2 },
-      headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6.5, fontStyle: 'bold', halign: 'center' },
+      styles: { fontSize: 6, cellPadding: 1, lineColor: GRID, lineWidth: 0.2 },
+      headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6, fontStyle: 'bold', halign: 'center' },
       alternateRowStyles: { fillColor: LIGHT_BG },
       columnStyles: {
-        0: { cellWidth: 10, halign: 'center' },
-        1: { cellWidth: 40, halign: 'left' },
-        2: { cellWidth: 60, halign: 'left' },
-        3: { cellWidth: 40, halign: 'center' },
-        4: { cellWidth: 40, halign: 'center' },
+        0: { cellWidth: 8, halign: 'center' },
+        1: { cellWidth: 25, halign: 'left' },
+        2: { cellWidth: 65, halign: 'left' },
+        3: { cellWidth: 46, halign: 'center', minCellHeight: 28 },
+        4: { cellWidth: 46, halign: 'center', minCellHeight: 28 },
+      },
+      didDrawCell: (data) => {
+        if (data.section !== 'body') return
+        const col = data.column.index
+        const rowIdx = data.row.index
+        const b64 = col === 3 ? beforeB64[rowIdx] : col === 4 ? afterB64[rowIdx] : null
+        if (b64 && b64 !== '-') {
+          const imgW = 24, imgH = 24
+          const x = data.cell.x + (data.cell.width - imgW) / 2
+          const y2 = data.cell.y + (data.cell.height - imgH) / 2
+          try { doc.addImage(b64, 'JPEG', x, y2, imgW, imgH) } catch { /* skip */ }
+        }
       },
     })
     y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 7
-
-    for (const d of docItems) {
-      if (d.photo_before || d.photo_after) {
-        const photos = [d.photo_before, d.photo_after].filter(Boolean)
-        if (photos.length > 0) {
-          np(12)
-          doc.setFontSize(7)
-          doc.setFont('helvetica', 'bold')
-          doc.setTextColor(0, 0, 0)
-          doc.text(`${d.component_name || '-'}${d.description ? ' - ' + d.description : ''}`, M, y)
-          y += 3
-          for (const url of photos) {
-            const b64 = await fetchImageAsBase64(url)
-            if (b64) {
-              np(55)
-              try {
-                const imgW = 50, imgH = 50
-                doc.addImage(b64, 'JPEG', M, y, imgW, imgH)
-                y += imgH + 3
-              } catch { /* skip */ }
-            }
-          }
-          y += 2
-        }
-      }
-    }
   }
 
   // ========== SIGNATURE (5 boxes) ==========
