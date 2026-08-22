@@ -1124,9 +1124,9 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
             </thead>
             <tbody>
               {([
-                { label: 'ACTUATOR LEAK TEST', prefix: 'actuator', criteria: '' },
+                { label: 'ACTUATOR LEAK TEST', prefix: 'actuator', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
                 { label: 'HYDROSTATIC SHELL TEST', prefix: 'shell', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
-                { label: 'HIGH-PRESSURE SEAT TEST', prefix: 'hp_seat', criteria: valveTest.spec_cv ? `ALLOWABLE LEAK ${(Number(valveTest.spec_cv) * 0.186).toFixed(2)} SCFH` : 'ALLOWABLE LEAK 0.00 SCFH' },
+                { label: 'HIGH-PRESSURE SEAT TEST', prefix: 'hp_seat', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
                 { label: 'LOW-PRESSURE SEAT LEAK TEST', prefix: 'seat', criteria: valveTest.spec_cv ? `ALLOWABLE LEAK ${(Number(valveTest.spec_cv) * 0.186).toFixed(2)} SCFH` : 'ALLOWABLE LEAK 0.00 SCFH' },
                 { label: 'FUNCTION TEST 0%', prefix: 'func0', criteria: 'SMOOTH and LINEAR' },
                 { label: 'FUNCTION TEST 25%', prefix: 'func25', criteria: '' },
