@@ -116,14 +116,35 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   y += FH
 
   // Row 4: Date | Assign Role
-  drawField(doc, 'Date', ts.assign_date, M, y, colW, FH, LW_L)
+  function formatENDate(raw: string): string {
+    if (!raw) return ''
+    try {
+      const d = new Date(raw + 'T00:00:00')
+      const months = ['January','February','March','April','May','June','July','August','September','October','November','December']
+      return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear()
+    } catch { return raw }
+  }
+  drawField(doc, 'Date', formatENDate(ts.assign_date), M, y, colW, FH, LW_L)
   drawField(doc, 'Assign Role', ts.assign_role, M + colW, y, colW, FH, LW_R)
   y += FH
 
-  // Row 5: Location | Service Person
-  drawField(doc, 'Location', ts.location, M, y, colW, FH, LW_L)
-  drawField(doc, 'Service Person', ts.service_person, M + colW, y, colW, FH, LW_R)
-  y += FH
+  // Row 5: Location (taller, word wrap) | Service Person
+  const locH = FH + 4
+  doc.setFillColor(245, 245, 245)
+  doc.rect(M, y, colW, locH, 'F')
+  doc.setDrawColor(...GRID)
+  doc.setLineWidth(0.2)
+  doc.rect(M, y, colW, locH, 'S')
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...LABEL_C)
+  doc.text('Location', M + 1.5, y + 4)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(0, 0, 0)
+  const locLines = doc.splitTextToSize(ts.location || '', colW - LW_L - 3)
+  doc.text(locLines, M + LW_L, y + 4)
+  drawField(doc, 'Service Person', ts.service_person, M + colW, y, colW, locH, LW_R)
+  y += locH
 
   // Row 6: Attachment | Mobilization Date
   drawField(doc, 'Attachment', ts.attachment, M, y, colW, FH, LW_L)
@@ -151,12 +172,12 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   const wsY = y + 9
   cb(doc, M + 2, wsY, ts.worksite_office)
   doc.text('Office', M + 6, wsY - 0.5)
-  cb(doc, M + 24, wsY, ts.worksite_plant)
-  doc.text('Plant/Workshop', M + 28, wsY - 0.5)
-  cb(doc, M + 60, wsY, ts.worksite_onshore)
-  doc.text('Onshore', M + 64, wsY - 0.5)
-  cb(doc, M + 82, wsY, ts.worksite_offshore)
-  doc.text('Offshore', M + 86, wsY - 0.5)
+  cb(doc, M + 22, wsY, ts.worksite_plant)
+  doc.text('Plant/Workshop', M + 26, wsY - 0.5)
+  cb(doc, M + 56, wsY, ts.worksite_onshore)
+  doc.text('Onshore', M + 60, wsY - 0.5)
+  cb(doc, M + 76, wsY, ts.worksite_offshore)
+  doc.text('Offshore', M + 80, wsY - 0.5)
 
   // Right cell: Brief Scope of Work (spans 2 rows)
   const scopeH = wsH * 2
@@ -263,7 +284,7 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   const summaryBottom = y + summaryLines.length * 3
 
   // Right side: Status checkboxes
-  const rsx = M + CW * 0.55
+  const rsx = M + CW * 0.50
   const rsy = y - 3
 
   doc.setFontSize(7)
@@ -272,28 +293,28 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.text('Status of Service?', rsx, rsy + 2)
   cb(doc, rsx, rsy + 7, ts.status_service === 'close')
   doc.text('Close', rsx + 4, rsy + 6.5)
-  cb(doc, rsx + 25, rsy + 7, ts.status_service === 'followup')
-  doc.text('Follow-up required', rsx + 29, rsy + 6.5)
+  cb(doc, rsx + 22, rsy + 7, ts.status_service === 'followup')
+  doc.text('Follow-up', rsx + 26, rsy + 6.5)
 
   doc.text('Nonconformance found?', rsx, rsy + 13)
   cb(doc, rsx, rsy + 18, ts.nonconformance === true)
   doc.text('Yes', rsx + 4, rsy + 17.5)
-  cb(doc, rsx + 18, rsy + 18, ts.nonconformance === false)
-  doc.text('No', rsx + 22, rsy + 17.5)
+  cb(doc, rsx + 16, rsy + 18, ts.nonconformance === false)
+  doc.text('No', rsx + 20, rsy + 17.5)
 
   doc.text('Any incident/spill?', rsx, rsy + 24)
   cb(doc, rsx, rsy + 29, ts.incident_spill === true)
   doc.text('Yes', rsx + 4, rsy + 28.5)
-  cb(doc, rsx + 18, rsy + 29, ts.incident_spill === false)
-  doc.text('No', rsx + 22, rsy + 28.5)
+  cb(doc, rsx + 16, rsy + 29, ts.incident_spill === false)
+  doc.text('No', rsx + 20, rsy + 28.5)
 
   doc.text('Any tools/equip. damage?', rsx, rsy + 35)
   cb(doc, rsx, rsy + 40, ts.tools_damage === true)
   doc.text('Yes', rsx + 4, rsy + 39.5)
-  cb(doc, rsx + 18, rsy + 40, ts.tools_damage === false)
-  doc.text('No', rsx + 22, rsy + 39.5)
-  cb(doc, rsx + 35, rsy + 40, ts.tools_damage === null)
-  doc.text('N/A', rsx + 39, rsy + 39.5)
+  cb(doc, rsx + 16, rsy + 40, ts.tools_damage === false)
+  doc.text('No', rsx + 20, rsy + 39.5)
+  cb(doc, rsx + 30, rsy + 40, ts.tools_damage === null)
+  doc.text('N/A', rsx + 34, rsy + 39.5)
 
   y = Math.max(summaryBottom, rsy + 45) + 3
 
