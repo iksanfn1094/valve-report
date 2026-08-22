@@ -9,34 +9,42 @@ type Message = {
 }
 
 const QUICK_PROMPTS = [
-  'Apa saja modul yang tersedia di aplikasi ini?',
-  'Bagaimana cara membuat valve inspection report?',
-  'Apa itu Engineering Hub?',
-  'Bantu saya analisis budget project',
-  'Tips keselamatan kerja di workshop',
+  'Ringkasan semua data',
+  'Analisis valve report',
+  'Timesheet workforce',
+  'Tipe valve terbanyak',
+  'Inspeksi terakhir',
 ]
 
-const AI_RESPONSES: Record<string, string> = {
-  'modul': 'Aplikasi ini memiliki 7 modul utama:\n\n1. **Field Survey** — Survei lapangan\n2. **Workforce** — Manajemen timesheet\n3. **Valve Service Report** — Inspeksi & pelaporan valve\n4. **Project Cost** — Budgeting & biaya project\n5. **Project Control** — Monitoring progress\n6. **Engineering Hub** — Kalkulasi & tools engineering\n7. **AI Assistant** — Asisten pintar (ini dia!)\n\nGunakan drag & drop di homepage untuk mengatur urutan menu sesuai keinginan Anda.',
-  'report': 'Untuk membuat Valve Service Report:\n\n1. Klik **VALVE SERVICE REPORT** di homepage\n2. Klik tombol **+ New Report**\n3. Isi data inspeksi: Valve ID, Type, Size, Manufacturer\n4. Tambahkan item inspeksi dengan kondisi komponen\n5. Upload foto jika diperlukan\n6. Save → Export PDF atau Excel\n\nTip: Masukkan Valve ID dan data akan otomatis terisi dari database!',
-  'engineering': '**Engineering Hub** adalah modul untuk:\n\n• Kalkulasi teknikal valve & pipa\n• Verifikasi spesifikasi material\n• Tools desain & analisis\n• Referensi standar industri (API, ASME, ANSI)\n\nModul ini仍在dikembangkan. Stay tuned!',
-  'budget': 'Untuk analisis budget project:\n\n1. Klik **PROJECT COST** di homepage\n2. Input data biaya: material, labor, equipment\n3. Gunakan **Project Control** untuk monitoring real-time\n\nTips: Selalu alokasikan 10-15% contingency untuk project valve service.',
-  'keselamatan': 'Tips keselamatan kerja di workshop:\n\n1. **PPE Wajib**: Helmet, safety shoes, gloves, safety glasses\n2. **Lockout/Tagout**: Selalu isolasi energi sebelum maintenance\n3. **Tool Inspection**: Cek kondisi tools sebelum digunakan\n4. **Housekeeping**: Jaga area kerja tetap bersih\n5. **Emergency**: Kenali lokasi fire extinguisher & first aid\n6. **Communication**: Selalu koordinasi dengan tim',
+const LOCAL_RESPONSES: Record<string, string> = {
+  'modul': 'Aplikasi ini memiliki 7 modul utama:\n\n1. **Field Survey** — Survei lapangan\n2. **Workforce** — Manajemen timesheet\n3. **Valve Service Report** — Inspeksi & pelaporan valve\n4. **Project Cost** — Budgeting & biaya project\n5. **Project Control** — Monitoring progress\n6. **Engineering Hub** — Kalkulasi & tools engineering\n7. **AI Assistant** — Asisten pintar (ini dia!)\n\nGunakan drag & drop di homepage untuk mengatur urutan menu.',
+  'engineering': '**Engineering Hub** menyediakan:\n\n• Tabel Standar O-Ring (ISO 3601-1 Class A / AS568)\n• Kalkulator Seat Leak Test (SCFH)\n• Ilustrasi dimensi O-Ring (CS, ID, OD)',
+  'report': 'Untuk membuat Valve Service Report:\n\n1. Klik **VALVE SERVICE REPORT** di homepage\n2. Klik **+ New Report**\n3. Isi data inspeksi: Valve ID, Type, Size\n4. Tambahkan item inspeksi\n5. Save → Export PDF/Excel\n\nTip: Masukkan Valve ID untuk auto-fill dari database!',
+  'budget': 'Untuk analisis budget project:\n\n1. Klik **PROJECT COST** di homepage\n2. Input data biaya: material, labor, equipment\n3. Gunakan **Project Control** untuk monitoring\n\nTips: Alokasikan 10-15% contingency untuk valve service.',
+  'timesheet': 'Untuk manajemen timesheet:\n\n1. Klik **WORKFORCE** di homepage\n2. Klik **+ New Timesheet**\n3. Isi data: nama, projek, tanggal kerja\n4. Tambah entries per hari\n5. Export PDF untuk slip kerja',
+  'keselamatan': 'Tips keselamatan kerja di workshop:\n\n1. **PPE Wajib**: Helmet, safety shoes, gloves\n2. **Lockout/Tagout**: Isolasi energi sebelum maintenance\n3. **Tool Inspection**: Cek tools sebelum pakai\n4. **Housekeeping**: Jaga area kerja bersih\n5. **Emergency**: Kenali lokasi APAR & first aid',
+  'orring': 'Tabel O-Ring di Engineering Hub:\n\n• Standar: ISO 3601-1 Class A / AS568 (USA)\n• 349 ukuran tersedia\n• Filter berdasarkan CS: 1.02mm s/d 6.99mm\n• Kalkulator Seat Leak Test tersedia',
 }
 
-function findResponse(input: string): string {
+function findLocalResponse(input: string): string | null {
   const lower = input.toLowerCase()
-  for (const [key, val] of Object.entries(AI_RESPONSES)) {
+  for (const [key, val] of Object.entries(LOCAL_RESPONSES)) {
     if (lower.includes(key)) return val
   }
-  return `Terima kasih atas pertanyaan Anda: "${input}"\n\nSaya adalah AI Assistant untuk aplikasi Project & Service Transformation. Saat ini saya dalam mode demo. Fitur AI lengkap akan segera tersedia untuk menganalisis data valve, budget, dan project secara otomatis.\n\nSementara itu, cobalah:\n• **Valve Service Report** untuk inspeksi valve\n• **Engineering Hub** untuk tools kalkulasi\n• **Workforce** untuk manajemen timesheet`
+  return null
+}
+
+function formatMd(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br/>')
 }
 
 export default function AIPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Halo! Saya AI Assistant untuk PT. Valvindo Megah. Ada yang bisa saya bantu?\n\nCoba klik salah satu prompt di bawah atau ketik pertanyaan Anda.',
+      content: 'Halo! Saya AI Assistant untuk PT. Valvindo Megah.\n\nSaya bisa menganalisis data dari database secara real-time:\n• Valve Service Report\n• Timesheet & Workforce\n• Ringkasan seluruh sistem\n\nCoba klik prompt di bawah atau ketik pertanyaan Anda.',
       timestamp: Date.now(),
     },
   ])
@@ -48,7 +56,7 @@ export default function AIPage() {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  function send(text?: string) {
+  async function send(text?: string) {
     const q = (text || input).trim()
     if (!q) return
     const userMsg: Message = { role: 'user', content: q, timestamp: Date.now() }
@@ -56,11 +64,27 @@ export default function AIPage() {
     setInput('')
     setLoading(true)
 
-    setTimeout(() => {
-      const response = findResponse(q)
-      setMessages((prev) => [...prev, { role: 'assistant', content: response, timestamp: Date.now() }])
-      setLoading(false)
-    }, 800 + Math.random() * 700)
+    const local = findLocalResponse(q)
+    if (local) {
+      setTimeout(() => {
+        setMessages((prev) => [...prev, { role: 'assistant', content: local, timestamp: Date.now() }])
+        setLoading(false)
+      }, 500)
+      return
+    }
+
+    try {
+      const res = await fetch('/api/ai-analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q }),
+      })
+      const data = await res.json()
+      setMessages((prev) => [...prev, { role: 'assistant', content: data.answer || 'Tidak ada response.', timestamp: Date.now() }])
+    } catch {
+      setMessages((prev) => [...prev, { role: 'assistant', content: 'Gagal mengakses database. Pastikan koneksi stabil.', timestamp: Date.now() }])
+    }
+    setLoading(false)
   }
 
   function handleKey(e: React.KeyboardEvent) {
@@ -75,7 +99,7 @@ export default function AIPage() {
       {/* Header */}
       <div className="bg-indigo-600 text-white rounded-t-xl px-5 py-4">
         <h1 className="text-lg font-bold tracking-wide">AI Assistant</h1>
-        <p className="text-xs text-indigo-200">Powered by Valvindo Intelligence</p>
+        <p className="text-xs text-indigo-200">Powered by Valvindo Intelligence — Real-time Database Analysis</p>
       </div>
 
       {/* Messages */}
@@ -83,23 +107,22 @@ export default function AIPage() {
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
-              className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+              className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                 m.role === 'user'
                   ? 'bg-indigo-600 text-white rounded-br-md'
                   : 'bg-white border border-gray-200 text-gray-800 shadow-sm rounded-bl-md'
               }`}
-            >
-              {m.content}
-            </div>
+              dangerouslySetInnerHTML={{ __html: m.role === 'assistant' ? formatMd(m.content) : m.content }}
+            />
           </div>
         ))}
         {loading && (
           <div className="flex justify-start">
             <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
               <div className="flex gap-1">
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0ms]" />
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:150ms]" />
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:300ms]" />
+                <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:0ms]" />
+                <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:150ms]" />
+                <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:300ms]" />
               </div>
             </div>
           </div>
