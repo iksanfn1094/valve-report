@@ -166,13 +166,13 @@ const TEST_OPTIONS = [
   { key: 'actuator', label: 'ACTUATOR LEAK TEST', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
   { key: 'shell', label: 'HYDROSTATIC SHELL TEST', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
   { key: 'hp_seat', label: 'HIGH-PRESSURE SEAT TEST', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
-  { key: 'hp_closure_a', label: 'HIGH PRESSURE CLOSURE TEST A', criteria: '' },
-  { key: 'lp_closure_b', label: 'LOW PRESSURE CLOSURE TEST B', criteria: '' },
+  { key: 'hp_closure_a', label: 'HIGH PRESSURE CLOSURE TEST A', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
+  { key: 'lp_closure_b', label: 'LOW PRESSURE CLOSURE TEST B', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
   { key: 'seat', label: 'LOW-PRESSURE SEAT LEAK TEST', criteria: '' },
   { key: 'func0', label: 'FUNCTION TEST 0%', criteria: 'SMOOTH and LINEAR' },
-  { key: 'func25', label: 'FUNCTION TEST 25%', criteria: '' },
+  { key: 'func25', label: 'FUNCTION TEST 25%', criteria: 'SMOOTH and LINEAR' },
   { key: 'func50', label: 'FUNCTION TEST 50%', criteria: 'SMOOTH and LINEAR' },
-  { key: 'func75', label: 'FUNCTION TEST 75%', criteria: '' },
+  { key: 'func75', label: 'FUNCTION TEST 75%', criteria: 'SMOOTH and LINEAR' },
   { key: 'func100', label: 'FUNCTION TEST 100%', criteria: 'SMOOTH and LINEAR' },
 ]
 
@@ -636,27 +636,38 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     const sz = parseFloat(report.size ?? '0') || 0
     if (!pr || !sz) return alert('Size atau Class belum terisi di report!')
 
-    let shellPressure = '', shellDuration = ''
-    let seatPressure = '', seatDuration = ''
+    let shellP = '', shellD = ''
+    let seatP = '', seatD = ''
+    let hpClosureP = '', lpClosureP = ''
 
     if (api === 'api6d') {
-      shellPressure = String(Math.round(pr * 1.5))
-      shellDuration = sz <= 4 ? '2' : sz <= 10 ? '5' : sz <= 18 ? '15' : '30'
-      seatPressure = String(Math.round(pr * 1.1))
-      seatDuration = sz <= 4 ? '2' : sz <= 18 ? '5' : '10'
+      shellP = String(Math.round(pr * 1.5))
+      shellD = sz <= 4 ? '2' : sz <= 10 ? '5' : sz <= 18 ? '15' : '30'
+      seatP = String(Math.round(pr * 1.1))
+      seatD = sz <= 4 ? '2' : sz <= 18 ? '5' : '10'
+      hpClosureP = seatP
+      lpClosureP = '95'
     } else {
-      shellPressure = String(Math.round(pr * 1.5))
-      shellDuration = sz <= 2 ? '0.25' : sz <= 4 ? '1' : sz <= 8 ? '2' : sz <= 14 ? '5' : '10'
-      seatPressure = String(Math.round(pr * 1.1))
-      seatDuration = sz <= 2 ? '0.25' : sz <= 4 ? '1' : sz <= 8 ? '2' : sz <= 14 ? '5' : '10'
+      shellP = String(Math.round(pr * 1.5))
+      shellD = sz <= 2 ? '0.25' : sz <= 4 ? '1' : sz <= 8 ? '2' : sz <= 14 ? '5' : '10'
+      seatP = String(Math.round(pr * 1.1))
+      seatD = sz <= 2 ? '0.25' : sz <= 4 ? '1' : sz <= 8 ? '2' : sz <= 14 ? '5' : '10'
+      hpClosureP = seatP
+      lpClosureP = '80'
     }
 
     setValveTest(prev => ({
       ...prev,
-      shell_pressure_psi: shellPressure,
-      shell_duration_min: shellDuration,
-      seat_pressure_psi: seatPressure,
-      seat_duration_min: seatDuration,
+      shell_pressure_psi: shellP,
+      shell_duration_min: shellD,
+      hp_seat_pressure_psi: seatP,
+      hp_seat_duration_min: seatD,
+      hp_closure_a_pressure_psi: hpClosureP,
+      hp_closure_a_duration_min: seatD,
+      lp_closure_b_pressure_psi: lpClosureP,
+      lp_closure_b_duration_min: seatD,
+      seat_pressure_psi: seatP,
+      seat_duration_min: seatD,
     }))
   }
 
