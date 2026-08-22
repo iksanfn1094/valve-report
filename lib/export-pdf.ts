@@ -258,7 +258,7 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
     drawField(doc, label, val || '', M, y, leftW, 5.5, 35)
     y += 5.5
   })
-  const boxH = 48
+  const boxH = 44
   const startY2 = startY + 3
   doc.setDrawColor(...GRID)
   doc.setLineWidth(0.3)
@@ -266,42 +266,42 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
   doc.setFontSize(8)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(0, 0, 0)
-  doc.text('Repair Category', rightX + 2, startY2 + 8)
+  doc.text('Repair Category', rightX + 2, startY2 + 7)
   const cats: [string, boolean][] = [
     ['Inspection', report.category === 'inspection'],
     ['Minor', report.category === 'minor'],
     ['Major', report.category === 'major'],
   ]
   cats.forEach(([label, checked], ci) => {
-    const cy = startY2 + 12 + ci * 6
+    const cy = startY2 + 10 + ci * 5
     doc.setDrawColor(0)
     doc.setLineWidth(0.3)
-    doc.rect(rightX + 3, cy, 4, 4, 'S')
+    doc.rect(rightX + 3, cy, 3.5, 3.5, 'S')
     if (checked) {
-      doc.setFontSize(8)
+      doc.setFontSize(7)
       doc.setFont('helvetica', 'bold')
-      doc.text('✓', rightX + 3.5, cy + 3.2)
+      doc.text('✓', rightX + 3.3, cy + 3)
     }
-    doc.setFontSize(7)
+    doc.setFontSize(6.5)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(0, 0, 0)
-    doc.text(label, rightX + 10, cy + 3.2)
+    doc.text(label, rightX + 9, cy + 3)
   })
   doc.setFontSize(8)
   doc.setFont('helvetica', 'bold')
-  doc.text('Recommendation', rightX + 2, startY2 + 33)
+  doc.text('Recommendation', rightX + 2, startY2 + 28)
   const recs: [string, string][] = [['C', 'Cleaning'], ['RP', 'Repair'], ['RE', 'Replace']]
   recs.forEach(([code, label], ci) => {
-    const cy = startY2 + 36 + ci * 5
+    const cy = startY2 + 31 + ci * 4
     doc.setDrawColor(0)
     doc.setLineWidth(0.3)
-    doc.rect(rightX + 3, cy - 1, 4, 4, 'S')
+    doc.rect(rightX + 3, cy - 1, 3.5, 3.5, 'S')
     doc.setFontSize(6)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(0, 0, 0)
-    doc.text(code, rightX + 10, cy + 2)
+    doc.text(code, rightX + 9, cy + 1.5)
     doc.setFont('helvetica', 'normal')
-    doc.text(label, rightX + 17, cy + 2)
+    doc.text(label, rightX + 16, cy + 1.5)
   })
   return Math.max(y, startY2 + boxH + 3)
 }
