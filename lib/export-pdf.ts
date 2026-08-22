@@ -246,7 +246,7 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
   doc.setFont('helvetica', 'bold')
   doc.text('CONSTRUCTION (AS FOUND)', M, y)
   y += 3
-  const leftW = CW * 0.6, rightX = M + leftW
+  const leftW = CW * 0.6, rightX = M + leftW, rightW = CW * 0.4
   const leftFields: [string, string | null][] = [
     ['Valve Id', report.job_number],
     ['Valve Type', report.valve_type], ['Manufacture', report.manufacture],
@@ -258,10 +258,11 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
     drawField(doc, label, val || '', M, y, leftW, 5.5, 35)
     y += 5.5
   })
-  const startY2 = startY
+  const boxH = 48
+  const startY2 = startY + 3
   doc.setDrawColor(...GRID)
   doc.setLineWidth(0.3)
-  doc.rect(rightX, startY2, CW * 0.4, 44, 'S')
+  doc.rect(rightX, startY2, rightW, boxH, 'S')
   doc.setFontSize(8)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(0, 0, 0)
@@ -275,37 +276,39 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
     const cy = startY2 + 12 + ci * 6
     doc.setDrawColor(0)
     doc.setLineWidth(0.3)
-    doc.rect(rightX + 3, cy, 3, 3, 'S')
-    if (checked) { doc.setFontSize(8); doc.text('X', rightX + 3.5, cy + 2.5) }
+    doc.rect(rightX + 3, cy, 4, 4, 'S')
+    if (checked) {
+      doc.setFontSize(8)
+      doc.setFont('helvetica', 'bold')
+      doc.text('✓', rightX + 3.5, cy + 3.2)
+    }
     doc.setFontSize(7)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(0, 0, 0)
-    doc.text(label, rightX + 9, cy + 2.5)
+    doc.text(label, rightX + 10, cy + 3.2)
   })
   doc.setFontSize(8)
   doc.setFont('helvetica', 'bold')
   doc.text('Recommendation', rightX + 2, startY2 + 33)
   const recs: [string, string][] = [['C', 'Cleaning'], ['RP', 'Repair'], ['RE', 'Replace']]
   recs.forEach(([code, label], ci) => {
-    const cy = startY2 + 36 + ci * 3.5
+    const cy = startY2 + 36 + ci * 5
+    doc.setDrawColor(0)
+    doc.setLineWidth(0.3)
+    doc.rect(rightX + 3, cy - 1, 4, 4, 'S')
     doc.setFontSize(6)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(0, 0, 0)
-    doc.text(code, rightX + 6, cy)
+    doc.text(code, rightX + 10, cy + 2)
     doc.setFont('helvetica', 'normal')
-    doc.text(label, rightX + 13, cy)
+    doc.text(label, rightX + 17, cy + 2)
   })
-  return Math.max(y, startY2 + 48)
+  return Math.max(y, startY2 + boxH + 3)
 }
 
 function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: number, CW: number, startY: number): number {
   let y = startY
   if (items.length === 0) return y
-  doc.setTextColor(...BLUE)
-  doc.setFontSize(9)
-  doc.setFont('helvetica', 'bold')
-  doc.text('INCOMING INSP. CHECK (CONDITION AS FOUND)', M, y)
-  y += 3
 
   const photosByItem = new Map<string, PhotoData[]>()
   for (const p of photos) {
@@ -313,86 +316,52 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
     photosByItem.get(p.item_id)!.push(p)
   }
 
+  doc.setTextColor(...BLUE)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'bold')
+  doc.text('INCOMING INSP. CHECK (CONDITION AS FOUND)', M, y)
+  y += 6
+
   autoTable(doc, {
     startY: y,
     margin: { left: M, right: M },
-    head: [['No', 'Component', 'Qty', 'Condition', 'C', 'RP', 'RE', 'Repair Category', 'Comment', 'Material Spec.']],
-    body: items.map((it) => [
-      String(it.item_no),
-      it.component_name || '-',
-      it.qty?.toString() || '-',
-      it.condition_note || '-',
-      it.recommendation.includes('C') ? '✓' : '',
-      it.recommendation.includes('RP') ? '✓' : '',
-      it.recommendation.includes('RE') ? '✓' : '',
-      '-',
-      it.comment || '-',
-      it.spec_material || '-',
-    ]),
+    head: [
+      ['No', 'Component / Part Description', 'Qty', 'Condition', { content: 'Recommendation', colSpan: 3 }, 'Repair Category', 'Foto', 'Material Spec.'],
+      ['', '', '', '', 'C', 'RP', 'RE', '', '', ''],
+    ],
+    body: items.map((it) => {
+      const rowPhotos = photosByItem.get(it.id || '') || []
+      const hasFoto = rowPhotos.length > 0 ? '✓' : '-'
+      return [
+        String(it.item_no),
+        it.component_name || '-',
+        it.qty?.toString() || '-',
+        it.condition_note || '-',
+        it.recommendation.includes('C') ? '✓' : '',
+        it.recommendation.includes('RP') ? '✓' : '',
+        it.recommendation.includes('RE') ? '✓' : '',
+        it.recommendation.includes('RE') ? '✓' : it.recommendation.includes('RP') ? '✓' : it.recommendation.includes('C') ? '✓' : '-',
+        hasFoto,
+        it.spec_material || '-',
+      ]
+    }),
     styles: { fontSize: 6, cellPadding: 1, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak' },
     headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6, fontStyle: 'bold', halign: 'center' },
     alternateRowStyles: { fillColor: LIGHT_BG },
     columnStyles: {
       0: { cellWidth: 8, halign: 'center' },
-      1: { cellWidth: 28, halign: 'left' },
+      1: { cellWidth: 30, halign: 'left' },
       2: { cellWidth: 10, halign: 'center' },
-      3: { cellWidth: 40, halign: 'left' },
-      4: { cellWidth: 8, halign: 'center' },
-      5: { cellWidth: 8, halign: 'center' },
-      6: { cellWidth: 8, halign: 'center' },
-      7: { cellWidth: 28, halign: 'center' },
-      8: { cellWidth: 28, halign: 'left' },
-      9: { cellWidth: 24, halign: 'left' },
+      3: { cellWidth: 38, halign: 'left' },
+      4: { cellWidth: 10, halign: 'center' },
+      5: { cellWidth: 10, halign: 'center' },
+      6: { cellWidth: 10, halign: 'center' },
+      7: { cellWidth: 24, halign: 'center' },
+      8: { cellWidth: 18, halign: 'center' },
+      9: { cellWidth: 30, halign: 'left' },
     },
   })
   y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
-
-  const hasPhotos = items.some((it) => (photosByItem.get(it.id || '') || []).length > 0)
-  if (hasPhotos) {
-    doc.setTextColor(...BLUE)
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'bold')
-    doc.text('PHOTO ITEMS', M, y)
-    y += 3
-    autoTable(doc, {
-      startY: y,
-      margin: { left: M, right: M },
-      head: [['No', 'Component', 'Condition', 'Photo']],
-      body: items.filter((it) => (photosByItem.get(it.id || '') || []).length > 0).map((it) => [
-        String(it.item_no),
-        it.component_name || '-',
-        it.condition_note || '-',
-        '',
-      ]),
-      styles: { fontSize: 6, cellPadding: 1, lineColor: GRID, lineWidth: 0.2 },
-      headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6, fontStyle: 'bold', halign: 'center' },
-      alternateRowStyles: { fillColor: LIGHT_BG },
-      columnStyles: {
-        0: { cellWidth: 10, halign: 'center' },
-        1: { cellWidth: 28, halign: 'left' },
-        2: { cellWidth: 60, halign: 'left' },
-        3: { cellWidth: 92, halign: 'left' },
-      },
-      didDrawCell: (data) => {
-        if (data.section !== 'body') return
-        if (data.column.index !== 3) return
-        const rowItem = items.filter((it) => (photosByItem.get(it.id || '') || []).length > 0)[data.row.index]
-        if (!rowItem) return
-        const rowPhotos = photosByItem.get(rowItem.id || '') || []
-        if (rowPhotos.length === 0) return
-        const photoSize = 26
-        const startX = data.cell.x + 1
-        const startYCell = data.cell.y + 1
-        rowPhotos.forEach((p, pi) => {
-          if (!p.url) return
-          const px = startX + (pi % 5) * (photoSize + 2)
-          const py = startYCell + Math.floor(pi / 5) * (photoSize + 2)
-          try { doc.addImage(p.url, 'JPEG', px, py, photoSize, photoSize) } catch { /* skip */ }
-        })
-      },
-    })
-    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
-  }
   return y
 }
 
