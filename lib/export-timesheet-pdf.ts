@@ -119,17 +119,22 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   function formatENDate(raw: string): string {
     if (!raw) return ''
     try {
-      const d = new Date(raw + 'T00:00:00')
-      const months = ['January','February','March','April','May','June','July','August','September','October','November','December']
-      return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear()
+      const parts = raw.split('-')
+      if (parts.length === 3) {
+        const months = ['January','February','March','April','May','June','July','August','September','October','November','December']
+        return parseInt(parts[2]) + ' ' + months[parseInt(parts[1]) - 1] + ' ' + parts[0]
+      }
+      return raw
     } catch { return raw }
   }
   drawField(doc, 'Date', formatENDate(ts.assign_date), M, y, colW, FH, LW_L)
   drawField(doc, 'Assign Role', ts.assign_role, M + colW, y, colW, FH, LW_R)
   y += FH
 
-  // Row 5: Location (taller, word wrap) | Service Person (aligned top)
+  // Row 5: Service Person (left, taller) | Location (right, taller, word wrap)
   const locH = FH + 4
+
+  // Left: Service Person (aligned top)
   doc.setFillColor(245, 245, 245)
   doc.rect(M, y, colW, locH, 'F')
   doc.setDrawColor(...GRID)
@@ -138,13 +143,12 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.setFontSize(7)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(...LABEL_C)
-  doc.text('Location', M + 1.5, y + 4)
+  doc.text('Service Person', M + 1.5, y + 4)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(0, 0, 0)
-  const locLines = doc.splitTextToSize(ts.location || '', colW - LW_L - 3)
-  doc.text(locLines, M + LW_L, y + 4)
+  doc.text(ts.service_person || '', M + LW_L, y + 4)
 
-  // Service Person - aligned top
+  // Right: Location (word wrap)
   doc.setFillColor(245, 245, 245)
   doc.rect(M + colW, y, colW, locH, 'F')
   doc.setDrawColor(...GRID)
@@ -153,10 +157,11 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.setFontSize(7)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(...LABEL_C)
-  doc.text('Service Person', M + colW + 1.5, y + 4)
+  doc.text('Location', M + colW + 1.5, y + 4)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(0, 0, 0)
-  doc.text(ts.service_person || '', M + colW + LW_R, y + 4)
+  const locLines = doc.splitTextToSize(ts.location || '', colW - LW_R - 3)
+  doc.text(locLines, M + colW + LW_R, y + 4)
 
   y += locH
 
@@ -341,7 +346,7 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   cb(doc, rsx + 30, rsy + 40, ts.tools_damage === null)
   doc.text('N/A', rsx + 34, rsy + 39.5)
 
-  y = Math.max(summaryBottom, rsy + 45) + 3
+  y = Math.max(summaryBottom, rsy + 45) + 1
 
   // Packing List & Demob Date
   drawField(doc, 'Packing List No. (if any)', ts.packing_list_no, M, y, colW, FH, 40)
