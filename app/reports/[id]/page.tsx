@@ -1320,6 +1320,9 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         </div>
         <div className="flex gap-2 mt-3">
           <button onClick={addTestPhoto} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-300 transition font-medium">+ Tambah Baris</button>
+          <button onClick={saveValveTest} disabled={savingTest} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition font-medium disabled:opacity-50">
+            {savingTest ? 'Menyimpan...' : 'Simpan'}
+          </button>
         </div>
       </div>
       )}
