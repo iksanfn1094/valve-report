@@ -132,7 +132,7 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
 
   // Row 7: Type of Worksite (left) | Brief Scope of Work (right, spanning 2 rows)
   const wsH = 20
-  const labelCol = CW * 0.35
+  const labelCol = colW
   const contentCol = CW - labelCol
 
   // Left cell: Type of Worksite
