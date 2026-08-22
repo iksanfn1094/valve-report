@@ -130,8 +130,8 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   drawField(doc, 'Mobilization Date', ts.mobilization_date, M + colW, y, colW, FH, LW_R)
   y += FH
 
-  // Row 7: Type of Worksite (left) | Brief Scope of Work (right, spanning 2 rows)
-  const wsH = 20
+  // Row 7: Type of Worksite (left) | Brief Scope of Work (right)
+  const wsH = 12
   const labelCol = colW
   const contentCol = CW - labelCol
 
@@ -145,30 +145,25 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...BLUE)
   doc.text('Type of Worksite', M + 2, y + 4)
-  doc.setFontSize(5.5)
-  doc.setFont('helvetica', 'italic')
-  doc.setTextColor(...LABEL_C)
-  doc.text('(check all that apply)', M + 2, y + 7.5)
   doc.setFontSize(7)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(0, 0, 0)
-  const wsY = y + 12
+  const wsY = y + 9
   cb(doc, M + 2, wsY, ts.worksite_office)
   doc.text('Office', M + 6, wsY - 0.5)
-  cb(doc, M + 30, wsY, ts.worksite_plant)
-  doc.text('Plant/Workshop', M + 34, wsY - 0.5)
-  cb(doc, M + 2, wsY + 5, ts.worksite_onshore)
-  doc.text('Onshore', M + 6, wsY + 4.5)
-  cb(doc, M + 30, wsY + 5, ts.worksite_offshore)
-  doc.text('Offshore', M + 34, wsY + 4.5)
+  cb(doc, M + 28, wsY, ts.worksite_plant)
+  doc.text('Plant/Workshop', M + 32, wsY - 0.5)
+  cb(doc, M + 62, wsY, ts.worksite_onshore)
+  doc.text('Onshore', M + 66, wsY - 0.5)
+  cb(doc, M + 84, wsY, ts.worksite_offshore)
+  doc.text('Offshore', M + 88, wsY - 0.5)
 
-  // Right cell: Brief Scope of Work (spans 2 rows: Worksite + Service)
-  const scopeH = wsH * 2
+  // Right cell: Brief Scope of Work
   doc.setFillColor(245, 245, 245)
-  doc.rect(M + labelCol, y, contentCol, scopeH, 'F')
+  doc.rect(M + labelCol, y, contentCol, wsH, 'F')
   doc.setDrawColor(...GRID)
   doc.setLineWidth(0.2)
-  doc.rect(M + labelCol, y, contentCol, scopeH, 'S')
+  doc.rect(M + labelCol, y, contentCol, wsH, 'S')
   doc.setFontSize(7)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...BLUE)
@@ -177,7 +172,7 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(0, 0, 0)
   const scopeLines = doc.splitTextToSize(ts.brief_scope || '', contentCol - 6)
-  doc.text(scopeLines, M + labelCol + 3, y + 10)
+  doc.text(scopeLines, M + labelCol + 3, y + 9)
 
   y += wsH
 
@@ -194,18 +189,18 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.setFontSize(7)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(0, 0, 0)
-  const svY2 = y + 12
+  const svY2 = y + 9
   cb(doc, M + 2, svY2, ts.service_workshop)
   doc.text('Workshop', M + 6, svY2 - 0.5)
-  cb(doc, M + 30, svY2, ts.service_field)
-  doc.text('Field Service', M + 34, svY2 - 0.5)
-  cb(doc, M + 2, svY2 + 5, ts.service_eng)
-  doc.text('ENG./Inspection', M + 6, svY2 + 4.5)
-  cb(doc, M + 30, svY2 + 5, ts.service_other)
-  doc.text('Other', M + 34, svY2 + 4.5)
+  cb(doc, M + 28, svY2, ts.service_field)
+  doc.text('Field Service', M + 32, svY2 - 0.5)
+  cb(doc, M + 62, svY2, ts.service_eng)
+  doc.text('ENG./Inspection', M + 66, svY2 - 0.5)
+  cb(doc, M + 100, svY2, ts.service_other)
+  doc.text('Other', M + 104, svY2 - 0.5)
   if (ts.service_other && ts.service_other_text) {
     doc.setFontSize(6)
-    doc.text('(' + ts.service_other_text + ')', M + 50, svY2 + 4.5)
+    doc.text('(' + ts.service_other_text + ')', M + 120, svY2 - 0.5)
   }
 
   y += wsH + 4
@@ -318,8 +313,10 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.text('Statement of completeness of the work:', M, y)
   y += 3
 
-  const stmtW = CW * 0.65
-  const sigBoxW = CW * 0.35 - 2
+  const stmtW = CW * 0.6
+  const sigAreaW = CW * 0.4 - 2
+  const sigBoxW = sigAreaW / 2 - 1
+  const sigH = 20
 
   doc.setFontSize(6.5)
   doc.setFont('helvetica', 'normal')
@@ -330,46 +327,46 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
 
   const stmtBottom = y + stmtLines.length * 3
 
-  // Signature boxes (right side)
-  const sigX = M + stmtW + 2
-  const sigH = 28
-  const sigY = y - 3
+  // Signature boxes (right side, two side by side)
+  const sigX = M + stmtW + 4
+  const sigY = y
 
   // Service Person sig
   doc.setDrawColor(...GRID)
   doc.setLineWidth(0.3)
-  doc.rect(sigX, sigY, sigBoxW, sigH / 2 - 1, 'S')
+  doc.rect(sigX, sigY, sigBoxW, sigH, 'S')
   doc.setFontSize(6)
   doc.setFont('helvetica', 'bold')
+  doc.setTextColor(0, 0, 0)
   doc.text('Service Person', sigX + sigBoxW / 2, sigY + 3, { align: 'center' })
   doc.setFontSize(6.5)
   doc.text(ts.service_person_name || '-', sigX + sigBoxW / 2, sigY + 8, { align: 'center' })
   doc.setDrawColor(120, 120, 120)
   doc.setLineWidth(0.2)
-  doc.line(sigX + 3, sigY + sigH / 2 - 4, sigX + sigBoxW - 3, sigY + sigH / 2 - 4)
+  doc.line(sigX + 3, sigY + sigH - 4, sigX + sigBoxW - 3, sigY + sigH - 4)
   doc.setFontSize(4.5)
   doc.setTextColor(140, 140, 140)
-  doc.text('(name/sign/date)', sigX + sigBoxW / 2, sigY + sigH / 2 - 2, { align: 'center' })
+  doc.text('(name/sign/date)', sigX + sigBoxW / 2, sigY + sigH - 2, { align: 'center' })
 
   // Customer Rep sig
-  const crSigY = sigY + sigH / 2 + 1
+  const crSigX = sigX + sigBoxW + 2
   doc.setDrawColor(...GRID)
   doc.setLineWidth(0.3)
-  doc.rect(sigX, crSigY, sigBoxW, sigH / 2 - 1, 'S')
+  doc.rect(crSigX, sigY, sigBoxW, sigH, 'S')
   doc.setFontSize(6)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(0, 0, 0)
-  doc.text('Customer Representative', sigX + sigBoxW / 2, crSigY + 3, { align: 'center' })
+  doc.text('Customer Rep.', crSigX + sigBoxW / 2, sigY + 3, { align: 'center' })
   doc.setFontSize(6.5)
-  doc.text(ts.customer_rep_name || '-', sigX + sigBoxW / 2, crSigY + 8, { align: 'center' })
+  doc.text(ts.customer_rep_name || '-', crSigX + sigBoxW / 2, sigY + 8, { align: 'center' })
   doc.setDrawColor(120, 120, 120)
   doc.setLineWidth(0.2)
-  doc.line(sigX + 3, crSigY + sigH / 2 - 4, sigX + sigBoxW - 3, crSigY + sigH / 2 - 4)
+  doc.line(crSigX + 3, sigY + sigH - 4, crSigX + sigBoxW - 3, sigY + sigH - 4)
   doc.setFontSize(4.5)
   doc.setTextColor(140, 140, 140)
-  doc.text('(name/sign/date)', sigX + sigBoxW / 2, crSigY + sigH / 2 - 2, { align: 'center' })
+  doc.text('(name/sign/date)', crSigX + sigBoxW / 2, sigY + sigH - 2, { align: 'center' })
 
-  y = Math.max(stmtBottom, crSigY + sigH / 2) + 6
+  y = Math.max(stmtBottom, sigY + sigH) + 6
 
   // ========== FOOTER ==========
   const tp = doc.getNumberOfPages()
