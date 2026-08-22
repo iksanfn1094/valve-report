@@ -251,31 +251,38 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     setValveTest(prev => ({ ...prev, test_rows: JSON.stringify(rows) }))
   }
 
-  type TestPhotoRow = { id: string; test_type: string; description: string; photo_url: string }
+  type TestPhotoRow = { id: string; test_type: string; description: string; photos: string[] }
   function getTestPhotos(): TestPhotoRow[] {
     try { return JSON.parse(valveTest.test_photos || '[]') } catch { return [] }
   }
   function addTestPhoto() {
-    const photos = getTestPhotos()
-    photos.push({ id: crypto.randomUUID(), test_type: '', description: '', photo_url: '' })
-    setValveTest(prev => ({ ...prev, test_photos: JSON.stringify(photos) }))
+    const p = getTestPhotos()
+    p.push({ id: crypto.randomUUID(), test_type: '', description: '', photos: [] })
+    setValveTest(prev => ({ ...prev, test_photos: JSON.stringify(p) }))
   }
-  function updateTestPhoto(idx: number, field: keyof TestPhotoRow, value: string) {
-    const photos = getTestPhotos()
-    ;(photos[idx] as Record<string, unknown>)[field] = value
-    setValveTest(prev => ({ ...prev, test_photos: JSON.stringify(photos) }))
+  function updateTestPhoto(idx: number, field: keyof TestPhotoRow, value: unknown) {
+    const p = getTestPhotos()
+    ;(p[idx] as Record<string, unknown>)[field] = value
+    setValveTest(prev => ({ ...prev, test_photos: JSON.stringify(p) }))
   }
   function removeTestPhoto(idx: number) {
-    const photos = getTestPhotos()
-    photos.splice(idx, 1)
-    setValveTest(prev => ({ ...prev, test_photos: JSON.stringify(photos) }))
+    const p = getTestPhotos()
+    p.splice(idx, 1)
+    setValveTest(prev => ({ ...prev, test_photos: JSON.stringify(p) }))
+  }
+  function removeTestPhotoImg(idx: number, imgIdx: number) {
+    const p = getTestPhotos()
+    p[idx].photos.splice(imgIdx, 1)
+    setValveTest(prev => ({ ...prev, test_photos: JSON.stringify(p) }))
   }
   async function uploadTestPhoto(file: File, idx: number) {
     const path = `valve-test-photos/${id}/${Date.now()}-${file.name}`
     const { error } = await supabase.storage.from('report-photos').upload(path, file)
     if (error) return alert('Upload gagal: ' + error.message)
     const { data } = supabase.storage.from('report-photos').getPublicUrl(path)
-    updateTestPhoto(idx, 'photo_url', data.publicUrl)
+    const p = getTestPhotos()
+    p[idx].photos.push(data.publicUrl)
+    setValveTest(prev => ({ ...prev, test_photos: JSON.stringify(p) }))
   }
 
   const fetchPhotos = useCallback(async () => {
@@ -1288,18 +1295,19 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                   <td className="border px-1 py-1">
                     <input type="text" value={row.description} onChange={e => updateTestPhoto(i, 'description', e.target.value)} className="w-full border-0 bg-transparent text-xs focus:outline-none" placeholder="Deskripsi foto..." />
                   </td>
-                  <td className="border px-1 py-1 text-center">
-                    {row.photo_url ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <img src={row.photo_url} alt="" className="w-10 h-10 object-cover rounded cursor-pointer" onClick={() => setPreviewPhoto(row.photo_url)} />
-                        <button onClick={() => updateTestPhoto(i, 'photo_url', '')} className="text-red-400 hover:text-red-600 text-xs">✕</button>
-                      </div>
-                    ) : (
+                  <td className="border px-1 py-1">
+                    <div className="flex flex-wrap items-center gap-1">
+                      {row.photos.map((url, j) => (
+                        <div key={j} className="relative">
+                          <img src={url} alt="" className="w-10 h-10 object-cover rounded cursor-pointer" onClick={() => setPreviewPhoto(url)} />
+                          <button onClick={() => removeTestPhotoImg(i, j)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-3 h-3 text-[8px] flex items-center justify-center leading-none">✕</button>
+                        </div>
+                      ))}
                       <label className="text-blue-600 hover:text-blue-800 cursor-pointer text-xs">
                         + Foto
                         <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadTestPhoto(f, i) }} />
                       </label>
-                    )}
+                    </div>
                   </td>
                   <td className="border px-1 py-1 text-center"><button onClick={() => removeTestPhoto(i)} className="text-red-400 hover:text-red-600 text-sm font-bold">✕</button></td>
                 </tr>
