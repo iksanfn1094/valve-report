@@ -133,14 +133,17 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   drawField(doc, 'Mobilization Date', ts.mobilization_date, M + colW, y, colW, FH, 35)
   y += FH
 
-  // Row 7: Type of Worksite (left half, taller) | Brief Scope of Work (right half, taller)
-  const wsH = 22
+  // Row 7: Type of Worksite (left) | Brief Scope of Work (right, spanning 2 rows)
+  const wsH = 20
+  const labelCol = CW * 0.35
+  const contentCol = CW * 0.65
+
   // Left cell: Type of Worksite
   doc.setFillColor(245, 245, 245)
-  doc.rect(M, y, colW, wsH, 'F')
+  doc.rect(M, y, labelCol, wsH, 'F')
   doc.setDrawColor(...GRID)
   doc.setLineWidth(0.2)
-  doc.rect(M, y, colW, wsH, 'S')
+  doc.rect(M, y, labelCol, wsH, 'S')
   doc.setFontSize(7)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...BLUE)
@@ -162,31 +165,31 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   cb(doc, M + 30, wsY + 5, ts.worksite_offshore)
   doc.text('Offshore', M + 34, wsY + 4.5)
 
-  // Right cell: Brief Scope of Work
+  // Right cell: Brief Scope of Work (spans 2 rows: Worksite + Service)
+  const scopeH = wsH * 2
   doc.setFillColor(245, 245, 245)
-  doc.rect(M + colW, y, colW, wsH, 'F')
+  doc.rect(M + labelCol, y, contentCol, scopeH, 'F')
   doc.setDrawColor(...GRID)
   doc.setLineWidth(0.2)
-  doc.rect(M + colW, y, colW, wsH, 'S')
+  doc.rect(M + labelCol, y, contentCol, scopeH, 'S')
   doc.setFontSize(7)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...BLUE)
-  doc.text('Brief Scope of Work', M + colW + 2, y + 4)
+  doc.text('Brief Scope of Work', M + labelCol + 2, y + 4)
   doc.setFontSize(6.5)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(0, 0, 0)
-  const scopeLines = doc.splitTextToSize(ts.brief_scope || '', colW - 6)
-  doc.text(scopeLines, M + colW + 3, y + 10)
+  const scopeLines = doc.splitTextToSize(ts.brief_scope || '', contentCol - 6)
+  doc.text(scopeLines, M + labelCol + 3, y + 10)
 
   y += wsH
 
-  // Row 8: Type of Service (full width)
-  const svH = 14
+  // Row 8: Type of Service (left, same format as Worksite)
   doc.setFillColor(245, 245, 245)
-  doc.rect(M, y, CW, svH, 'F')
+  doc.rect(M, y, labelCol, wsH, 'F')
   doc.setDrawColor(...GRID)
   doc.setLineWidth(0.2)
-  doc.rect(M, y, CW, svH, 'S')
+  doc.rect(M, y, labelCol, wsH, 'S')
   doc.setFontSize(7)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...BLUE)
@@ -194,21 +197,21 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.setFontSize(7)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(0, 0, 0)
-  const svY = y + 11
-  cb(doc, M + 2, svY, ts.service_workshop)
-  doc.text('Workshop', M + 6, svY - 0.5)
-  cb(doc, M + 35, svY, ts.service_field)
-  doc.text('Field Service', M + 39, svY - 0.5)
-  cb(doc, M + 70, svY, ts.service_eng)
-  doc.text('ENG./Inspection', M + 74, svY - 0.5)
-  cb(doc, M + 115, svY, ts.service_other)
-  doc.text('Other', M + 119, svY - 0.5)
+  const svY2 = y + 12
+  cb(doc, M + 2, svY2, ts.service_workshop)
+  doc.text('Workshop', M + 6, svY2 - 0.5)
+  cb(doc, M + 30, svY2, ts.service_field)
+  doc.text('Field Service', M + 34, svY2 - 0.5)
+  cb(doc, M + 2, svY2 + 5, ts.service_eng)
+  doc.text('ENG./Inspection', M + 6, svY2 + 4.5)
+  cb(doc, M + 30, svY2 + 5, ts.service_other)
+  doc.text('Other', M + 34, svY2 + 4.5)
   if (ts.service_other && ts.service_other_text) {
     doc.setFontSize(6)
-    doc.text('(' + ts.service_other_text + ')', M + 135, svY - 0.5)
+    doc.text('(' + ts.service_other_text + ')', M + 50, svY2 + 4.5)
   }
 
-  y += svH + 4
+  y += wsH + 4
 
   // ========== TIMESHEET TABLE ==========
   np(30)
