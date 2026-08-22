@@ -530,8 +530,8 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       const { error } = await supabase.from('report_valve_test').update(payload).eq('id', valveTest.id)
       if (error) { setSavingTest(false); return alert('Error update: ' + error.message) }
     } else {
-      const { data, error } = await supabase.from('report_valve_test').insert(payload).select().single()
-      if (error) { setSavingTest(false); return alert('Error insert: ' + error.message) }
+      const { data, error } = await supabase.from('report_valve_test').upsert(payload, { onConflict: 'report_id' }).select().single()
+      if (error) { setSavingTest(false); return alert('Error save: ' + error.message) }
       if (data) setValveTest(prev => ({ ...prev, id: data.id }))
     }
     setSavingTest(false)
