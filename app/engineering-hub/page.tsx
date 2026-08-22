@@ -33,7 +33,7 @@ export default function EngineeringHubPage() {
   ]
 
   const filtered = ORING_SIZES.filter(o => {
-    const matchSearch = !search || o.dash.includes(search) || o.id.toString().includes(search) || o.cs.toString().includes(search)
+    const matchSearch = !search || o.id.toString().includes(search) || o.cs.toString().includes(search)
     const matchCs = csFilter === 'all' || o.cs.toString() === csFilter
     return matchSearch && matchCs
   })
@@ -69,19 +69,15 @@ export default function EngineeringHubPage() {
             <table className="w-full text-sm">
               <thead className="bg-teal-600 text-white sticky top-0">
                 <tr>
-                  <th className="px-3 py-2 text-left">Dash No.</th>
                   <th className="px-3 py-2 text-right">CS (mm)</th>
                   <th className="px-3 py-2 text-right">Inner Diameter (mm)</th>
-                  <th className="px-3 py-2 text-right">Outer Diameter (mm)</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((o, i) => (
                   <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="px-3 py-1.5 font-mono">-{o.dash}</td>
                     <td className="px-3 py-1.5 text-right">{o.cs.toFixed(2)}</td>
                     <td className="px-3 py-1.5 text-right">{o.id.toFixed(2)}</td>
-                    <td className="px-3 py-1.5 text-right">{o.od.toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>
