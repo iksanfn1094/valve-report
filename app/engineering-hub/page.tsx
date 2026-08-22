@@ -87,43 +87,85 @@ export default function EngineeringHubPage() {
             </div>
 
             {/* Illustration */}
-            <div className="flex-shrink-0 flex flex-col items-center gap-2" style={{ width: 220 }}>
-              <svg viewBox="0 0 220 220" width="200" height="200" xmlns="http://www.w3.org/2000/svg">
-                {/* O-ring outer circle */}
-                <circle cx="110" cy="110" r="85" fill="none" stroke="#999" strokeWidth="1.5" strokeDasharray="4,3" />
+            <div className="flex-shrink-0 flex flex-col items-center gap-2" style={{ width: 280 }}>
+              <svg viewBox="0 0 280 238" width="280" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <radialGradient id="oringBodyGrad" cx="35%" cy="30%" r="80%">
+                    <stop offset="0%" stopColor="#a7f3d0" />
+                    <stop offset="45%" stopColor="#34d399" />
+                    <stop offset="100%" stopColor="#047857" />
+                  </radialGradient>
+                  <radialGradient id="oringHoleGrad" cx="50%" cy="45%" r="65%">
+                    <stop offset="0%" stopColor="#eef1f4" />
+                    <stop offset="70%" stopColor="#e2e6ea" />
+                    <stop offset="100%" stopColor="#c8cdd3" />
+                  </radialGradient>
+                  <radialGradient id="oringShadowGrad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#000000" stopOpacity="0.28" />
+                    <stop offset="70%" stopColor="#000000" stopOpacity="0.12" />
+                    <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+                  </radialGradient>
+                </defs>
+
+                {/* Soft shadow beneath the ring */}
+                <ellipse cx="125" cy="191" rx="84" ry="12" fill="url(#oringShadowGrad)" />
+
+                {/* Engineering centerlines */}
+                <line x1="40" y1="105" x2="210" y2="105" stroke="#94a3b8" strokeWidth="0.75" strokeDasharray="10,4,2,4" opacity="0.8" />
+                <line x1="125" y1="20" x2="125" y2="187" stroke="#94a3b8" strokeWidth="0.75" strokeDasharray="10,4,2,4" opacity="0.8" />
+
                 {/* O-ring body (donut) */}
-                <circle cx="110" cy="110" r="75" fill="#6ee7b7" stroke="#059669" strokeWidth="2" />
-                <circle cx="110" cy="110" r="50" fill="white" stroke="#059669" strokeWidth="2" />
+                <circle cx="125" cy="105" r="75" fill="url(#oringBodyGrad)" stroke="#065f46" strokeWidth="2" />
 
-                {/* ID dimension line (horizontal through center) */}
-                <line x1="60" y1="110" x2="160" y2="110" stroke="#2563eb" strokeWidth="1" strokeDasharray="3,2" />
-                <line x1="60" y1="105" x2="60" y2="115" stroke="#2563eb" strokeWidth="1.5" />
-                <line x1="160" y1="105" x2="160" y2="115" stroke="#2563eb" strokeWidth="1.5" />
-                <text x="110" y="107" textAnchor="middle" fill="#2563eb" fontSize="11" fontWeight="bold">ID</text>
+                {/* Glossy highlight along top-left of the ring */}
+                <path d="M82 62 A61 61 0 0 1 168 62" fill="none" stroke="#ffffff" strokeWidth="6" strokeLinecap="round" opacity="0.45" />
 
-                {/* CS dimension line (vertical, right side of ring body) */}
-                <line x1="190" y1="35" x2="190" y2="75" stroke="#dc2626" strokeWidth="1" />
-                <line x1="186" y1="35" x2="194" y2="35" stroke="#dc2626" strokeWidth="1.5" />
-                <line x1="186" y1="75" x2="194" y2="75" stroke="#dc2626" strokeWidth="1.5" />
-                <line x1="183" y1="55" x2="197" y2="55" stroke="none" />
-                <rect x="181" y="46" width="22" height="13" rx="2" fill="white" fillOpacity="0.85" />
-                <text x="192" y="56" textAnchor="middle" fill="#dc2626" fontSize="11" fontWeight="bold">CS</text>
+                {/* Inner hole */}
+                <circle cx="125" cy="105" r="48" fill="url(#oringHoleGrad)" stroke="#9ca3af" strokeWidth="1.5" />
+                {/* Subtle shadow cast inside the hole */}
+                <path d="M96 76 A41 41 0 0 1 154 76" fill="none" stroke="#94a3b8" strokeWidth="5" strokeLinecap="round" opacity="0.35" />
 
-                {/* OD dimension line (bottom) */}
-                <line x1="25" y1="195" x2="195" y2="195" stroke="#7c3aed" strokeWidth="1" strokeDasharray="3,2" />
-                <line x1="25" y1="190" x2="25" y2="200" stroke="#7c3aed" strokeWidth="1.5" />
-                <line x1="195" y1="190" x2="195" y2="200" stroke="#7c3aed" strokeWidth="1.5" />
-                <text x="110" y="208" textAnchor="middle" fill="#7c3aed" fontSize="10" fontWeight="bold">OD = ID + 2×CS</text>
+                {/* ID dimension (blue, horizontal through center) */}
+                <line x1="77" y1="99" x2="77" y2="111" stroke="#2563eb" strokeWidth="1.5" />
+                <line x1="173" y1="99" x2="173" y2="111" stroke="#2563eb" strokeWidth="1.5" />
+                <line x1="85" y1="105" x2="165" y2="105" stroke="#2563eb" strokeWidth="1.2" />
+                <polygon points="77,105 85,101.5 85,108.5" fill="#2563eb" />
+                <polygon points="173,105 165,101.5 165,108.5" fill="#2563eb" />
+                <rect x="111" y="97" width="28" height="16" rx="3" fill="white" fillOpacity="0.9" />
+                <text x="125" y="109" textAnchor="middle" fill="#2563eb" fontSize="11" fontWeight="bold">ID</text>
 
-                {/* Connector lines from ring to dimension lines */}
-                <line x1="60" y1="110" x2="35" y2="110" stroke="#2563eb" strokeWidth="0.7" strokeDasharray="2,2" />
-                <line x1="160" y1="110" x2="185" y2="110" stroke="#2563eb" strokeWidth="0.7" strokeDasharray="2,2" />
+                {/* CS dimension (red, vertical, right side showing ring thickness) */}
+                <line x1="127" y1="30" x2="220" y2="30" stroke="#dc2626" strokeWidth="0.8" strokeDasharray="4,3" opacity="0.7" />
+                <line x1="127" y1="57" x2="220" y2="57" stroke="#dc2626" strokeWidth="0.8" strokeDasharray="4,3" opacity="0.7" />
+                <line x1="212" y1="38" x2="212" y2="49" stroke="#dc2626" strokeWidth="1.2" />
+                <polygon points="212,30 208.5,38 215.5,38" fill="#dc2626" />
+                <polygon points="212,57 208.5,49 215.5,49" fill="#dc2626" />
+                <rect x="198" y="37" width="28" height="13" rx="3" fill="white" fillOpacity="0.9" />
+                <text x="212" y="47" textAnchor="middle" fill="#dc2626" fontSize="11" fontWeight="bold">CS</text>
+
+                {/* OD dimension (purple, bottom) */}
+                <line x1="50" y1="112" x2="50" y2="212" stroke="#7c3aed" strokeWidth="0.8" strokeDasharray="4,3" opacity="0.7" />
+                <line x1="200" y1="112" x2="200" y2="212" stroke="#7c3aed" strokeWidth="0.8" strokeDasharray="4,3" opacity="0.7" />
+                <line x1="58" y1="206" x2="192" y2="206" stroke="#7c3aed" strokeWidth="1.2" />
+                <polygon points="50,206 58,202.5 58,209.5" fill="#7c3aed" />
+                <polygon points="200,206 192,202.5 192,209.5" fill="#7c3aed" />
+                <rect x="71" y="199" width="108" height="15" rx="3" fill="white" fillOpacity="0.9" />
+                <text x="125" y="210.5" textAnchor="middle" fill="#7c3aed" fontSize="11" fontWeight="bold">OD = ID + 2×CS</text>
               </svg>
-              <div className="text-center space-y-1">
-                <p className="text-xs font-semibold text-gray-700">O-Ring Dimensions</p>
-                <p className="text-xs text-blue-600"><b>ID</b> = Inner Diameter</p>
-                <p className="text-xs text-red-600"><b>CS</b> = Cross Section</p>
-                <p className="text-xs text-purple-600"><b>OD</b> = Outer Diameter</p>
+              <p className="text-xs font-semibold text-gray-700">O-Ring Dimensions</p>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block" />
+                  <span className="text-xs text-gray-600"><b>ID</b> = Inner Diameter</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-600 inline-block" />
+                  <span className="text-xs text-gray-600"><b>CS</b> = Cross Section</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-600 inline-block" />
+                  <span className="text-xs text-gray-600"><b>OD</b> = Outer Diameter</span>
+                </div>
               </div>
             </div>
           </div>
