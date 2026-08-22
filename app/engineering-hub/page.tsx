@@ -4,21 +4,12 @@ import { useState } from 'react'
 import { ORING_SIZES } from '@/lib/oring-data'
 
 type TabKey = 'oring' | 'calc'
-type CalcType = 'seat' | 'stem' | 'back' | 'leak'
-
-const CalcFormulas: Record<CalcType, { label: string; formula: string; fields: string[]; unit: string }> = {
-  seat: { label: 'Seat Ring', formula: 'Compression = (GROOVE DEPTH - O-RING CS) / O-RING CS × 100%', fields: ['Groove Depth (mm)', 'O-Ring CS (mm)'], unit: '%' },
-  stem: { label: 'Stem Seal', formula: 'Compression = (GROOVE WIDTH - O-RING ID) / O-RING ID × 100%', fields: ['Groove Width (mm)', 'O-Ring ID (mm)'], unit: '%' },
-  back: { label: 'Back Ring', formula: 'Compression = (GROOVE DEPTH - O-RING CS) / O-RING CS × 100%', fields: ['Groove Depth (mm)', 'O-Ring CS (mm)'], unit: '%' },
-  leak: { label: 'Seat Leak Test', formula: 'SCFH = Cv × 3.1 × 0.001 × 60', fields: ['Cv (Flow Coefficient)'], unit: 'SCFH' },
-}
 
 export default function EngineeringHubPage() {
   const [tab, setTab] = useState<TabKey>('oring')
   const [search, setSearch] = useState('')
   const [csFilter, setCsFilter] = useState<string>('all')
-  const [calcType, setCalcType] = useState<CalcType>('seat')
-  const [calcVals, setCalcVals] = useState(['', ''])
+  const [calcVals, setCalcVals] = useState([''])
   const [calcResult, setCalcResult] = useState<number | null>(null)
 
   const csGroups = [
@@ -40,14 +31,8 @@ export default function EngineeringHubPage() {
   })
 
   function runCalc() {
-    if (calcType === 'leak') {
-      const cv = parseFloat(calcVals[0])
-      if (!isNaN(cv)) setCalcResult(cv * 3.1 * 0.001 * 60)
-    } else {
-      const a = parseFloat(calcVals[0])
-      const b = parseFloat(calcVals[1])
-      if (!isNaN(a) && !isNaN(b) && b > 0) setCalcResult(((a - b) / b) * 100)
-    }
+    const cv = parseFloat(calcVals[0])
+    if (!isNaN(cv)) setCalcResult(cv * 3.1 * 0.001 * 60)
   }
 
   return (
@@ -180,38 +165,18 @@ export default function EngineeringHubPage() {
 
       {tab === 'calc' && (
         <div className="space-y-4">
-          <div className="flex gap-2">
-            {(Object.keys(CalcFormulas) as CalcType[]).map(ct => (
-              <button key={ct} onClick={() => { setCalcType(ct); setCalcVals(['', '']); setCalcResult(null) }} className={`px-3 py-1.5 text-sm rounded-lg transition ${calcType === ct ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-                {CalcFormulas[ct].label}
-              </button>
-            ))}
-          </div>
           <div className="bg-gray-50 border rounded-lg p-4 space-y-3 max-w-md">
-            <p className="text-sm text-gray-500 font-mono">{CalcFormulas[calcType].formula}</p>
-            {calcType === 'leak' && <p className="text-xs text-gray-400">3.1 = conversion constant, 0.001 = unit factor, 60 = sec→min</p>}
-            {CalcFormulas[calcType].fields.map((f, i) => (
-              <div key={i}>
-                <label className="text-xs text-gray-500">{f}</label>
-                <input type="number" step="0.01" value={calcVals[i]} onChange={e => { const next = [...calcVals]; next[i] = e.target.value; setCalcVals(next) }} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1" />
-              </div>
-            ))}
+            <p className="text-sm text-gray-500 font-mono">SCFH = Cv × 3.1 × 0.001 × 60</p>
+            <p className="text-xs text-gray-400">3.1 = conversion constant, 0.001 = unit factor, 60 = sec→min</p>
+            <div>
+              <label className="text-xs text-gray-500">Cv (Flow Coefficient)</label>
+              <input type="number" step="0.01" value={calcVals[0]} onChange={e => setCalcVals([e.target.value])} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1" />
+            </div>
             <button onClick={runCalc} className="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700 transition">Calculate</button>
             {calcResult !== null && (
               <div className="mt-2 p-3 bg-teal-50 border border-teal-200 rounded-lg">
-                {calcType === 'leak' ? (
-                  <>
-                    <p className="text-sm font-semibold text-teal-800">Result: {calcResult.toFixed(2)} SCFH</p>
-                    <p className="text-xs text-gray-500 mt-1">Standard Cubic Feet per Hour (seat leak rate)</p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-sm font-semibold text-teal-800">Result: {calcResult.toFixed(2)}% compression</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {calcResult >= 10 && calcResult <= 25 ? 'Optimal range (10-25%)' : calcResult < 10 ? 'Below optimal — may leak' : 'Above optimal — may cause extrusion'}
-                    </p>
-                  </>
-                )}
+                <p className="text-sm font-semibold text-teal-800">Result: {calcResult.toFixed(2)} SCFH</p>
+                <p className="text-xs text-gray-500 mt-1">Standard Cubic Feet per Hour (seat leak rate)</p>
               </div>
             )}
           </div>
