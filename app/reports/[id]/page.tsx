@@ -535,6 +535,48 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     alert('Valve Test tersimpan!')
   }
 
+  function autoFillStandart(api: 'api6d' | 'api598') {
+    if (!report) return
+    const classMap: Record<string, number> = { '150': 285, '300': 740, '400': 1000, '600': 1500, '900': 2250, '1500': 3750, '2500': 6250 }
+    const classVal = (report.class ?? '').replace(/[^0-9]/g, '')
+    const pr = classMap[classVal] ?? (parseFloat(classVal) || 0)
+    const sz = parseFloat(report.size ?? '0') || 0
+    if (!pr || !sz) return alert('Size atau Class belum terisi di report!')
+
+    let shellPressure = '', shellDuration = ''
+    let seatPressure = '', seatDuration = ''
+
+    if (api === 'api6d') {
+      shellPressure = String(Math.round(pr * 1.5))
+      shellDuration = sz <= 4 ? '2' : sz <= 10 ? '5' : sz <= 18 ? '15' : '30'
+      seatPressure = String(Math.round(pr * 1.1))
+      seatDuration = sz <= 4 ? '2' : sz <= 18 ? '5' : '10'
+    } else {
+      shellPressure = String(Math.round(pr * 1.5))
+      shellDuration = sz <= 2 ? '0.25' : sz <= 4 ? '1' : sz <= 8 ? '2' : sz <= 14 ? '5' : '10'
+      seatPressure = String(Math.round(pr * 1.1))
+      seatDuration = sz <= 2 ? '0.25' : sz <= 4 ? '1' : sz <= 8 ? '2' : sz <= 14 ? '5' : '10'
+    }
+
+    setValveTest(prev => ({
+      ...prev,
+      shell_pressure_psi: shellPressure,
+      shell_duration_min: shellDuration,
+      seat_pressure_psi: seatPressure,
+      seat_duration_min: seatDuration,
+      func0_pressure_psi: seatPressure,
+      func0_duration_min: seatDuration,
+      func25_pressure_psi: seatPressure,
+      func25_duration_min: seatDuration,
+      func50_pressure_psi: seatPressure,
+      func50_duration_min: seatDuration,
+      func75_pressure_psi: seatPressure,
+      func75_duration_min: seatDuration,
+      func100_pressure_psi: seatPressure,
+      func100_duration_min: seatDuration,
+    }))
+  }
+
   const REPORT_FIELDS: { key: keyof Report; label: string; type?: string }[] = [
     { key: 'report_no', label: 'Report No' },
     { key: 'report_date', label: 'Date' },
@@ -1029,8 +1071,8 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       <div className="bg-white rounded-lg shadow border p-4 space-y-4">
         <h3 className="text-lg font-bold text-gray-800">VALVE TESTED ACCORDANCE WITH</h3>
         <div className="flex flex-wrap gap-4 text-sm">
-          <label className="flex items-center gap-2"><input type="checkbox" checked={valveTest.spec_api6d} onChange={e => updateTestField('spec_api6d', e.target.checked)} className="accent-blue-600" /><span className="font-medium">API 6D</span></label>
-          <label className="flex items-center gap-2"><input type="checkbox" checked={valveTest.spec_api598} onChange={e => updateTestField('spec_api598', e.target.checked)} className="accent-blue-600" /><span className="font-medium">API 598</span></label>
+          <label className="flex items-center gap-2"><input type="checkbox" checked={valveTest.spec_api6d} onChange={e => { updateTestField('spec_api6d', e.target.checked); if (e.target.checked) autoFillStandart('api6d') }} className="accent-blue-600" /><span className="font-medium">API 6D</span></label>
+          <label className="flex items-center gap-2"><input type="checkbox" checked={valveTest.spec_api598} onChange={e => { updateTestField('spec_api598', e.target.checked); if (e.target.checked) autoFillStandart('api598') }} className="accent-blue-600" /><span className="font-medium">API 598</span></label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={valveTest.spec_fci70_2} onChange={e => updateTestField('spec_fci70_2', e.target.checked)} className="accent-blue-600" /><span className="font-medium">FCI-70-2</span></label>
           <div className="flex items-center gap-2"><span className="text-gray-500 text-xs">SOP NO.</span><input type="text" value={valveTest.spec_sop_no} onChange={e => updateTestField('spec_sop_no', e.target.value)} className="border border-gray-300 rounded px-2 py-1 text-sm w-32" /></div>
           <div className="flex items-center gap-2"><span className="text-gray-500 text-xs">CV</span><input type="number" step="0.01" value={valveTest.spec_cv} onChange={e => updateTestField('spec_cv', e.target.value)} className="border border-gray-300 rounded px-2 py-1 text-sm w-24" placeholder="0" /></div>
