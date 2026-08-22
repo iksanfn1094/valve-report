@@ -11,6 +11,7 @@ create table report_valve_test (
   spec_api598 boolean default false,
   spec_fci70_2 boolean default false,
   spec_sop_no text,
+  spec_cv numeric,
   spec_others text,
   -- Hydrostatic Shell Test
   shell_pressure_psi numeric,
@@ -78,3 +79,6 @@ create index idx_valve_test_report on report_valve_test(report_id);
 create trigger trigger_valve_test_updated
   before update on report_valve_test
   for each row execute function update_updated_at();
+
+-- Tambahan: kolom CV (jalankan jika table sudah ada sebelumnya)
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS spec_cv numeric;
