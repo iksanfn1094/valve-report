@@ -643,6 +643,11 @@ export async function exportReportPDF(
             const y2 = data.cell.y + (data.cell.height - IMG_SZ) / 2 + row * (IMG_SZ + GAP)
             try { doc.addImage(b64, 'JPEG', x, y2, IMG_SZ, IMG_SZ) } catch { /* skip */ }
           })
+        } else {
+          doc.setFontSize(7)
+          doc.setFont('helvetica', 'italic')
+          doc.setTextColor(150, 150, 150)
+          doc.text('N/A', data.cell.x + data.cell.width / 2, data.cell.y + data.cell.height / 2, { align: 'center' })
         }
       },
     })
