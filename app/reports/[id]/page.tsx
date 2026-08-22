@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState, use, useCallback } from 'react'
-import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { exportReportPDF } from '@/lib/export-pdf'
 import { exportReportExcel } from '@/lib/export-excel'
@@ -205,6 +204,9 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   const [items, setItems] = useState<Item[]>([])
   const [photos, setPhotos] = useState<Photo[]>([])
   const [bomItems, setBomItems] = useState<BomItem[]>([])
+  type DocPhotoRow = { id?: string; component_name: string; description: string; photos: string[] }
+  const [docItems, setDocItems] = useState<DocPhotoRow[]>([])
+  const [savingDoc, setSavingDoc] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState<string | null>(null)
@@ -285,6 +287,62 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     setValveTest(prev => ({ ...prev, test_photos: JSON.stringify(p) }))
   }
 
+  function addDocItem() {
+    setDocItems([...docItems, { id: undefined, component_name: '', description: '', photos: [] }])
+  }
+  function removeDocItem(idx: number) {
+    setDocItems(docItems.filter((_, i) => i !== idx))
+  }
+  function updateDocItem(idx: number, field: keyof DocPhotoRow, value: unknown) {
+    const copy = [...docItems]
+    ;(copy[idx] as Record<string, unknown>)[field] = value
+    setDocItems(copy)
+  }
+  function removeDocImg(idx: number, imgIdx: number) {
+    const copy = [...docItems]
+    copy[idx] = { ...copy[idx], photos: copy[idx].photos.filter((_, j) => j !== imgIdx) }
+    setDocItems(copy)
+  }
+  async function uploadDocPhoto(file: File, idx: number) {
+    const path = `doc-photos/${id}/${Date.now()}-${file.name}`
+    const { error } = await supabase.storage.from('report-photos').upload(path, file)
+    if (error) return alert('Upload gagal: ' + error.message)
+    const { data } = supabase.storage.from('report-photos').getPublicUrl(path)
+    const copy = [...docItems]
+    copy[idx] = { ...copy[idx], photos: [...copy[idx].photos, data.publicUrl] }
+    setDocItems(copy)
+  }
+  async function saveDocItems() {
+    if (!id) return
+    setSavingDoc(true)
+    const existing = docItems.filter(d => d.id)
+    const newItems = docItems.filter(d => !d.id)
+    for (const d of existing) {
+      await supabase.from('report_documentation').update({
+        component_name: d.component_name,
+        description: d.description,
+        photos: JSON.stringify(d.photos),
+      }).eq('id', d.id)
+    }
+    if (newItems.length > 0) {
+      const rows = newItems.map((d) => ({
+        report_id: id,
+        component_name: d.component_name,
+        description: d.description,
+        photos: JSON.stringify(d.photos),
+        sort_order: docItems.indexOf(d),
+      }))
+      const { data, error } = await supabase.from('report_documentation').insert(rows).select()
+      if (error) { setSavingDoc(false); return alert('Error: ' + error.message) }
+      if (data) {
+        let di = 0
+        setDocItems(docItems.map(d => { if (d.id) return d; const ins = data[di++]; return { ...d, id: ins.id } }))
+      }
+    }
+    setSavingDoc(false)
+    alert('Tersimpan!')
+  }
+
   const fetchPhotos = useCallback(async () => {
     const { data } = await supabase
       .from('report_photos')
@@ -341,6 +399,15 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           test_rows: t.test_rows ?? '[]',
           test_photos: t.test_photos ?? '[]',
         })
+      }
+      const docRes = await supabase.from('report_documentation').select('*').eq('report_id', id).order('sort_order')
+      if (docRes.data) {
+        setDocItems(docRes.data.map((d) => ({
+          id: d.id as string,
+          component_name: d.component_name ?? '',
+          description: d.description ?? '',
+          photos: (() => { try { return JSON.parse(d.photos || '[]') } catch { return [] as string[] } })(),
+        })))
       }
       setLoading(false)
       await fetchPhotos()
@@ -762,21 +829,12 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         <div className="flex gap-1 border-b border-gray-200 overflow-x-auto">
           {[
             { key: 'inspection', label: 'Inspection', active: 'bg-blue-600 text-white' },
-            { key: 'documentation', label: 'Documentation', href: `/docs?reportId=${id}` },
+            { key: 'documentation', label: 'Documentation', active: 'bg-yellow-600 text-white' },
             { key: 'penetrant', label: 'Liquid Penetrant', active: 'bg-orange-600 text-white' },
             { key: 'torque', label: 'Torque & Anti-static', active: 'bg-purple-600 text-white' },
             { key: 'test', label: 'Test', active: 'bg-red-600 text-white' },
             { key: 'packaging', label: 'Packaging', active: 'bg-green-600 text-white' },
-          ].map((t) =>
-            t.href ? (
-              <Link
-                key={t.key}
-                href={t.href}
-                className="px-4 py-2 text-sm font-medium rounded-t-lg transition whitespace-nowrap bg-gray-100 text-gray-600 hover:bg-gray-200"
-              >
-                {t.label}
-              </Link>
-            ) : (
+          ].map((t) => (
               <button
                 key={t.key}
                 onClick={() => setActiveTab(t.key)}
@@ -788,8 +846,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
               >
                 {t.label}
               </button>
-            )
-          )}
+            ))}
         </div>
       </div>
 
@@ -1322,6 +1379,66 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           <button onClick={addTestPhoto} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-300 transition font-medium">+ Tambah Baris</button>
           <button onClick={saveValveTest} disabled={savingTest} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition font-medium disabled:opacity-50">
             {savingTest ? 'Menyimpan...' : 'Simpan'}
+          </button>
+        </div>
+      </div>
+      )}
+
+      {/* Documentation Tab */}
+      {activeTab === 'documentation' && (
+      <div className="bg-white rounded-lg shadow border p-4">
+        <h3 className="text-lg font-bold text-gray-800 mb-3">DOCUMENTATION</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="bg-blue-900 text-white">
+                <th className="border px-2 py-2 text-center w-8">No</th>
+                <th className="border px-2 py-2 text-left">Component</th>
+                <th className="border px-2 py-2 text-left">Description</th>
+                <th className="border px-2 py-2 text-center">Photo</th>
+                <th className="border px-2 py-2 text-center w-8"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {docItems.map((row, i) => (
+                <tr key={row.id || i} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
+                  <td className="border px-2 py-1 text-center text-gray-500">{i + 1}</td>
+                  <td className="border px-1 py-1">
+                    <select value={row.component_name} onChange={e => updateDocItem(i, 'component_name', e.target.value)} className="w-full border-0 bg-transparent text-xs focus:outline-none">
+                      <option value="">-- Pilih Komponen --</option>
+                      {['Body', 'Bonnet', 'Stem', 'Seat', 'Disc', 'Ball', 'Plug', 'Packing', 'Gasket', 'Bolt', 'Nut', 'Spring', 'Diaphragm', 'Actuator', 'Handwheel', 'Yoke', 'Backseat', 'Guide', 'Thrust Bearing', 'Retainer', 'O-Ring', 'Other'].map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </td>
+                  <td className="border px-1 py-1">
+                    <input type="text" value={row.description} onChange={e => updateDocItem(i, 'description', e.target.value)} className="w-full border-0 bg-transparent text-xs focus:outline-none" placeholder="Deskripsi..." />
+                  </td>
+                  <td className="border px-1 py-1">
+                    <div className="flex flex-wrap items-center gap-1">
+                      {row.photos.map((url, j) => (
+                        <div key={j} className="relative">
+                          <img src={url} alt="" className="w-10 h-10 object-cover rounded cursor-pointer" onClick={() => setPreviewPhoto(url)} />
+                          <button onClick={() => removeDocImg(i, j)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-3 h-3 text-[8px] flex items-center justify-center leading-none">&#10005;</button>
+                        </div>
+                      ))}
+                      <label className="text-blue-600 hover:text-blue-800 cursor-pointer text-xs">
+                        + Foto
+                        <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadDocPhoto(f, i) }} />
+                      </label>
+                    </div>
+                  </td>
+                  <td className="border px-1 py-1 text-center"><button onClick={() => removeDocItem(i)} className="text-red-400 hover:text-red-600 text-sm font-bold">&#10005;</button></td>
+                </tr>
+              ))}
+              {docItems.length === 0 && (
+                <tr><td colSpan={5} className="border px-2 py-6 text-center text-gray-400">Belum ada data. Klik &quot;+ Tambah Baris&quot; untuk menambah.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex gap-2 mt-3">
+          <button onClick={addDocItem} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-300 transition font-medium">+ Tambah Baris</button>
+          <button onClick={saveDocItems} disabled={savingDoc} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition font-medium disabled:opacity-50">
+            {savingDoc ? 'Menyimpan...' : 'Simpan'}
           </button>
         </div>
       </div>

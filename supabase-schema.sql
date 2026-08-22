@@ -74,6 +74,8 @@ create table report_documentation (
   photo_before_url text,
   photo_after_url text,
   notes text,
+  description text,
+  photos text,
   sort_order int,
   created_at timestamptz default now()
 );
