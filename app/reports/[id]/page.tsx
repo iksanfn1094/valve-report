@@ -98,6 +98,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState<string | null>(null)
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState('inspection')
 
   const fetchPhotos = useCallback(async () => {
     const { data } = await supabase
@@ -417,14 +418,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       <div className="bg-white rounded-lg shadow border p-4">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-bold text-gray-800">Inspection Report: {report.job_number}</h2>
-          <div className="flex gap-2">
-            <Link href={`/reports/${id}/bom`} className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 transition">
-              BOM
-            </Link>
-            <Link href={`/docs?reportId=${id}`} className="bg-teal-600 text-white px-3 py-1 rounded text-sm hover:bg-teal-700 transition">
-              Documentation
-            </Link>
-          </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
@@ -483,7 +476,50 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         </div>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="bg-white rounded-lg shadow border px-4 pt-3">
+        <div className="flex gap-1 border-b border-gray-200 overflow-x-auto">
+          {[
+            { key: 'inspection', label: 'Inspection', active: 'bg-blue-600 text-white' },
+            { key: 'documentation', label: 'Documentation', href: `/docs?reportId=${id}` },
+            { key: 'penetrant', label: 'Liquid Penetrant', active: 'bg-orange-600 text-white' },
+            { key: 'torque', label: 'Torque & Anti-static', active: 'bg-purple-600 text-white' },
+            { key: 'test', label: 'Test', active: 'bg-red-600 text-white' },
+            { key: 'packaging', label: 'Packaging', active: 'bg-green-600 text-white' },
+          ].map((t) =>
+            t.href ? (
+              <Link
+                key={t.key}
+                href={t.href}
+                className="px-4 py-2 text-sm font-medium rounded-t-lg transition whitespace-nowrap bg-gray-100 text-gray-600 hover:bg-gray-200"
+              >
+                {t.label}
+              </Link>
+            ) : (
+              <button
+                key={t.key}
+                onClick={() => setActiveTab(t.key)}
+                className={`px-4 py-2 text-sm font-medium rounded-t-lg transition whitespace-nowrap ${
+                  activeTab === t.key
+                    ? t.active
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {t.label}
+              </button>
+            )
+          )}
+          <Link
+            href={`/reports/${id}/bom`}
+            className="px-4 py-2 text-sm font-medium rounded-t-lg transition whitespace-nowrap bg-gray-100 text-gray-600 hover:bg-gray-200 ml-auto"
+          >
+            BOM
+          </Link>
+        </div>
+      </div>
+
       {/* Items Table */}
+      {activeTab === 'inspection' && (
       <div className="bg-white rounded-lg shadow border p-4">
         <h3 className="text-lg font-bold text-gray-800 mb-3">Incoming Insp. Check (Condition As Found)</h3>
         <div className="overflow-x-auto">
@@ -695,6 +731,14 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           * Klik &quot;+ Foto&quot; untuk upload foto per komponen. Baris harus disimpan dulu sebelum bisa upload foto.
         </p>
       </div>
+      )}
+
+      {/* Placeholder for other tabs */}
+      {activeTab !== 'inspection' && activeTab !== 'documentation' && (
+        <div className="bg-white rounded-lg shadow border p-8 text-center">
+          <p className="text-gray-400 text-sm">Fitur ini akan segera tersedia.</p>
+        </div>
+      )}
 
       {/* Signature Table */}
       <div className="bg-white rounded-lg shadow border p-4">
