@@ -73,6 +73,17 @@ const TEST_LABELS: Record<string, string> = {
   func50: 'FUNCTION TEST 50%', func75: 'FUNCTION TEST 75%', func100: 'FUNCTION TEST 100%',
 }
 
+const TEST_CRITERIA: Record<string, string> = {
+  actuator: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
+  shell: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
+  hp_seat: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
+  hp_closure_a: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
+  lp_closure_b: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
+  seat: '',
+  func0: 'SMOOTH and LINEAR', func25: 'SMOOTH and LINEAR',
+  func50: 'SMOOTH and LINEAR', func75: 'SMOOTH and LINEAR', func100: 'SMOOTH and LINEAR',
+}
+
 async function fetchImageAsBase64(url: string): Promise<string | null> {
   try {
     const res = await fetch(url)
@@ -436,16 +447,16 @@ export async function exportReportPDF(
       doc.text('ACCEPTANCE STANDARD', M, y)
       y += 3
 
-      const testColW = [36, 18, 14, 42, 18, 18, 14, 22]
+      const testColW = [42, 18, 14, 48, 18, 18, 12, 20]
       const testHeaders = ['DESCRIPTION TEST', 'PRESSURE (Psi)', 'TIME (Min)', 'ACCEPTANCE CRITERIA', 'START', 'FINISH', 'RESULT', 'REMARK']
 
       const testBody = testRows.map(key => {
         const p = (field: string) => ((valveTest as unknown as Record<string, string>)[`${key}_${field}`]) || '-'
-        let acceptance = p('acceptance')
-        if (key === 'seat') {
-          const cv = parseFloat(valveTest.spec_cv) || 0
-          acceptance = cv ? `ALLOWABLE LEAK ${(cv * 0.186).toFixed(2)} SCFH` : 'ALLOWABLE LEAK 0.00 SCFH'
-        }
+        const cv = parseFloat(valveTest.spec_cv) || 0
+        const isSeat = key === 'seat'
+        const acceptance = isSeat
+          ? (cv ? `ALLOWABLE LEAK ${(cv * 0.186).toFixed(2)} SCFH` : 'ALLOWABLE LEAK 0.00 SCFH')
+          : (TEST_CRITERIA[key] || '')
         return [
           TEST_LABELS[key] || key,
           p('pressure_psi'), p('duration_min'), acceptance,
