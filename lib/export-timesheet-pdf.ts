@@ -194,7 +194,7 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
       return raw
     } catch { return raw }
   }
-  drawField(doc, 'Date', formatENDate(ts.assign_date), M, y, colW, FH, LW_L)
+  drawField(doc, 'Attachment', ts.attachment, M, y, colW, FH, LW_L)
   drawField(doc, 'Assign Role', ts.assign_role, M + colW, y, colW, FH, LW_R)
   y += FH
 
@@ -342,7 +342,7 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.setFontSize(7)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(0, 0, 0)
-  const summaryLines = doc.splitTextToSize(ts.summary_of_service || '', CW * 0.55)
+  const summaryLines = justifyText(doc, ts.summary_of_service || '', CW * 0.55)
   doc.text(summaryLines, M + 2, y)
   const summaryBottom = y + summaryLines.length * 3
 
