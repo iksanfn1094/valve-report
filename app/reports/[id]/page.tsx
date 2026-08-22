@@ -1392,7 +1392,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
               <tr className="bg-blue-900 text-white">
                 <th className="border px-2 py-2 text-center w-8">No</th>
                 <th className="border px-2 py-2 text-left">Component</th>
-                <th className="border px-2 py-2 text-left">Description</th>
                 <th className="border px-2 py-2 text-center">Photo Before</th>
                 <th className="border px-2 py-2 text-center">Photo After</th>
                 <th className="border px-2 py-2 text-center w-8"></th>
@@ -1407,9 +1406,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                       <option value="">-- Pilih Komponen --</option>
                       {['Body', 'Bonnet', 'Stem', 'Seat', 'Disc', 'Ball', 'Plug', 'Packing', 'Gasket', 'Bolt', 'Nut', 'Spring', 'Diaphragm', 'Actuator', 'Handwheel', 'Yoke', 'Backseat', 'Guide', 'Thrust Bearing', 'Retainer', 'O-Ring', 'Other'].map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
-                  </td>
-                  <td className="border px-1 py-1">
-                    <input type="text" value={row.description} onChange={e => updateDocItem(i, 'description', e.target.value)} className="w-full border-0 bg-transparent text-xs focus:outline-none" placeholder="Deskripsi..." />
                   </td>
                   <td className="border px-1 py-1 text-center">
                     {row.photo_before ? (
@@ -1435,7 +1431,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 </tr>
               ))}
               {docItems.length === 0 && (
-                <tr><td colSpan={6} className="border px-2 py-6 text-center text-gray-400">Belum ada data. Klik &quot;+ Tambah Baris&quot; untuk menambah.</td></tr>
+                <tr><td colSpan={5} className="border px-2 py-6 text-center text-gray-400">Belum ada data. Klik &quot;+ Tambah Baris&quot; untuk menambah.</td></tr>
               )}
             </tbody>
           </table>

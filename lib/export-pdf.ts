@@ -602,11 +602,10 @@ export async function exportReportPDF(
     autoTable(doc, {
       startY: y,
       margin: { left: M, right: M },
-      head: [['No', 'Component', 'Description', 'Photo Before', 'Photo After']],
+      head: [['No', 'Component', 'Photo Before', 'Photo After']],
       body: docItems.map((d, i) => [
         String(i + 1),
         d.component_name || '-',
-        d.description || '-',
         ' ',
         ' ',
       ]),
@@ -615,16 +614,15 @@ export async function exportReportPDF(
       alternateRowStyles: { fillColor: LIGHT_BG },
       columnStyles: {
         0: { cellWidth: 8, halign: 'center' },
-        1: { cellWidth: 25, halign: 'left' },
-        2: { cellWidth: 65, halign: 'left' },
-        3: { cellWidth: 46, halign: 'center', minCellHeight: 28 },
-        4: { cellWidth: 46, halign: 'center', minCellHeight: 28 },
+        1: { cellWidth: 30, halign: 'left' },
+        2: { cellWidth: 76, halign: 'center', minCellHeight: 28 },
+        3: { cellWidth: 76, halign: 'center', minCellHeight: 28 },
       },
       didDrawCell: (data) => {
         if (data.section !== 'body') return
         const col = data.column.index
         const rowIdx = data.row.index
-        const b64 = col === 3 ? beforeB64[rowIdx] : col === 4 ? afterB64[rowIdx] : null
+        const b64 = col === 2 ? beforeB64[rowIdx] : col === 3 ? afterB64[rowIdx] : null
         if (b64 && b64 !== '-') {
           const imgW = 24, imgH = 24
           const x = data.cell.x + (data.cell.width - imgW) / 2
