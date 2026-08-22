@@ -319,7 +319,7 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
   doc.text('INCOMING INSP. CHECK (CONDITION AS FOUND)', M, y)
-  y += 8
+  y += 10
 
   autoTable(doc, {
     startY: y,
@@ -364,7 +364,7 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
       5: { cellWidth: 8, halign: 'center' },
       6: { cellWidth: 8, halign: 'center' },
       7: { cellWidth: 24, halign: 'center' },
-      8: { cellWidth: 20, halign: 'center' },
+      8: { cellWidth: 26, halign: 'center', minCellHeight: 24 },
       9: { cellWidth: 32, halign: 'left' },
     },
     didDrawCell: (data) => {
@@ -372,7 +372,7 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
       const item = items[data.row.index]
       if (!item) return
 
-      // Draw flipped checkmark for C/RP/RE columns (4,5,6) - smaller box
+      // Draw checkmark for C/RP/RE columns (4,5,6) - no box, just check
       const checkCols = [4, 5, 6]
       if (checkCols.includes(data.column.index)) {
         const val = data.cell.raw as string
@@ -380,29 +380,33 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
           const cx = data.cell.x + data.cell.width / 2
           const cy = data.cell.y + data.cell.height / 2
           doc.setDrawColor(0)
-          doc.setLineWidth(0.3)
-          doc.rect(cx - 2, cy - 2, 4, 4, 'S')
-          doc.setLineWidth(0.5)
-          doc.line(cx - 1.5, cy + 0.2, cx - 0.3, cy - 1)
-          doc.line(cx - 0.3, cy - 1, cx + 1.5, cy + 1.5)
+          doc.setLineWidth(0.6)
+          doc.line(cx - 2, cy + 0.5, cx - 0.5, cy - 1)
+          doc.line(cx - 0.5, cy - 1, cx + 2.5, cy + 1.5)
           doc.setLineWidth(0.2)
         }
       }
 
       // Repair Category (7) - just text, no checkbox
 
-      // Draw photos in Foto column (8)
+      // Draw photos in Foto column (8) - bigger, square, centered
       if (data.column.index === 8) {
         const rowPhotos = photosByItem.get(item.id || '') || []
         if (rowPhotos.length > 0) {
-          const photoSize = 14
-          const gap = 1
-          const startX = data.cell.x + 1
-          const startYCell = data.cell.y + 1
-          rowPhotos.slice(0, 4).forEach((p, pi) => {
+          const photoSize = 18
+          const gap = 2
+          const maxPerRow = Math.floor(data.cell.width / (photoSize + gap))
+          const totalPhotosWidth = Math.min(rowPhotos.length, maxPerRow) * (photoSize + gap) - gap
+          const offsetX = (data.cell.width - totalPhotosWidth) / 2
+          const totalRows = Math.ceil(rowPhotos.length / maxPerRow)
+          const totalHeight = totalRows * (photoSize + gap) - gap
+          const offsetY = (data.cell.height - totalHeight) / 2
+          rowPhotos.slice(0, maxPerRow * 2).forEach((p, pi) => {
             if (!p.url) return
-            const px = startX + (pi % 4) * (photoSize + gap)
-            const py = startYCell + Math.floor(pi / 4) * (photoSize + gap)
+            const row = Math.floor(pi / maxPerRow)
+            const col = pi % maxPerRow
+            const px = data.cell.x + offsetX + col * (photoSize + gap)
+            const py = data.cell.y + offsetY + row * (photoSize + gap)
             try { doc.addImage(p.url, 'JPEG', px, py, photoSize, photoSize) } catch { /* skip */ }
           })
         }
