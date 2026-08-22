@@ -50,11 +50,6 @@ export default function EngineeringHubPage() {
     return matchSearch && matchCs
   })
 
-  function runCalc() {
-    const cv = parseFloat(calcVals[0])
-    if (!isNaN(cv)) setCalcResult(cv * 3.1 * 0.001 * 60)
-  }
-
   return (
     <div className="max-w-6xl mx-auto py-6 px-4 space-y-4">
       <h1 className="text-xl font-bold text-teal-700">Engineering Hub</h1>
@@ -377,10 +372,9 @@ export default function EngineeringHubPage() {
             <p className="text-xs text-gray-400">3.1 = conversion constant, 0.001 = unit factor, 60 = sec→min</p>
             <div>
               <label className="text-xs text-gray-500">Cv (Flow Coefficient)</label>
-              <input type="number" step="0.01" value={calcVals[0]} onChange={e => setCalcVals([e.target.value])} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1" />
+              <input type="number" step="0.01" value={calcVals[0]} onChange={e => { setCalcVals([e.target.value]); const v = parseFloat(e.target.value); setCalcResult(!isNaN(v) ? v * 3.1 * 0.001 * 60 : null) }} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1" placeholder="Masukkan Cv..." />
             </div>
-            <button onClick={runCalc} className="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700 transition">Calculate</button>
-            {calcResult !== null && (
+            {calcResult !== null && calcVals[0] !== '' && (
               <div className="mt-2 p-3 bg-teal-50 border border-teal-200 rounded-lg">
                 <p className="text-sm font-semibold text-teal-800">Result: {calcResult.toFixed(2)} SCFH</p>
                 <p className="text-xs text-gray-500 mt-1">Standard Cubic Feet per Hour (seat leak rate)</p>
