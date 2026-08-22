@@ -219,7 +219,8 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   y += 2
 
   const bodyRows: string[][] = []
-  for (let i = 0; i < 20; i++) {
+  const rowCount = Math.max(10, entries.length)
+  for (let i = 0; i < rowCount; i++) {
     const e = entries[i]
     bodyRows.push([
       String(i + 1),
