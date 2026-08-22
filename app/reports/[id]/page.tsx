@@ -1044,7 +1044,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
             <thead>
               <tr className="bg-blue-900 text-white">
                 <th className="border px-2 py-2 text-left" rowSpan={2}>DESCRIPTION TEST</th>
-                <th className="border px-2 py-1 text-center" colSpan={2}>DURATION</th>
+                <th className="border px-2 py-1 text-center" colSpan={2}>STANDART</th>
                 <th className="border px-2 py-2 text-center" rowSpan={2}>ACCEPTANCE CRITERIA</th>
                 <th className="border px-2 py-2 text-center" rowSpan={2}>START TEST</th>
                 <th className="border px-2 py-2 text-center" rowSpan={2}>FINISH TEST</th>
