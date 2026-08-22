@@ -76,6 +76,27 @@ type ValveTest = {
   shell_finish_test: string
   shell_result: string
   shell_remark: string
+  hp_seat_pressure_psi: string
+  hp_seat_duration_min: string
+  hp_seat_acceptance: string
+  hp_seat_start_test: string
+  hp_seat_finish_test: string
+  hp_seat_result: string
+  hp_seat_remark: string
+  lp_seat_pressure_psi: string
+  lp_seat_duration_min: string
+  lp_seat_acceptance: string
+  lp_seat_start_test: string
+  lp_seat_finish_test: string
+  lp_seat_result: string
+  lp_seat_remark: string
+  actuator_pressure_psi: string
+  actuator_duration_min: string
+  actuator_acceptance: string
+  actuator_start_test: string
+  actuator_finish_test: string
+  actuator_result: string
+  actuator_remark: string
   seat_pressure_psi: string
   seat_duration_min: string
   seat_acceptance: string
@@ -162,6 +183,9 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   const [valveTest, setValveTest] = useState<ValveTest>({
     spec_api6d: false, spec_api598: false, spec_fci70_2: false, spec_3_15_psi: false, spec_sop_no: '', spec_others: '', spec_cv: '',
     shell_pressure_psi: '', shell_duration_min: '', shell_acceptance: 'NO VISIBLE LEAKAGE & PRESSURE DROP', shell_start_test: '', shell_finish_test: '', shell_result: '', shell_remark: '',
+    hp_seat_pressure_psi: '', hp_seat_duration_min: '', hp_seat_acceptance: '', hp_seat_start_test: '', hp_seat_finish_test: '', hp_seat_result: '', hp_seat_remark: '',
+    lp_seat_pressure_psi: '', lp_seat_duration_min: '', lp_seat_acceptance: '', lp_seat_start_test: '', lp_seat_finish_test: '', lp_seat_result: '', lp_seat_remark: '',
+    actuator_pressure_psi: '', actuator_duration_min: '', actuator_acceptance: '', actuator_start_test: '', actuator_finish_test: '', actuator_result: '', actuator_remark: '',
     seat_pressure_psi: '', seat_duration_min: '', seat_acceptance: 'ALLOWABLE LEAK 0.00 SCFH', seat_start_test: '', seat_finish_test: '', seat_result: '', seat_remark: '',
     func0_pressure_psi: '', func0_duration_min: '', func0_acceptance: 'SMOOTH and LINEAR', func0_start_test: '', func0_finish_test: '', func0_result: '', func0_remark: '',
     func25_pressure_psi: '', func25_duration_min: '', func25_acceptance: '', func25_start_test: '', func25_finish_test: '', func25_result: '', func25_remark: '',
@@ -213,6 +237,9 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         setValveTest({
           spec_api6d: t.spec_api6d ?? false, spec_api598: t.spec_api598 ?? false, spec_fci70_2: t.spec_fci70_2 ?? false, spec_3_15_psi: t.spec_3_15_psi ?? false, spec_sop_no: t.spec_sop_no ?? '', spec_others: t.spec_others ?? '', spec_cv: t.spec_cv?.toString() ?? '',
           shell_pressure_psi: t.shell_pressure_psi?.toString() ?? '', shell_duration_min: t.shell_duration_min?.toString() ?? '', shell_acceptance: t.shell_acceptance ?? 'NO VISIBLE LEAKAGE & PRESSURE DROP', shell_start_test: t.shell_start_test ?? '', shell_finish_test: t.shell_finish_test ?? '', shell_result: t.shell_result ?? '', shell_remark: t.shell_remark ?? '',
+          hp_seat_pressure_psi: t.hp_seat_pressure_psi?.toString() ?? '', hp_seat_duration_min: t.hp_seat_duration_min?.toString() ?? '', hp_seat_acceptance: t.hp_seat_acceptance ?? '', hp_seat_start_test: t.hp_seat_start_test ?? '', hp_seat_finish_test: t.hp_seat_finish_test ?? '', hp_seat_result: t.hp_seat_result ?? '', hp_seat_remark: t.hp_seat_remark ?? '',
+          lp_seat_pressure_psi: t.lp_seat_pressure_psi?.toString() ?? '', lp_seat_duration_min: t.lp_seat_duration_min?.toString() ?? '', lp_seat_acceptance: t.lp_seat_acceptance ?? '', lp_seat_start_test: t.lp_seat_start_test ?? '', lp_seat_finish_test: t.lp_seat_finish_test ?? '', lp_seat_result: t.lp_seat_result ?? '', lp_seat_remark: t.lp_seat_remark ?? '',
+          actuator_pressure_psi: t.actuator_pressure_psi?.toString() ?? '', actuator_duration_min: t.actuator_duration_min?.toString() ?? '', actuator_acceptance: t.actuator_acceptance ?? '', actuator_start_test: t.actuator_start_test ?? '', actuator_finish_test: t.actuator_finish_test ?? '', actuator_result: t.actuator_result ?? '', actuator_remark: t.actuator_remark ?? '',
           seat_pressure_psi: t.seat_pressure_psi?.toString() ?? '', seat_duration_min: t.seat_duration_min?.toString() ?? '', seat_acceptance: t.seat_acceptance ?? 'ALLOWABLE LEAK 0.00 SCFH', seat_start_test: t.seat_start_test ?? '', seat_finish_test: t.seat_finish_test ?? '', seat_result: t.seat_result ?? '', seat_remark: t.seat_remark ?? '',
           func0_pressure_psi: t.func0_pressure_psi?.toString() ?? '', func0_duration_min: t.func0_duration_min?.toString() ?? '', func0_acceptance: t.func0_acceptance ?? 'SMOOTH and LINEAR', func0_start_test: t.func0_start_test ?? '', func0_finish_test: t.func0_finish_test ?? '', func0_result: t.func0_result ?? '', func0_remark: t.func0_remark ?? '',
           func25_pressure_psi: t.func25_pressure_psi?.toString() ?? '', func25_duration_min: t.func25_duration_min?.toString() ?? '', func25_acceptance: t.func25_acceptance ?? '', func25_start_test: t.func25_start_test ?? '', func25_finish_test: t.func25_finish_test ?? '', func25_result: t.func25_result ?? '', func25_remark: t.func25_remark ?? '',
@@ -519,6 +546,9 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       report_id: id,
       spec_api6d: valveTest.spec_api6d, spec_api598: valveTest.spec_api598, spec_fci70_2: valveTest.spec_fci70_2, spec_3_15_psi: valveTest.spec_3_15_psi, spec_sop_no: valveTest.spec_sop_no, spec_others: valveTest.spec_others, spec_cv: toNum(valveTest.spec_cv),
       shell_pressure_psi: toNum(valveTest.shell_pressure_psi), shell_duration_min: toNum(valveTest.shell_duration_min), shell_acceptance: valveTest.shell_acceptance, shell_start_test: valveTest.shell_start_test, shell_finish_test: valveTest.shell_finish_test, shell_result: valveTest.shell_result, shell_remark: valveTest.shell_remark,
+      hp_seat_pressure_psi: toNum(valveTest.hp_seat_pressure_psi), hp_seat_duration_min: toNum(valveTest.hp_seat_duration_min), hp_seat_acceptance: valveTest.hp_seat_acceptance, hp_seat_start_test: valveTest.hp_seat_start_test, hp_seat_finish_test: valveTest.hp_seat_finish_test, hp_seat_result: valveTest.hp_seat_result, hp_seat_remark: valveTest.hp_seat_remark,
+      lp_seat_pressure_psi: toNum(valveTest.lp_seat_pressure_psi), lp_seat_duration_min: toNum(valveTest.lp_seat_duration_min), lp_seat_acceptance: valveTest.lp_seat_acceptance, lp_seat_start_test: valveTest.lp_seat_start_test, lp_seat_finish_test: valveTest.lp_seat_finish_test, lp_seat_result: valveTest.lp_seat_result, lp_seat_remark: valveTest.lp_seat_remark,
+      actuator_pressure_psi: toNum(valveTest.actuator_pressure_psi), actuator_duration_min: toNum(valveTest.actuator_duration_min), actuator_acceptance: valveTest.actuator_acceptance, actuator_start_test: valveTest.actuator_start_test, actuator_finish_test: valveTest.actuator_finish_test, actuator_result: valveTest.actuator_result, actuator_remark: valveTest.actuator_remark,
       seat_pressure_psi: toNum(valveTest.seat_pressure_psi), seat_duration_min: toNum(valveTest.seat_duration_min), seat_acceptance: valveTest.seat_acceptance, seat_start_test: valveTest.seat_start_test, seat_finish_test: valveTest.seat_finish_test, seat_result: valveTest.seat_result, seat_remark: valveTest.seat_remark,
       func0_pressure_psi: toNum(valveTest.func0_pressure_psi), func0_duration_min: toNum(valveTest.func0_duration_min), func0_acceptance: valveTest.func0_acceptance, func0_start_test: valveTest.func0_start_test, func0_finish_test: valveTest.func0_finish_test, func0_result: valveTest.func0_result, func0_remark: valveTest.func0_remark,
       func25_pressure_psi: toNum(valveTest.func25_pressure_psi), func25_duration_min: toNum(valveTest.func25_duration_min), func25_acceptance: valveTest.func25_acceptance, func25_start_test: valveTest.func25_start_test, func25_finish_test: valveTest.func25_finish_test, func25_result: valveTest.func25_result, func25_remark: valveTest.func25_remark,
@@ -1094,7 +1124,10 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
             </thead>
             <tbody>
               {([
+                { label: 'ACTUATOR LEAK TEST', prefix: 'actuator', criteria: '' },
                 { label: 'HYDROSTATIC SHELL TEST', prefix: 'shell', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
+                { label: 'HIGH-PRESSURE SEAT TEST', prefix: 'hp_seat', criteria: valveTest.spec_cv ? `ALLOWABLE LEAK ${(Number(valveTest.spec_cv) * 0.186).toFixed(2)} SCFH` : 'ALLOWABLE LEAK 0.00 SCFH' },
+                { label: 'LOW-PRESSURE GAS SEAT TEST', prefix: 'lp_seat', criteria: valveTest.spec_cv ? `ALLOWABLE LEAK ${(Number(valveTest.spec_cv) * 0.186).toFixed(2)} SCFH` : 'ALLOWABLE LEAK 0.00 SCFH' },
                 { label: 'SEAT LEAK TEST', prefix: 'seat', criteria: valveTest.spec_cv ? `ALLOWABLE LEAK ${(Number(valveTest.spec_cv) * 0.186).toFixed(2)} SCFH` : 'ALLOWABLE LEAK 0.00 SCFH' },
                 { label: 'FUNCTION TEST 0%', prefix: 'func0', criteria: 'SMOOTH and LINEAR' },
                 { label: 'FUNCTION TEST 25%', prefix: 'func25', criteria: '' },

@@ -22,6 +22,30 @@ create table report_valve_test (
   shell_finish_test text,
   shell_result text,
   shell_remark text,
+  -- High-Pressure Seat Test
+  hp_seat_pressure_psi numeric,
+  hp_seat_duration_min numeric,
+  hp_seat_acceptance text,
+  hp_seat_start_test text,
+  hp_seat_finish_test text,
+  hp_seat_result text,
+  hp_seat_remark text,
+  -- Low-Pressure Gas Seat Test
+  lp_seat_pressure_psi numeric,
+  lp_seat_duration_min numeric,
+  lp_seat_acceptance text,
+  lp_seat_start_test text,
+  lp_seat_finish_test text,
+  lp_seat_result text,
+  lp_seat_remark text,
+  -- Actuator Leak Test
+  actuator_pressure_psi numeric,
+  actuator_duration_min numeric,
+  actuator_acceptance text,
+  actuator_start_test text,
+  actuator_finish_test text,
+  actuator_result text,
+  actuator_remark text,
   -- Seat Leak Test
   seat_pressure_psi numeric,
   seat_duration_min numeric,
@@ -84,3 +108,24 @@ create trigger trigger_valve_test_updated
 -- Tambahan: kolom CV (jalankan jika table sudah ada sebelumnya)
 ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS spec_cv numeric;
 ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS spec_3_15_psi boolean default false;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS hp_seat_pressure_psi numeric;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS hp_seat_duration_min numeric;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS hp_seat_acceptance text;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS hp_seat_start_test text;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS hp_seat_finish_test text;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS hp_seat_result text;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS hp_seat_remark text;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS lp_seat_pressure_psi numeric;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS lp_seat_duration_min numeric;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS lp_seat_acceptance text;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS lp_seat_start_test text;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS lp_seat_finish_test text;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS lp_seat_result text;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS lp_seat_remark text;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS actuator_pressure_psi numeric;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS actuator_duration_min numeric;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS actuator_acceptance text;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS actuator_start_test text;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS actuator_finish_test text;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS actuator_result text;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS actuator_remark text;
