@@ -204,7 +204,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   const [items, setItems] = useState<Item[]>([])
   const [photos, setPhotos] = useState<Photo[]>([])
   const [bomItems, setBomItems] = useState<BomItem[]>([])
-  type DocPhotoRow = { id?: string; component_name: string; description: string; photos: string[] }
+  type DocPhotoRow = { id?: string; component_name: string; description: string; photo_before: string; photo_after: string }
   const [docItems, setDocItems] = useState<DocPhotoRow[]>([])
   const [savingDoc, setSavingDoc] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -288,7 +288,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   }
 
   function addDocItem() {
-    setDocItems([...docItems, { id: undefined, component_name: '', description: '', photos: [] }])
+    setDocItems([...docItems, { id: undefined, component_name: '', description: '', photo_before: '', photo_after: '' }])
   }
   function removeDocItem(idx: number) {
     setDocItems(docItems.filter((_, i) => i !== idx))
@@ -298,18 +298,13 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     ;(copy[idx] as Record<string, unknown>)[field] = value
     setDocItems(copy)
   }
-  function removeDocImg(idx: number, imgIdx: number) {
-    const copy = [...docItems]
-    copy[idx] = { ...copy[idx], photos: copy[idx].photos.filter((_, j) => j !== imgIdx) }
-    setDocItems(copy)
-  }
-  async function uploadDocPhoto(file: File, idx: number) {
+  async function uploadDocPhoto(file: File, idx: number, side: 'before' | 'after') {
     const path = `doc-photos/${id}/${Date.now()}-${file.name}`
     const { error } = await supabase.storage.from('report-photos').upload(path, file)
     if (error) return alert('Upload gagal: ' + error.message)
     const { data } = supabase.storage.from('report-photos').getPublicUrl(path)
     const copy = [...docItems]
-    copy[idx] = { ...copy[idx], photos: [...copy[idx].photos, data.publicUrl] }
+    copy[idx] = { ...copy[idx], [side === 'before' ? 'photo_before' : 'photo_after']: data.publicUrl }
     setDocItems(copy)
   }
   async function saveDocItems() {
@@ -321,7 +316,8 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       await supabase.from('report_documentation').update({
         component_name: d.component_name,
         description: d.description,
-        photos: JSON.stringify(d.photos),
+        photo_before: d.photo_before,
+        photo_after: d.photo_after,
       }).eq('id', d.id)
     }
     if (newItems.length > 0) {
@@ -329,7 +325,8 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         report_id: id,
         component_name: d.component_name,
         description: d.description,
-        photos: JSON.stringify(d.photos),
+        photo_before: d.photo_before,
+        photo_after: d.photo_after,
         sort_order: docItems.indexOf(d),
       }))
       const { data, error } = await supabase.from('report_documentation').insert(rows).select()
@@ -406,7 +403,8 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           id: d.id as string,
           component_name: d.component_name ?? '',
           description: d.description ?? '',
-          photos: (() => { try { return JSON.parse(d.photos || '[]') } catch { return [] as string[] } })(),
+          photo_before: d.photo_before ?? '',
+          photo_after: d.photo_after ?? '',
         })))
       }
       setLoading(false)
@@ -1395,7 +1393,8 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 <th className="border px-2 py-2 text-center w-8">No</th>
                 <th className="border px-2 py-2 text-left">Component</th>
                 <th className="border px-2 py-2 text-left">Description</th>
-                <th className="border px-2 py-2 text-center">Photo</th>
+                <th className="border px-2 py-2 text-center">Photo Before</th>
+                <th className="border px-2 py-2 text-center">Photo After</th>
                 <th className="border px-2 py-2 text-center w-8"></th>
               </tr>
             </thead>
@@ -1412,25 +1411,31 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                   <td className="border px-1 py-1">
                     <input type="text" value={row.description} onChange={e => updateDocItem(i, 'description', e.target.value)} className="w-full border-0 bg-transparent text-xs focus:outline-none" placeholder="Deskripsi..." />
                   </td>
-                  <td className="border px-1 py-1">
-                    <div className="flex flex-wrap items-center gap-1">
-                      {row.photos.map((url, j) => (
-                        <div key={j} className="relative">
-                          <img src={url} alt="" className="w-10 h-10 object-cover rounded cursor-pointer" onClick={() => setPreviewPhoto(url)} />
-                          <button onClick={() => removeDocImg(i, j)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-3 h-3 text-[8px] flex items-center justify-center leading-none">&#10005;</button>
-                        </div>
-                      ))}
+                  <td className="border px-1 py-1 text-center">
+                    {row.photo_before ? (
+                      <img src={row.photo_before} alt="Before" className="w-10 h-10 object-cover rounded cursor-pointer mx-auto" onClick={() => setPreviewPhoto(row.photo_before)} />
+                    ) : (
                       <label className="text-blue-600 hover:text-blue-800 cursor-pointer text-xs">
                         + Foto
-                        <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadDocPhoto(f, i) }} />
+                        <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadDocPhoto(f, i, 'before') }} />
                       </label>
-                    </div>
+                    )}
+                  </td>
+                  <td className="border px-1 py-1 text-center">
+                    {row.photo_after ? (
+                      <img src={row.photo_after} alt="After" className="w-10 h-10 object-cover rounded cursor-pointer mx-auto" onClick={() => setPreviewPhoto(row.photo_after)} />
+                    ) : (
+                      <label className="text-blue-600 hover:text-blue-800 cursor-pointer text-xs">
+                        + Foto
+                        <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadDocPhoto(f, i, 'after') }} />
+                      </label>
+                    )}
                   </td>
                   <td className="border px-1 py-1 text-center"><button onClick={() => removeDocItem(i)} className="text-red-400 hover:text-red-600 text-sm font-bold">&#10005;</button></td>
                 </tr>
               ))}
               {docItems.length === 0 && (
-                <tr><td colSpan={5} className="border px-2 py-6 text-center text-gray-400">Belum ada data. Klik &quot;+ Tambah Baris&quot; untuk menambah.</td></tr>
+                <tr><td colSpan={6} className="border px-2 py-6 text-center text-gray-400">Belum ada data. Klik &quot;+ Tambah Baris&quot; untuk menambah.</td></tr>
               )}
             </tbody>
           </table>
