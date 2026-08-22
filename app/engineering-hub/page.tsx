@@ -208,11 +208,24 @@ export default function EngineeringHubPage() {
           {/* Calculator */}
           <div className="bg-gray-50 border rounded-lg p-4 space-y-3 max-w-lg">
             <p className="text-sm font-semibold text-gray-700">Quick Calculator</p>
-            <p className="text-xs text-gray-400">Masukkan Pressure Rating (bar) dan Valve Size (inch) untuk hitung test pressure & holding time</p>
+            <p className="text-xs text-gray-400">Pilih Pressure Class atau input langsung Pressure Rating (bar)</p>
             <div className="flex gap-3">
               <div className="flex-1">
+                <label className="text-xs text-gray-500">Pressure Class</label>
+                <select value={pr} onChange={e => setPr(e.target.value)} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1">
+                  <option value="">— Pilih Class —</option>
+                  <option value="19.6">Class 150 (19.6 bar / 285 psi)</option>
+                  <option value="51.0">Class 300 (51.0 bar / 740 psi)</option>
+                  <option value="68.9">Class 400 (68.9 bar / 1000 psi)</option>
+                  <option value="103.4">Class 600 (103.4 bar / 1500 psi)</option>
+                  <option value="155.1">Class 900 (155.1 bar / 2250 psi)</option>
+                  <option value="258.6">Class 1500 (258.6 bar / 3750 psi)</option>
+                  <option value="431.0">Class 2500 (431.0 bar / 6250 psi)</option>
+                </select>
+              </div>
+              <div className="flex-1">
                 <label className="text-xs text-gray-500">Pressure Rating (bar)</label>
-                <input type="number" step="1" value={pr} onChange={e => setPr(e.target.value)} placeholder="e.g. 100" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1" />
+                <input type="number" step="0.1" value={pr} onChange={e => setPr(e.target.value)} placeholder="e.g. 100" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1" />
               </div>
               <div className="flex-1">
                 <label className="text-xs text-gray-500">Valve Size (inch)</label>
