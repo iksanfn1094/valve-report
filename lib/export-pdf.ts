@@ -431,7 +431,7 @@ export async function exportReportPDF(
       if (valveTest.spec_api598) specs.push('API 598')
       if (valveTest.spec_fci70_2) specs.push('FCI-70-2')
       if (valveTest.spec_3_15_psi) specs.push('3-15 PSI')
-      if (valveTest.spec_cv) specs.push(`CV: ${valveTest.spec_cv}`)
+      if (valveTest.spec_cv && parseFloat(valveTest.spec_cv) > 0) specs.push(`CV: ${valveTest.spec_cv}`)
       if (valveTest.spec_sop_no) specs.push(`SOP NO: ${valveTest.spec_sop_no}`)
       if (valveTest.spec_others) specs.push(`OTHERS: ${valveTest.spec_others}`)
 
