@@ -1049,7 +1049,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 <th className="border px-2 py-2 text-center" rowSpan={2}>RESULT</th>
                 <th className="border px-2 py-2 text-center" rowSpan={2}>REMARK/NOTES</th>
               </tr>
-              <tr className="bg-blue-800 text-white">
+              <tr className="bg-blue-900 text-white">
                 <th className="border px-2 py-1 text-center">PRESSURE (Psi)</th>
                 <th className="border px-2 py-1 text-center">TIME (Minutes)</th>
               </tr>
