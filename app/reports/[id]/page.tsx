@@ -471,6 +471,42 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         </div>
       )}
 
+      {/* Tab Navigation */}
+      <div className="bg-white rounded-lg shadow border px-4 pt-3">
+        <div className="flex gap-1 border-b border-gray-200 overflow-x-auto">
+          {[
+            { key: 'inspection', label: 'Inspection', active: 'bg-blue-600 text-white' },
+            { key: 'documentation', label: 'Documentation', href: `/docs?reportId=${id}` },
+            { key: 'penetrant', label: 'Liquid Penetrant', active: 'bg-orange-600 text-white' },
+            { key: 'torque', label: 'Torque & Anti-static', active: 'bg-purple-600 text-white' },
+            { key: 'test', label: 'Test', active: 'bg-red-600 text-white' },
+            { key: 'packaging', label: 'Packaging', active: 'bg-green-600 text-white' },
+          ].map((t) =>
+            t.href ? (
+              <Link
+                key={t.key}
+                href={t.href}
+                className="px-4 py-2 text-sm font-medium rounded-t-lg transition whitespace-nowrap bg-gray-100 text-gray-600 hover:bg-gray-200"
+              >
+                {t.label}
+              </Link>
+            ) : (
+              <button
+                key={t.key}
+                onClick={() => setActiveTab(t.key)}
+                className={`px-4 py-2 text-sm font-medium rounded-t-lg transition whitespace-nowrap ${
+                  activeTab === t.key
+                    ? t.active
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {t.label}
+              </button>
+            )
+          )}
+        </div>
+      </div>
+
       {/* Header Info */}
       <div className="bg-white rounded-lg shadow border p-4">
         <div className="flex items-center justify-between mb-3">
@@ -529,42 +565,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
             <button onClick={() => updateStatus('approved')} className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition">
               Approve
             </button>
-          )}
-        </div>
-      </div>
-
-      {/* Tab Navigation */}
-      <div className="bg-white rounded-lg shadow border px-4 pt-3">
-        <div className="flex gap-1 border-b border-gray-200 overflow-x-auto">
-          {[
-            { key: 'inspection', label: 'Inspection', active: 'bg-blue-600 text-white' },
-            { key: 'documentation', label: 'Documentation', href: `/docs?reportId=${id}` },
-            { key: 'penetrant', label: 'Liquid Penetrant', active: 'bg-orange-600 text-white' },
-            { key: 'torque', label: 'Torque & Anti-static', active: 'bg-purple-600 text-white' },
-            { key: 'test', label: 'Test', active: 'bg-red-600 text-white' },
-            { key: 'packaging', label: 'Packaging', active: 'bg-green-600 text-white' },
-          ].map((t) =>
-            t.href ? (
-              <Link
-                key={t.key}
-                href={t.href}
-                className="px-4 py-2 text-sm font-medium rounded-t-lg transition whitespace-nowrap bg-gray-100 text-gray-600 hover:bg-gray-200"
-              >
-                {t.label}
-              </Link>
-            ) : (
-              <button
-                key={t.key}
-                onClick={() => setActiveTab(t.key)}
-                className={`px-4 py-2 text-sm font-medium rounded-t-lg transition whitespace-nowrap ${
-                  activeTab === t.key
-                    ? t.active
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {t.label}
-              </button>
-            )
           )}
         </div>
       </div>
