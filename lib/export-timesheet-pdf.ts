@@ -131,10 +131,10 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   drawField(doc, 'Assign Role', ts.assign_role, M + colW, y, colW, FH, LW_R)
   y += FH
 
-  // Row 5: Service Person (left, taller) | Location (right, taller, word wrap)
+  // Row 5: Location (left, taller, word wrap) | Service Person (right, aligned top)
   const locH = FH + 4
 
-  // Left: Service Person (aligned top)
+  // Left: Location (word wrap)
   doc.setFillColor(245, 245, 245)
   doc.rect(M, y, colW, locH, 'F')
   doc.setDrawColor(...GRID)
@@ -143,12 +143,13 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.setFontSize(7)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(...LABEL_C)
-  doc.text('Service Person', M + 1.5, y + 4)
+  doc.text('Location', M + 1.5, y + 4)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(0, 0, 0)
-  doc.text(ts.service_person || '', M + LW_L, y + 4)
+  const locLines = doc.splitTextToSize(ts.location || '', colW - LW_L - 3)
+  doc.text(locLines, M + LW_L, y + 4)
 
-  // Right: Location (word wrap)
+  // Right: Service Person (aligned top)
   doc.setFillColor(245, 245, 245)
   doc.rect(M + colW, y, colW, locH, 'F')
   doc.setDrawColor(...GRID)
@@ -157,11 +158,10 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.setFontSize(7)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(...LABEL_C)
-  doc.text('Location', M + colW + 1.5, y + 4)
+  doc.text('Service Person', M + colW + 1.5, y + 4)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(0, 0, 0)
-  const locLines = doc.splitTextToSize(ts.location || '', colW - LW_R - 3)
-  doc.text(locLines, M + colW + LW_R, y + 4)
+  doc.text(ts.service_person || '', M + colW + LW_R, y + 4)
 
   y += locH
 
@@ -350,7 +350,7 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
 
   // Packing List & Demob Date
   drawField(doc, 'Packing List No. (if any)', ts.packing_list_no, M, y, colW, FH, 40)
-  drawField(doc, 'Demobilization Date', ts.demobilization_date, M + colW, y, colW, FH, 35)
+  drawField(doc, 'Demobilization Date', formatENDate(ts.demobilization_date), M + colW, y, colW, FH, 35)
   y += FH + 4
 
   // ========== STATEMENT ==========
