@@ -163,36 +163,6 @@ function drawValveInfo(doc: jsPDF, report: ReportData, M: number, CW: number, st
   return y + 5
 }
 
-function drawJobInfo(doc: jsPDF, report: ReportData, M: number, CW: number, startY: number): number {
-  let y = startY
-  doc.setTextColor(...BLUE)
-  doc.setFontSize(9)
-  doc.setFont('helvetica', 'bold')
-  doc.text('JOB INFORMATION', M, y)
-  y += 3
-  const thirdW = CW / 3
-  const jobRows: [string, string | null][][] = [
-    [
-      ['CUSTOMER', report.customer],
-      ['RO NO.', report.ro_no],
-      ['REPORT NO.', report.report_no],
-    ],
-    [
-      ['PROJECT', report.project],
-      ['EX STATION & P/F', report.ex_station],
-      ['REPORT DATE', formatTanggal(report.report_date)],
-    ],
-  ]
-  jobRows.forEach((row) => {
-    row.forEach(([label, val], ci) => {
-      const cx = M + ci * thirdW
-      drawField(doc, label, val || '', cx, y, thirdW, 5.5, thirdW / 2 + 2)
-    })
-    y += 5.5
-  })
-  return y + 5
-}
-
 function drawSignature(doc: jsPDF, report: ReportData, M: number, CW: number, startY: number, PW: number, PH: number) {
   let y = startY
   if (y + 55 > PH - M) { doc.addPage(); y = M }
@@ -239,159 +209,120 @@ function drawFooter(doc: jsPDF, report: ReportData, tabLabel: string, PW: number
   }
 }
 
-function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number, startY: number): number {
+function drawHeaderInfo(doc: jsPDF, report: ReportData, M: number, CW: number, startY: number): number {
   let y = startY
-  doc.setTextColor(...BLUE)
-  doc.setFontSize(9)
-  doc.setFont('helvetica', 'bold')
-  doc.text('CONSTRUCTION (AS FOUND)', M, y)
-  y += 3
-  const leftW = CW * 0.6, rightX = M + leftW
-  const leftFields: [string, string | null][] = [
-    ['Valve Id', report.job_number],
-    ['Valve Type', report.valve_type], ['Manufacture', report.manufacture],
-    ['Size (in.)', report.size], ['Class', report.class],
-    ['S/N', report.serial_no], ['End Connection', report.end_connection],
-    ['Operated', report.operated],
+  const colW = CW / 4
+  const fields: [string, string | null][][] = [
+    [['Report No', report.report_no], ['Date', formatTanggal(report.report_date)], ['Project', report.project], ['Customer', report.customer]],
+    [['Valve Type', report.valve_type], ['Manufacture', report.manufacture], ['Size (in.)', report.size], ['Class', report.class]],
+    [['Serial No', report.serial_no], ['End Connection', report.end_connection], ['Operated', report.operated], ['Location', (report as unknown as { location?: string }).location || null]],
+    [['EX Station', report.ex_station], ['RO No', report.ro_no], ['Inspector', report.inspector_name], ['Category', report.category]],
   ]
-  leftFields.forEach(([label, val]) => {
-    drawField(doc, label, val || '', M, y, leftW, 5.5, 35)
+  fields.forEach((row) => {
+    row.forEach(([label, val], ci) => {
+      drawField(doc, label, val || '', M + ci * colW, y, colW, 5.5, colW / 2 + 2)
+    })
     y += 5.5
   })
-  const startY2 = startY
-  doc.setDrawColor(...GRID)
-  doc.setLineWidth(0.3)
-  doc.rect(rightX, startY2, CW * 0.4, 44, 'S')
-  doc.setFontSize(8)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(0, 0, 0)
-  doc.text('Repair Category', rightX + 2, startY2 + 8)
-  const cats: [string, boolean][] = [
-    ['Inspection', report.category === 'inspection'],
-    ['Minor', report.category === 'minor'],
-    ['Major', report.category === 'major'],
-  ]
-  cats.forEach(([label, checked], ci) => {
-    const cy = startY2 + 12 + ci * 6
-    doc.setDrawColor(0)
-    doc.setLineWidth(0.3)
-    doc.rect(rightX + 3, cy, 3, 3, 'S')
-    if (checked) { doc.setFontSize(8); doc.text('X', rightX + 3.5, cy + 2.5) }
-    doc.setFontSize(7)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(0, 0, 0)
-    doc.text(label, rightX + 9, cy + 2.5)
-  })
-  doc.setFontSize(8)
-  doc.setFont('helvetica', 'bold')
-  doc.text('Recommendation', rightX + 2, startY2 + 33)
-  const recs: [string, string][] = [['C', 'Cleaning'], ['RP', 'Repair'], ['RE', 'Replace']]
-  recs.forEach(([code, label], ci) => {
-    const cy = startY2 + 36 + ci * 3.5
-    doc.setFontSize(6)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(0, 0, 0)
-    doc.text(code, rightX + 6, cy)
-    doc.setFont('helvetica', 'normal')
-    doc.text(label, rightX + 13, cy)
-  })
-  return Math.max(y, startY2 + 48)
+  return y + 5
 }
 
-function drawItemsTable(doc: jsPDF, items: ItemData[], M: number, CW: number, startY: number): number {
+function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: number, CW: number, startY: number): number {
   let y = startY
   if (items.length === 0) return y
   doc.setTextColor(...BLUE)
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
-  doc.text('INSPECTION ITEMS TABLE', M, y)
+  doc.text('INCOMING INSP. CHECK (CONDITION AS FOUND)', M, y)
   y += 3
-  const colW = [10, 16, 14, 42, 34, 20, 24, 30]
-  const headers = ['No', 'Component', 'Spec.', 'Condition Note', 'Recommendation', 'Comment', 'Material', 'Action']
-  autoTable(doc, {
-    startY: y,
-    margin: { left: M, right: M },
-    head: [headers],
-    body: items.map((it) => [
-      String(it.item_no),
-      it.component_name || '-',
-      it.spec_material || '-',
-      it.condition_note || '-',
-      (it.recommendation || []).join(', ') || '-',
-      it.comment || '-',
-      it.spec_material || '-',
-      it.recommendation?.includes('Replace') ? 'Replace' : it.recommendation?.includes('Repair') ? 'Repair' : 'Cleaning',
-    ]),
-    styles: { fontSize: 6.5, cellPadding: 1.5, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak' },
-    headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6.5, fontStyle: 'bold', halign: 'center' },
-    alternateRowStyles: { fillColor: LIGHT_BG },
-    columnStyles: {
-      0: { cellWidth: colW[0], halign: 'center' },
-      1: { cellWidth: colW[1], halign: 'left' },
-      2: { cellWidth: colW[2], halign: 'center' },
-      3: { cellWidth: colW[3], halign: 'left' },
-      4: { cellWidth: colW[4], halign: 'left' },
-      5: { cellWidth: colW[5], halign: 'left' },
-      6: { cellWidth: colW[6], halign: 'left' },
-      7: { cellWidth: colW[7], halign: 'center' },
-    },
-  })
-  return (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
-}
 
-async function drawPhotoItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: number, CW: number, PW: number, startY: number): Promise<number> {
-  let y = startY
   const photosByItem = new Map<string, PhotoData[]>()
   for (const p of photos) {
     if (!photosByItem.has(p.item_id)) photosByItem.set(p.item_id, [])
     photosByItem.get(p.item_id)!.push(p)
   }
-  if (photosByItem.size === 0) return y
-  doc.setTextColor(...BLUE)
-  doc.setFontSize(9)
-  doc.setFont('helvetica', 'bold')
-  doc.text('PHOTO ITEMS', M, y)
-  y += 3
-  const colW2 = [10, 16, 42, 122]
+
   autoTable(doc, {
     startY: y,
     margin: { left: M, right: M },
-    head: [['No', 'Component', 'Condition Note', 'Photo']],
-    body: items.filter((it) => photosByItem.has(it.id || '')).map((it) => [
+    head: [['No', 'Component', 'Qty', 'Condition', 'C', 'RP', 'RE', 'Repair Category', 'Comment', 'Material Spec.']],
+    body: items.map((it) => [
       String(it.item_no),
       it.component_name || '-',
+      it.qty?.toString() || '-',
       it.condition_note || '-',
-      '',
+      it.recommendation.includes('C') ? '✓' : '',
+      it.recommendation.includes('RP') ? '✓' : '',
+      it.recommendation.includes('RE') ? '✓' : '',
+      '-',
+      it.comment || '-',
+      it.spec_material || '-',
     ]),
-    styles: { fontSize: 6.5, cellPadding: 1.5, lineColor: GRID, lineWidth: 0.2 },
-    headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6.5, fontStyle: 'bold', halign: 'center' },
+    styles: { fontSize: 6, cellPadding: 1, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak' },
+    headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6, fontStyle: 'bold', halign: 'center' },
     alternateRowStyles: { fillColor: LIGHT_BG },
     columnStyles: {
-      0: { cellWidth: colW2[0], halign: 'center' },
-      1: { cellWidth: colW2[1], halign: 'left' },
-      2: { cellWidth: colW2[2], halign: 'left' },
-      3: { cellWidth: colW2[3], halign: 'left' },
-    },
-    didDrawCell: (data) => {
-      if (data.section !== 'body') return
-      const col = data.column.index
-      if (col !== 3) return
-      const rowItem = items.filter((it) => photosByItem.has(it.id || ''))[data.row.index]
-      if (!rowItem) return
-      const rowPhotos = photosByItem.get(rowItem.id || '') || []
-      if (rowPhotos.length === 0) return
-      const photoSize = 26
-      const startX = data.cell.x + 1
-      const startYCell = data.cell.y + 1
-      rowPhotos.forEach((p, pi) => {
-        if (!p.url) return
-        const px = startX + (pi % 5) * (photoSize + 2)
-        const py = startYCell + Math.floor(pi / 5) * (photoSize + 2)
-        try { doc.addImage(p.url, 'JPEG', px, py, photoSize, photoSize) } catch { /* skip */ }
-      })
+      0: { cellWidth: 8, halign: 'center' },
+      1: { cellWidth: 28, halign: 'left' },
+      2: { cellWidth: 10, halign: 'center' },
+      3: { cellWidth: 40, halign: 'left' },
+      4: { cellWidth: 8, halign: 'center' },
+      5: { cellWidth: 8, halign: 'center' },
+      6: { cellWidth: 8, halign: 'center' },
+      7: { cellWidth: 28, halign: 'center' },
+      8: { cellWidth: 28, halign: 'left' },
+      9: { cellWidth: 24, halign: 'left' },
     },
   })
-  return (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
+  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
+
+  const hasPhotos = items.some((it) => (photosByItem.get(it.id || '') || []).length > 0)
+  if (hasPhotos) {
+    doc.setTextColor(...BLUE)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.text('PHOTO ITEMS', M, y)
+    y += 3
+    autoTable(doc, {
+      startY: y,
+      margin: { left: M, right: M },
+      head: [['No', 'Component', 'Condition', 'Photo']],
+      body: items.filter((it) => (photosByItem.get(it.id || '') || []).length > 0).map((it) => [
+        String(it.item_no),
+        it.component_name || '-',
+        it.condition_note || '-',
+        '',
+      ]),
+      styles: { fontSize: 6, cellPadding: 1, lineColor: GRID, lineWidth: 0.2 },
+      headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6, fontStyle: 'bold', halign: 'center' },
+      alternateRowStyles: { fillColor: LIGHT_BG },
+      columnStyles: {
+        0: { cellWidth: 10, halign: 'center' },
+        1: { cellWidth: 28, halign: 'left' },
+        2: { cellWidth: 60, halign: 'left' },
+        3: { cellWidth: 92, halign: 'left' },
+      },
+      didDrawCell: (data) => {
+        if (data.section !== 'body') return
+        if (data.column.index !== 3) return
+        const rowItem = items.filter((it) => (photosByItem.get(it.id || '') || []).length > 0)[data.row.index]
+        if (!rowItem) return
+        const rowPhotos = photosByItem.get(rowItem.id || '') || []
+        if (rowPhotos.length === 0) return
+        const photoSize = 26
+        const startX = data.cell.x + 1
+        const startYCell = data.cell.y + 1
+        rowPhotos.forEach((p, pi) => {
+          if (!p.url) return
+          const px = startX + (pi % 5) * (photoSize + 2)
+          const py = startYCell + Math.floor(pi / 5) * (photoSize + 2)
+          try { doc.addImage(p.url, 'JPEG', px, py, photoSize, photoSize) } catch { /* skip */ }
+        })
+      },
+    })
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
+  }
+  return y
 }
 
 function drawBomTable(doc: jsPDF, bomItems: BomData[], M: number, CW: number, startY: number): number {
@@ -631,10 +562,8 @@ export async function exportReportPDF(
     if (items.length > 0) {
       drawHeader(doc, 'INSPECTION REPORT', PW)
       let y = 25
-      y = drawJobInfo(doc, report, M, CW, y)
-      y = drawConstruction(doc, report, M, CW, y)
-      y = drawItemsTable(doc, items, M, CW, y)
-      y = await drawPhotoItemsTable(doc, items, photos, M, CW, PW, y)
+      y = drawHeaderInfo(doc, report, M, CW, y)
+      y = drawItemsTable(doc, items, photos, M, CW, y)
       drawSignature(doc, report, M, CW, y, PW, PH)
     }
 
@@ -677,13 +606,11 @@ export async function exportReportPDF(
     if (tab === 'test' || tab === 'documentation') {
       y = drawValveInfo(doc, report, M, CW, y)
     } else {
-      y = drawJobInfo(doc, report, M, CW, y)
+      y = drawHeaderInfo(doc, report, M, CW, y)
     }
 
-    if (tab === 'inspection' || tab === 'all') {
-      y = drawConstruction(doc, report, M, CW, y)
-      y = drawItemsTable(doc, items, M, CW, y)
-      y = await drawPhotoItemsTable(doc, items, photos, M, CW, PW, y)
+    if (tab === 'inspection') {
+      y = drawItemsTable(doc, items, photos, M, CW, y)
     }
     if (tab === 'documentation') {
       y = await drawDocumentationSection(doc, docItems, M, CW, y)
