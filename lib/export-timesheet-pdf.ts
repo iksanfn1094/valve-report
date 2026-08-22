@@ -80,75 +80,77 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
 
   y = 25
 
-  // ========== PROJECT INFORMATION ==========
-  const halfW = CW / 2
-  const FH = 5.5
+  // ========== PROJECT INFORMATION (single group table) ==========
+  const colW = CW / 2
+  const FH = 6
+
+  function drawRow(a: string, b: string, rowY: number, aLabelW = 30, bLabelW = 30) {
+    drawField(doc, a, '', M, rowY, colW, FH, aLabelW)
+    drawField(doc, b, '', M + colW, rowY, colW, FH, bLabelW)
+  }
 
   // Row 1: Customer | Internal S/O No.
-  drawField(doc, 'Customer', ts.customer, M, y, halfW, FH, 30)
-  drawField(doc, 'Internal S/O No.', ts.internal_so_no, M + halfW, y, halfW, FH, 35)
+  drawField(doc, 'Customer', ts.customer, M, y, colW, FH, 30)
+  drawField(doc, 'Internal S/O No.', ts.internal_so_no, M + colW, y, colW, FH, 35)
   y += FH
 
   // Row 2: Customer PO | Letter Of Assignment
-  drawField(doc, 'Customer PO', ts.customer_po, M, y, halfW, FH, 30)
-  drawField(doc, 'Letter Of Assignment', ts.letter_of_assignment, M + halfW, y, halfW, FH, 35)
+  drawField(doc, 'Customer PO', ts.customer_po, M, y, colW, FH, 30)
+  drawField(doc, 'Letter Of Assignment', ts.letter_of_assignment, M + colW, y, colW, FH, 35)
   y += FH
 
-  // Row 3: End-User/Project | Allowance (checkboxes)
-  drawField(doc, 'End-User/Project', ts.end_user_project, M, y, halfW, FH, 30)
+  // Row 3: End-User/Project | Allowance
+  drawField(doc, 'End-User/Project', ts.end_user_project, M, y, colW, FH, 30)
+  // Allowance cell with checkboxes
   doc.setFillColor(245, 245, 245)
-  doc.rect(M + halfW, y, halfW, FH, 'F')
+  doc.rect(M + colW, y, colW, FH, 'F')
   doc.setDrawColor(...GRID)
   doc.setLineWidth(0.2)
-  doc.rect(M + halfW, y, halfW, FH, 'S')
+  doc.rect(M + colW, y, colW, FH, 'S')
   doc.setFontSize(7)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(...LABEL_C)
-  doc.text('Allowance', M + halfW + 1.5, y + FH - 1.7)
+  doc.text('Allowance', M + colW + 1.5, y + FH - 1.7)
   doc.setTextColor(0, 0, 0)
-  doc.setFont('helvetica', 'normal')
-  cb(doc, M + halfW + 25, y + FH - 0.2, ts.allowance === 'chargeable')
-  doc.text('Chargeable', M + halfW + 29, y + FH - 0.5)
-  cb(doc, M + halfW + 55, y + FH - 0.2, ts.allowance === 'non_chargeable')
-  doc.text('Non Chargeable', M + halfW + 59, y + FH - 0.5)
+  cb(doc, M + colW + 30, y + FH - 0.2, ts.allowance === 'chargeable')
+  doc.text('Chargeable', M + colW + 34, y + FH - 0.5)
+  cb(doc, M + colW + 65, y + FH - 0.2, ts.allowance === 'non_chargeable')
+  doc.text('Non Chargeable', M + colW + 69, y + FH - 0.5)
   y += FH
 
-  // Row 4: Date | Assign Role | Mobilization Date
-  const thirdW = CW / 3
-  drawField(doc, 'Date', ts.assign_date, M, y, thirdW, FH, 15)
-  drawField(doc, 'Assign Role', ts.assign_role, M + thirdW, y, thirdW, FH, 25)
-  drawField(doc, 'Mobilization Date', ts.mobilization_date, M + thirdW * 2, y, thirdW, FH, 35)
+  // Row 4: Date | Assign Role
+  drawField(doc, 'Date', ts.assign_date, M, y, colW, FH, 15)
+  drawField(doc, 'Assign Role', ts.assign_role, M + colW, y, colW, FH, 25)
   y += FH
 
   // Row 5: Location | Service Person
-  drawField(doc, 'Location', ts.location, M, y, halfW, FH, 25)
-  drawField(doc, 'Service Person', ts.service_person, M + halfW, y, halfW, FH, 30)
+  drawField(doc, 'Location', ts.location, M, y, colW, FH, 25)
+  drawField(doc, 'Service Person', ts.service_person, M + colW, y, colW, FH, 30)
   y += FH
 
-  // Row 6: Attachment (full width)
-  drawField(doc, 'Attachment', ts.attachment, M, y, CW, FH, 25)
-  y += FH + 3
+  // Row 6: Attachment | Mobilization Date
+  drawField(doc, 'Attachment', ts.attachment, M, y, colW, FH, 25)
+  drawField(doc, 'Mobilization Date', ts.mobilization_date, M + colW, y, colW, FH, 35)
+  y += FH
 
-  // ========== TYPE OF WORKSITE & BRIEF SCOPE (side by side) ==========
-  const leftCol = CW * 0.5
-  const rightCol = CW * 0.5
-  const rightX = M + leftCol
-
+  // Row 7: Type of Worksite (left half, taller) | Brief Scope of Work (right half, taller)
+  const wsH = 22
+  // Left cell: Type of Worksite
+  doc.setFillColor(245, 245, 245)
+  doc.rect(M, y, colW, wsH, 'F')
   doc.setDrawColor(...GRID)
   doc.setLineWidth(0.2)
-  doc.rect(M, y, leftCol, 20, 'S')
-  doc.rect(rightX, y, rightCol, 20, 'S')
-
-  // Left: Type of Worksite
+  doc.rect(M, y, colW, wsH, 'S')
   doc.setFontSize(7)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...BLUE)
   doc.text('Type of Worksite', M + 2, y + 4)
-  doc.setFontSize(6)
-  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(5.5)
+  doc.setFont('helvetica', 'italic')
+  doc.setTextColor(...LABEL_C)
   doc.text('(check all that apply)', M + 2, y + 7.5)
-
   doc.setFontSize(7)
+  doc.setFont('helvetica', 'normal')
   doc.setTextColor(0, 0, 0)
   const wsY = y + 12
   cb(doc, M + 2, wsY, ts.worksite_office)
@@ -160,33 +162,39 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   cb(doc, M + 30, wsY + 5, ts.worksite_offshore)
   doc.text('Offshore', M + 34, wsY + 4.5)
 
-  // Right: Brief Scope of Work
+  // Right cell: Brief Scope of Work
+  doc.setFillColor(245, 245, 245)
+  doc.rect(M + colW, y, colW, wsH, 'F')
+  doc.setDrawColor(...GRID)
+  doc.setLineWidth(0.2)
+  doc.rect(M + colW, y, colW, wsH, 'S')
   doc.setFontSize(7)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...BLUE)
-  doc.text('Brief Scope of Work', rightX + 2, y + 4)
+  doc.text('Brief Scope of Work', M + colW + 2, y + 4)
   doc.setFontSize(6.5)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(0, 0, 0)
-  const scopeLines = doc.splitTextToSize(ts.brief_scope || '', rightCol - 6)
-  doc.text(scopeLines, rightX + 3, y + 10)
+  const scopeLines = doc.splitTextToSize(ts.brief_scope || '', colW - 6)
+  doc.text(scopeLines, M + colW + 3, y + 10)
 
-  y += 23
+  y += wsH
 
-  // ========== TYPE OF SERVICE ==========
+  // Row 8: Type of Service (full width)
+  const svH = 14
+  doc.setFillColor(245, 245, 245)
+  doc.rect(M, y, CW, svH, 'F')
   doc.setDrawColor(...GRID)
   doc.setLineWidth(0.2)
-  doc.rect(M, y, CW, 12, 'S')
-
+  doc.rect(M, y, CW, svH, 'S')
   doc.setFontSize(7)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...BLUE)
   doc.text('Type of Service', M + 2, y + 4)
-
   doc.setFontSize(7)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(0, 0, 0)
-  const svY = y + 10
+  const svY = y + 11
   cb(doc, M + 2, svY, ts.service_workshop)
   doc.text('Workshop', M + 6, svY - 0.5)
   cb(doc, M + 35, svY, ts.service_field)
@@ -200,7 +208,7 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
     doc.text('(' + ts.service_other_text + ')', M + 135, svY - 0.5)
   }
 
-  y += 15
+  y += svH + 4
 
   // ========== TIMESHEET TABLE ==========
   np(30)
@@ -297,8 +305,8 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   y = Math.max(summaryBottom, rsy + 45) + 3
 
   // Packing List & Demob Date
-  drawField(doc, 'Packing List No. (if any)', ts.packing_list_no, M, y, halfW, FH, 40)
-  drawField(doc, 'Demobilization Date', ts.demobilization_date, M + halfW, y, halfW, FH, 35)
+  drawField(doc, 'Packing List No. (if any)', ts.packing_list_no, M, y, colW, FH, 40)
+  drawField(doc, 'Demobilization Date', ts.demobilization_date, M + colW, y, colW, FH, 35)
   y += FH + 4
 
   // ========== STATEMENT ==========
