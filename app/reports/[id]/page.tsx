@@ -60,6 +60,64 @@ type BomItem = {
   keterangan: string
 }
 
+type ValveTest = {
+  id?: string
+  spec_api6d: boolean
+  spec_api598: boolean
+  spec_fci70_2: boolean
+  spec_sop_no: string
+  spec_others: string
+  shell_pressure_psi: string
+  shell_duration_min: string
+  shell_acceptance: string
+  shell_start_test: string
+  shell_finish_test: string
+  shell_result: string
+  shell_remark: string
+  seat_pressure_psi: string
+  seat_duration_min: string
+  seat_acceptance: string
+  seat_start_test: string
+  seat_finish_test: string
+  seat_result: string
+  seat_remark: string
+  func0_pressure_psi: string
+  func0_duration_min: string
+  func0_acceptance: string
+  func0_start_test: string
+  func0_finish_test: string
+  func0_result: string
+  func0_remark: string
+  func25_pressure_psi: string
+  func25_duration_min: string
+  func25_acceptance: string
+  func25_start_test: string
+  func25_finish_test: string
+  func25_result: string
+  func25_remark: string
+  func50_pressure_psi: string
+  func50_duration_min: string
+  func50_acceptance: string
+  func50_start_test: string
+  func50_finish_test: string
+  func50_result: string
+  func50_remark: string
+  func75_pressure_psi: string
+  func75_duration_min: string
+  func75_acceptance: string
+  func75_start_test: string
+  func75_finish_test: string
+  func75_result: string
+  func75_remark: string
+  func100_pressure_psi: string
+  func100_duration_min: string
+  func100_acceptance: string
+  func100_start_test: string
+  func100_finish_test: string
+  func100_result: string
+  func100_remark: string
+}
+
 const RECS = [
   { value: 'C', label: 'C (Clean)', desc: 'Bersih, tidak perlu perbaikan' },
   { value: 'RP', label: 'RP (Repair)', desc: 'Perlu perbaikan' },
