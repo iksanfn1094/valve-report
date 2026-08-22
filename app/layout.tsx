@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Valve Report",
-  description: "Sistem pencatatan report untuk pekerjaan valve maintenance & repair",
+  title: "V-Transform",
+  description: "Project & Service Transformation Platform",
 };
 
 export default function RootLayout({
@@ -35,7 +35,7 @@ export default function RootLayout({
           {children}
         </main>
         <footer className="bg-gray-200 text-center text-xs py-2 text-gray-500">
-          Valve Maintenance Inspection Report System
+          V-Transform — PT. Valvindo Megah
         </footer>
       </body>
     </html>
