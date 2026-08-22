@@ -83,24 +83,21 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   // ========== PROJECT INFORMATION (single group table) ==========
   const colW = CW / 2
   const FH = 6
-
-  function drawRow(a: string, b: string, rowY: number, aLabelW = 30, bLabelW = 30) {
-    drawField(doc, a, '', M, rowY, colW, FH, aLabelW)
-    drawField(doc, b, '', M + colW, rowY, colW, FH, bLabelW)
-  }
+  const LW_L = 30  // label width for left column
+  const LW_R = 35  // label width for right column
 
   // Row 1: Customer | Internal S/O No.
-  drawField(doc, 'Customer', ts.customer, M, y, colW, FH, 30)
-  drawField(doc, 'Internal S/O No.', ts.internal_so_no, M + colW, y, colW, FH, 35)
+  drawField(doc, 'Customer', ts.customer, M, y, colW, FH, LW_L)
+  drawField(doc, 'Internal S/O No.', ts.internal_so_no, M + colW, y, colW, FH, LW_R)
   y += FH
 
   // Row 2: Customer PO | Letter Of Assignment
-  drawField(doc, 'Customer PO', ts.customer_po, M, y, colW, FH, 30)
-  drawField(doc, 'Letter Of Assignment', ts.letter_of_assignment, M + colW, y, colW, FH, 35)
+  drawField(doc, 'Customer PO', ts.customer_po, M, y, colW, FH, LW_L)
+  drawField(doc, 'Letter Of Assignment', ts.letter_of_assignment, M + colW, y, colW, FH, LW_R)
   y += FH
 
   // Row 3: End-User/Project | Allowance
-  drawField(doc, 'End-User/Project', ts.end_user_project, M, y, colW, FH, 30)
+  drawField(doc, 'End-User/Project', ts.end_user_project, M, y, colW, FH, LW_L)
   // Allowance cell with checkboxes
   doc.setFillColor(245, 245, 245)
   doc.rect(M + colW, y, colW, FH, 'F')
@@ -112,31 +109,31 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.setTextColor(...LABEL_C)
   doc.text('Allowance', M + colW + 1.5, y + FH - 1.7)
   doc.setTextColor(0, 0, 0)
-  cb(doc, M + colW + 30, y + FH - 0.2, ts.allowance === 'chargeable')
-  doc.text('Chargeable', M + colW + 34, y + FH - 0.5)
-  cb(doc, M + colW + 65, y + FH - 0.2, ts.allowance === 'non_chargeable')
-  doc.text('Non Chargeable', M + colW + 69, y + FH - 0.5)
+  cb(doc, M + colW + LW_R, y + FH - 0.2, ts.allowance === 'chargeable')
+  doc.text('Chargeable', M + colW + LW_R + 4, y + FH - 0.5)
+  cb(doc, M + colW + LW_R + 30, y + FH - 0.2, ts.allowance === 'non_chargeable')
+  doc.text('Non Chargeable', M + colW + LW_R + 34, y + FH - 0.5)
   y += FH
 
   // Row 4: Date | Assign Role
-  drawField(doc, 'Date', ts.assign_date, M, y, colW, FH, 15)
-  drawField(doc, 'Assign Role', ts.assign_role, M + colW, y, colW, FH, 25)
+  drawField(doc, 'Date', ts.assign_date, M, y, colW, FH, LW_L)
+  drawField(doc, 'Assign Role', ts.assign_role, M + colW, y, colW, FH, LW_R)
   y += FH
 
   // Row 5: Location | Service Person
-  drawField(doc, 'Location', ts.location, M, y, colW, FH, 25)
-  drawField(doc, 'Service Person', ts.service_person, M + colW, y, colW, FH, 30)
+  drawField(doc, 'Location', ts.location, M, y, colW, FH, LW_L)
+  drawField(doc, 'Service Person', ts.service_person, M + colW, y, colW, FH, LW_R)
   y += FH
 
   // Row 6: Attachment | Mobilization Date
-  drawField(doc, 'Attachment', ts.attachment, M, y, colW, FH, 25)
-  drawField(doc, 'Mobilization Date', ts.mobilization_date, M + colW, y, colW, FH, 35)
+  drawField(doc, 'Attachment', ts.attachment, M, y, colW, FH, LW_L)
+  drawField(doc, 'Mobilization Date', ts.mobilization_date, M + colW, y, colW, FH, LW_R)
   y += FH
 
   // Row 7: Type of Worksite (left) | Brief Scope of Work (right, spanning 2 rows)
   const wsH = 20
   const labelCol = CW * 0.35
-  const contentCol = CW * 0.65
+  const contentCol = CW - labelCol
 
   // Left cell: Type of Worksite
   doc.setFillColor(245, 245, 245)
