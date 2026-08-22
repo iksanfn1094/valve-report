@@ -50,6 +50,14 @@ type PhotoData = {
   url?: string
 }
 
+type DocData = {
+  id?: string
+  component_name: string
+  description: string
+  photo_before: string
+  photo_after: string
+}
+
 type ValveTestData = {
   spec_api6d: boolean; spec_api598: boolean; spec_fci70_2: boolean; spec_3_15_psi: boolean
   spec_sop_no: string; spec_others: string; spec_cv: string
@@ -142,7 +150,8 @@ export async function exportReportPDF(
   bomItems: BomData[],
   photos: PhotoData[],
   tab: string = 'all',
-  valveTest?: ValveTestData
+  valveTest?: ValveTestData,
+  docItems: DocData[] = []
 ) {
   const doc = new jsPDF('p', 'mm', 'a4')
   const PW = 210, PH = 297, M = 10, CW = PW - M * 2
@@ -572,6 +581,66 @@ export async function exportReportPDF(
       },
     })
     y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
+  }
+
+  // ========== DOCUMENTATION ==========
+  if ((tab === 'all' || tab === 'documentation') && docItems.length > 0) {
+    np(20)
+    doc.setTextColor(...BLUE)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.text('DOCUMENTATION', M, y)
+    y += 3
+
+    autoTable(doc, {
+      startY: y,
+      margin: { left: M, right: M },
+      head: [['No', 'Component', 'Description', 'Photo Before', 'Photo After']],
+      body: docItems.map((d, i) => [
+        String(i + 1),
+        d.component_name || '-',
+        d.description || '-',
+        d.photo_before ? '✓' : '-',
+        d.photo_after ? '✓' : '-',
+      ]),
+      styles: { fontSize: 6.5, cellPadding: 1.5, lineColor: GRID, lineWidth: 0.2 },
+      headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6.5, fontStyle: 'bold', halign: 'center' },
+      alternateRowStyles: { fillColor: LIGHT_BG },
+      columnStyles: {
+        0: { cellWidth: 10, halign: 'center' },
+        1: { cellWidth: 40, halign: 'left' },
+        2: { cellWidth: 60, halign: 'left' },
+        3: { cellWidth: 40, halign: 'center' },
+        4: { cellWidth: 40, halign: 'center' },
+      },
+    })
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 7
+
+    for (const d of docItems) {
+      if (d.photo_before || d.photo_after) {
+        const photos = [d.photo_before, d.photo_after].filter(Boolean)
+        if (photos.length > 0) {
+          np(12)
+          doc.setFontSize(7)
+          doc.setFont('helvetica', 'bold')
+          doc.setTextColor(0, 0, 0)
+          doc.text(`${d.component_name || '-'}${d.description ? ' - ' + d.description : ''}`, M, y)
+          y += 3
+          for (const url of photos) {
+            const b64 = await fetchImageAsBase64(url)
+            if (b64) {
+              np(55)
+              try {
+                const imgW = 50, imgH = 50
+                doc.addImage(b64, 'JPEG', M, y, imgW, imgH)
+                y += imgH + 3
+              } catch { /* skip */ }
+            }
+          }
+          y += 2
+        }
+      }
+    }
   }
 
   // ========== SIGNATURE (5 boxes) ==========

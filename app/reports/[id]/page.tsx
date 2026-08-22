@@ -451,17 +451,17 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
 
   useEffect(() => {
     window.__reportActions = {
-      exportPDF: () => {
-        if (!report) return
-        exportReportPDF(report, items.map((it) => ({ ...it, id: it.id })), bomItems, photos, activeTab, valveTest)
-      },
+        exportPDF: () => {
+          if (!report) return
+          exportReportPDF(report, items.map((it) => ({ ...it, id: it.id })), bomItems, photos, activeTab, valveTest, docItems.map(d => ({ ...d, id: d.id ?? '' })))
+        },
       exportExcel: () => {
         if (!report) return
         exportReportExcel(report, items, bomItems)
       },
     }
     return () => { delete window.__reportActions }
-  }, [report, items, bomItems, photos, activeTab, valveTest])
+  }, [report, items, bomItems, photos, activeTab, valveTest, docItems])
 
   function addRow() {
     setItems([
