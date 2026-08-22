@@ -319,7 +319,7 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
   doc.text('INCOMING INSP. CHECK (CONDITION AS FOUND)', M, y)
-  y += 10
+  y += 12
 
   autoTable(doc, {
     startY: y,
@@ -344,9 +344,9 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
         it.component_name || '-',
         it.qty?.toString() || '-',
         it.condition_note || '-',
-        it.recommendation.includes('C') ? '✓' : '',
-        it.recommendation.includes('RP') ? '✓' : '',
-        it.recommendation.includes('RE') ? '✓' : '',
+        it.recommendation.includes('C') ? 'x' : '',
+        it.recommendation.includes('RP') ? 'x' : '',
+        it.recommendation.includes('RE') ? 'x' : '',
         it.repair_category || '-',
         '',
         it.spec_material || '-',
@@ -364,7 +364,7 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
       5: { cellWidth: 8, halign: 'center' },
       6: { cellWidth: 8, halign: 'center' },
       7: { cellWidth: 24, halign: 'center' },
-      8: { cellWidth: 26, halign: 'center', minCellHeight: 24 },
+      8: { cellWidth: 28, halign: 'center', minCellHeight: 28 },
       9: { cellWidth: 32, halign: 'left' },
     },
     didDrawCell: (data) => {
@@ -372,17 +372,17 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
       const item = items[data.row.index]
       if (!item) return
 
-      // Draw checkmark for C/RP/RE columns (4,5,6) - no box, just check
+      // Draw checkmark for C/RP/RE columns (4,5,6) - flipped, smaller
       const checkCols = [4, 5, 6]
       if (checkCols.includes(data.column.index)) {
         const val = data.cell.raw as string
-        if (val === '✓') {
+        if (val === 'x') {
           const cx = data.cell.x + data.cell.width / 2
           const cy = data.cell.y + data.cell.height / 2
           doc.setDrawColor(0)
-          doc.setLineWidth(0.6)
-          doc.line(cx - 2, cy + 0.5, cx - 0.5, cy - 1)
-          doc.line(cx - 0.5, cy - 1, cx + 2.5, cy + 1.5)
+          doc.setLineWidth(0.5)
+          doc.line(cx - 2, cy - 0.5, cx - 0.5, cy + 1)
+          doc.line(cx - 0.5, cy + 1, cx + 2.5, cy - 1.5)
           doc.setLineWidth(0.2)
         }
       }
@@ -393,7 +393,7 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
       if (data.column.index === 8) {
         const rowPhotos = photosByItem.get(item.id || '') || []
         if (rowPhotos.length > 0) {
-          const photoSize = 18
+          const photoSize = 22
           const gap = 2
           const maxPerRow = Math.floor(data.cell.width / (photoSize + gap))
           const totalPhotosWidth = Math.min(rowPhotos.length, maxPerRow) * (photoSize + gap) - gap
