@@ -9,7 +9,7 @@ const API6D_TESTS = [
   { no: 1, name: 'Hydrostatic Shell Test', medium: 'Water', pressureFormula: '≥ 1.5 × PR', holdingFn: (sz: number) => sz <= 4 ? '2 min' : sz <= 10 ? '5 min' : sz <= 18 ? '15 min' : '30 min', criteria: 'No visible leakage dari pressure-containing parts' },
   { no: 2, name: 'Hydrostatic Seat Test', medium: 'Water', pressureFormula: '≥ 1.1 × PR', holdingFn: (sz: number) => sz <= 4 ? '2 min' : sz <= 18 ? '5 min' : '10 min', criteria: 'Soft seat: ISO 5208 Rate A\nMetal seat: ISO 5208 Rate CD' },
   { no: 3, name: 'High-Pressure Gas Seat Test', medium: 'Inert gas (N₂)', pressureFormula: '≥ 1.1 × PR', holdingFn: (sz: number) => sz <= 18 ? '15 min' : '30 min', criteria: 'Sesuai API 6D gas seat test criteria' },
-  { no: 4, name: 'Low-Pressure Gas Seat Test', medium: 'Air / inert gas', pressureFormula: '0.6–0.7 MPa\n(≈87–102 psi)', holdingFn: (sz: number) => sz <= 18 ? '15 min' : '30 min', criteria: 'Soft seat: ISO 5208 Rate A\nMetal seat: mengikuti API 6D' },
+  { no: 4, name: 'Low-Pressure Gas Seat Test', medium: 'Air / inert gas', pressureFormula: '87–102 psi\n(0.6–0.7 MPa)', holdingFn: (sz: number) => sz <= 18 ? '15 min' : '30 min', criteria: 'Soft seat: ISO 5208 Rate A\nMetal seat: mengikuti API 6D' },
   { no: 5, name: 'Backseat Test', medium: 'Water', pressureFormula: 'Sesuai PR', holdingFn: (sz: number) => sz <= 4 ? '2 min' : '5 min', criteria: 'No visible leakage' },
 ]
 
@@ -214,18 +214,18 @@ export default function EngineeringHubPage() {
                 <label className="text-xs text-gray-500">Pressure Class</label>
                 <select value={pr} onChange={e => setPr(e.target.value)} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1">
                   <option value="">— Pilih Class —</option>
-                  <option value="19.6">Class 150 (19.6 bar / 285 psi)</option>
-                  <option value="51.0">Class 300 (51.0 bar / 740 psi)</option>
-                  <option value="68.9">Class 400 (68.9 bar / 1000 psi)</option>
-                  <option value="103.4">Class 600 (103.4 bar / 1500 psi)</option>
-                  <option value="155.1">Class 900 (155.1 bar / 2250 psi)</option>
-                  <option value="258.6">Class 1500 (258.6 bar / 3750 psi)</option>
-                  <option value="431.0">Class 2500 (431.0 bar / 6250 psi)</option>
+                <option value="285">Class 150 (285 psi)</option>
+                <option value="740">Class 300 (740 psi)</option>
+                <option value="1000">Class 400 (1000 psi)</option>
+                <option value="1500">Class 600 (1500 psi)</option>
+                <option value="2250">Class 900 (2250 psi)</option>
+                <option value="3750">Class 1500 (3750 psi)</option>
+                <option value="6250">Class 2500 (6250 psi)</option>
                 </select>
               </div>
               <div className="flex-1">
-                <label className="text-xs text-gray-500">Pressure Rating (bar)</label>
-                <input type="number" step="0.1" value={pr} onChange={e => setPr(e.target.value)} placeholder="e.g. 100" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1" />
+                <label className="text-xs text-gray-500">Pressure Rating (psi)</label>
+                <input type="number" step="1" value={pr} onChange={e => setPr(e.target.value)} placeholder="e.g. 1500" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1" />
               </div>
               <div className="flex-1">
                 <label className="text-xs text-gray-500">Valve Size (inch)</label>
@@ -247,10 +247,10 @@ export default function EngineeringHubPage() {
                       const prVal = parseFloat(pr)
                       const sz = parseFloat(valveSize)
                       let pressure = '-'
-                      if (t.no === 1) pressure = `${(prVal * 1.5).toFixed(1)} bar`
-                      else if (t.no <= 3) pressure = `${(prVal * 1.1).toFixed(1)} bar`
-                      else if (t.no === 4) pressure = '0.6–0.7 MPa (87–102 psi)'
-                      else pressure = `${prVal.toFixed(1)} bar`
+                      if (t.no === 1) pressure = `${(prVal * 1.5).toFixed(0)} psi`
+                      else if (t.no <= 3) pressure = `${(prVal * 1.1).toFixed(0)} psi`
+                      else if (t.no === 4) pressure = '87–102 psi (0.6–0.7 MPa)'
+                      else pressure = `${prVal.toFixed(0)} psi`
                       return (
                         <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                           <td className="px-2 py-1.5 font-semibold">{t.name}</td>
