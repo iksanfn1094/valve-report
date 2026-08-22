@@ -115,23 +115,7 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.text('Non Chargeable', M + colW + LW_R + 34, y + FH - 0.5)
   y += FH
 
-  // Row 4: Date | Assign Role
-  function formatENDate(raw: string): string {
-    if (!raw) return ''
-    try {
-      const parts = raw.split('-')
-      if (parts.length === 3) {
-        const months = ['January','February','March','April','May','June','July','August','September','October','November','December']
-        return parseInt(parts[2]) + ' ' + months[parseInt(parts[1]) - 1] + ' ' + parts[0]
-      }
-      return raw
-    } catch { return raw }
-  }
-  drawField(doc, 'Date', formatENDate(ts.assign_date), M, y, colW, FH, LW_L)
-  drawField(doc, 'Assign Role', ts.assign_role, M + colW, y, colW, FH, LW_R)
-  y += FH
-
-  // Row 5: Location (left, taller, word wrap) | Service Person (right, aligned top)
+  // Row 4: Location (left, taller, word wrap) | Service Person (right, aligned top)
   const locH = FH + 4
 
   // Left: Location (word wrap)
@@ -164,6 +148,22 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.text(ts.service_person || '', M + colW + LW_R, y + 4)
 
   y += locH
+
+  // Row 5: Date | Assign Role
+  function formatENDate(raw: string): string {
+    if (!raw) return ''
+    try {
+      const parts = raw.split('-')
+      if (parts.length === 3) {
+        const months = ['January','February','March','April','May','June','July','August','September','October','November','December']
+        return parseInt(parts[2]) + ' ' + months[parseInt(parts[1]) - 1] + ' ' + parts[0]
+      }
+      return raw
+    } catch { return raw }
+  }
+  drawField(doc, 'Date', formatENDate(ts.assign_date), M, y, colW, FH, LW_L)
+  drawField(doc, 'Assign Role', ts.assign_role, M + colW, y, colW, FH, LW_R)
+  y += FH
 
   // Row 6: Type of Worksite (left) | Mobilization Date (right)
   const wsH = 12
@@ -267,7 +267,7 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
     const e = entries[i]
     bodyRows.push([
       String(i + 1),
-      e?.entry_date || '',
+      formatENDate(e?.entry_date || ''),
       e ? (e.time_start || '') + (e.time_end ? ' - ' + e.time_end : '') : '',
       e?.overtime || '',
       e?.description || '',
