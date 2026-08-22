@@ -366,6 +366,63 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     setReport((prev) => prev ? { ...prev, ...updates } : prev)
   }
 
+  const BOM_SECTIONS = [
+    { value: 'valve', label: 'Valve Parts' },
+    { value: 'machining', label: 'Machining' },
+    { value: 'coating', label: 'Coating' },
+  ]
+  const BOM_UNITS = ['pcs', 'set', 'lot', 'kg', 'meter', 'liter', 'pair']
+
+  function addBomRow(section: string) {
+    const sectionItems = bomItems.filter((i) => i.section === section)
+    setBomItems([
+      ...bomItems,
+      {
+        section,
+        item_no: sectionItems.length + 1,
+        qty: null,
+        unit: 'pcs',
+        description: '',
+        specification: '',
+        dimension: '',
+        keterangan: '',
+      },
+    ])
+  }
+
+  function removeBomRow(idx: number) {
+    setBomItems(bomItems.filter((_, i) => i !== idx))
+  }
+
+  function updateBomRow(idx: number, field: keyof BomItem, value: unknown) {
+    const copy = [...bomItems]
+    ;(copy[idx] as Record<string, unknown>)[field] = value
+    setBomItems(copy)
+  }
+
+  async function saveBom() {
+    setSaving(true)
+    await supabase.from('report_bom_items').delete().eq('report_id', id)
+    const rows = bomItems.map((it, i) => ({
+      report_id: id,
+      section: it.section,
+      item_no: it.item_no,
+      qty: it.qty,
+      unit: it.unit,
+      description: it.description,
+      specification: it.specification,
+      dimension: it.dimension,
+      keterangan: it.keterangan,
+      sort_order: i,
+    }))
+    if (rows.length > 0) {
+      const { error } = await supabase.from('report_bom_items').insert(rows)
+      if (error) { setSaving(false); return alert('Error: ' + error.message) }
+    }
+    setSaving(false)
+    alert('BOM tersimpan!')
+  }
+
   const REPORT_FIELDS: { key: keyof Report; label: string; type?: string }[] = [
     { key: 'report_no', label: 'Report No' },
     { key: 'report_date', label: 'Date' },
@@ -509,23 +566,14 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
               </button>
             )
           )}
-          <Link
-            href={`/reports/${id}/bom`}
-            className="px-4 py-2 text-sm font-medium rounded-t-lg transition whitespace-nowrap bg-gray-100 text-gray-600 hover:bg-gray-200 ml-auto hidden"
-          >
-            BOM
-          </Link>
         </div>
       </div>
 
       {/* Items Table */}
-      {activeTab === 'inspection' && (
+      {activeTab === 'inspection' && (<>
       <div className="bg-white rounded-lg shadow border p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-bold text-gray-800">Incoming Insp. Check (Condition As Found)</h3>
-          <Link href={`/reports/${id}/bom`} className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 transition">
-            BOM
-          </Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
@@ -736,7 +784,134 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           * Klik &quot;+ Foto&quot; untuk upload foto per komponen. Baris harus disimpan dulu sebelum bisa upload foto.
         </p>
       </div>
-      )}
+
+      {/* BOM Section */}
+      <div className="bg-white rounded-lg shadow border p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-bold text-gray-800">Bill of Material (BOM)</h3>
+          <div className="flex gap-2">
+            {BOM_SECTIONS.map((s) => (
+              <button
+                key={s.value}
+                onClick={() => addBomRow(s.value)}
+                className="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-300 transition"
+              >
+                + {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border px-2 py-1 w-10">No</th>
+                <th className="border px-2 py-1">Section</th>
+                <th className="border px-2 py-1 w-16">Qty</th>
+                <th className="border px-2 py-1">Unit</th>
+                <th className="border px-2 py-1">Description</th>
+                <th className="border px-2 py-1">Specification</th>
+                <th className="border px-2 py-1">Dimension</th>
+                <th className="border px-2 py-1">Keterangan</th>
+                <th className="border px-2 py-1 w-10"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {bomItems.map((item, idx) => (
+                <tr key={idx} className="hover:bg-gray-50">
+                  <td className="border px-2 py-1 text-center text-gray-500">{idx + 1}</td>
+                  <td className="border px-2 py-1">
+                    <select
+                      className="w-full border-0 bg-transparent text-sm focus:outline-none"
+                      value={item.section}
+                      onChange={(e) => updateBomRow(idx, 'section', e.target.value)}
+                    >
+                      {BOM_SECTIONS.map((s) => (
+                        <option key={s.value} value={s.value}>{s.label}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="border px-2 py-1">
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      className="w-full border-0 bg-transparent text-sm text-center focus:outline-none"
+                      value={item.qty ?? ''}
+                      onChange={(e) => updateBomRow(idx, 'qty', Number(e.target.value) || null)}
+                    />
+                  </td>
+                  <td className="border px-2 py-1">
+                    <select
+                      className="w-full border-0 bg-transparent text-sm focus:outline-none"
+                      value={item.unit}
+                      onChange={(e) => updateBomRow(idx, 'unit', e.target.value)}
+                    >
+                      {BOM_UNITS.map((u) => (
+                        <option key={u} value={u}>{u}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="border px-2 py-1">
+                    <input
+                      className="w-full border-0 bg-transparent text-sm focus:outline-none"
+                      value={item.description}
+                      onChange={(e) => updateBomRow(idx, 'description', e.target.value)}
+                    />
+                  </td>
+                  <td className="border px-2 py-1">
+                    <input
+                      className="w-full border-0 bg-transparent text-sm focus:outline-none"
+                      value={item.specification}
+                      onChange={(e) => updateBomRow(idx, 'specification', e.target.value)}
+                    />
+                  </td>
+                  <td className="border px-2 py-1">
+                    <input
+                      className="w-full border-0 bg-transparent text-sm focus:outline-none"
+                      value={item.dimension}
+                      onChange={(e) => updateBomRow(idx, 'dimension', e.target.value)}
+                    />
+                  </td>
+                  <td className="border px-2 py-1">
+                    <input
+                      className="w-full border-0 bg-transparent text-sm focus:outline-none"
+                      value={item.keterangan}
+                      onChange={(e) => updateBomRow(idx, 'keterangan', e.target.value)}
+                    />
+                  </td>
+                  <td className="border px-2 py-1 text-center">
+                    <button
+                      onClick={() => removeBomRow(idx)}
+                      className="text-red-500 hover:text-red-700 font-bold"
+                      title="Hapus baris"
+                    >
+                      x
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {bomItems.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="border px-2 py-6 text-center text-gray-400">
+                    Belum ada item BOM. Klik tombol &quot;+ Valve Parts&quot; atau lainnya untuk menambah.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex gap-2 mt-3">
+          <button
+            onClick={saveBom}
+            disabled={saving}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition font-medium disabled:opacity-50"
+          >
+            {saving ? 'Menyimpan...' : 'Simpan BOM'}
+          </button>
+        </div>
+      </div>
+      </>)}
 
       {/* Placeholder for other tabs */}
       {activeTab !== 'inspection' && activeTab !== 'documentation' && (
