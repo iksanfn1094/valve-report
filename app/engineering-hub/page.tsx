@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { ORING_SIZES } from '@/lib/oring-data'
 
-type TabKey = 'oring' | 'api6d' | 'calc'
+type TabKey = 'oring' | 'api6d' | 'api598' | 'calc'
 
 const API6D_TESTS = [
   { no: 1, name: 'Hydrostatic Shell Test', medium: 'Water', pressureFormula: '≥ 1.5 × PR', holdingFn: (sz: number) => sz <= 4 ? '2 min' : sz <= 10 ? '5 min' : sz <= 18 ? '15 min' : '30 min', criteria: 'No visible leakage dari pressure-containing parts' },
@@ -11,6 +11,14 @@ const API6D_TESTS = [
   { no: 3, name: 'High-Pressure Gas Seat Test', medium: 'Inert gas (N₂)', pressureFormula: '≥ 1.1 × PR', holdingFn: (sz: number) => sz <= 18 ? '15 min' : '30 min', criteria: 'Sesuai API 6D gas seat test criteria' },
   { no: 4, name: 'Low-Pressure Gas Seat Test', medium: 'Air / inert gas', pressureFormula: '87–102 psi\n(0.6–0.7 MPa)', holdingFn: (sz: number) => sz <= 18 ? '15 min' : '30 min', criteria: 'Soft seat: ISO 5208 Rate A\nMetal seat: mengikuti API 6D' },
   { no: 5, name: 'Backseat Test', medium: 'Water', pressureFormula: 'Sesuai PR', holdingFn: (sz: number) => sz <= 4 ? '2 min' : '5 min', criteria: 'No visible leakage' },
+]
+
+const API598_TESTS = [
+  { no: 1, name: 'Shell Test', medium: 'Liquid', pressureFormula: '1.5 × CWP', holdingFn: (sz: number) => sz <= 2 ? '15 sec' : sz <= 4 ? '1 min' : sz <= 8 ? '2 min' : sz <= 14 ? '5 min' : '10 min', criteria: 'No visible leakage through pressure boundary' },
+  { no: 2, name: 'Backseat Test', medium: 'Liquid', pressureFormula: '1.1 × CWP', holdingFn: (sz: number) => sz <= 2 ? '15 sec' : sz <= 4 ? '1 min' : sz <= 8 ? '2 min' : sz <= 14 ? '5 min' : '10 min', criteria: 'No visible leakage' },
+  { no: 3, name: 'High-Pressure Closure Test', medium: 'Liquid / Gas', pressureFormula: '1.1 × CWP', holdingFn: (sz: number) => sz <= 2 ? '15 sec' : sz <= 4 ? '1 min' : sz <= 8 ? '2 min' : sz <= 14 ? '5 min' : '10 min', criteria: 'Leakage ≤ allowable rate' },
+  { no: 4, name: 'Low-Pressure Closure Test', medium: 'Air / Gas', pressureFormula: '80 ± 5 psi\n(5.5 ± 0.5 bar)', holdingFn: (sz: number) => sz <= 2 ? '15 sec' : sz <= 4 ? '1 min' : sz <= 8 ? '2 min' : sz <= 14 ? '5 min' : '10 min', criteria: 'Leakage ≤ allowable rate' },
+  { no: 5, name: 'High-Pressure Closure Test – Gas', medium: 'Air / inert gas', pressureFormula: '1.1 × CWP', holdingFn: (sz: number) => sz <= 2 ? '15 sec' : sz <= 4 ? '1 min' : sz <= 8 ? '2 min' : sz <= 14 ? '5 min' : '10 min', criteria: 'Leakage ≤ allowable rate' },
 ]
 
 export default function EngineeringHubPage() {
@@ -21,6 +29,8 @@ export default function EngineeringHubPage() {
   const [calcResult, setCalcResult] = useState<number | null>(null)
   const [pr, setPr] = useState('')
   const [valveSize, setValveSize] = useState('')
+  const [cwp, setCwp] = useState('')
+  const [valveSize598, setValveSize598] = useState('')
 
   const csGroups = [
     { label: 'All', value: 'all' },
@@ -50,7 +60,7 @@ export default function EngineeringHubPage() {
       <h1 className="text-xl font-bold text-teal-700">Engineering Hub</h1>
 
       <div className="flex gap-2 border-b border-gray-200 pb-0">
-        {([['oring', 'Standard O-Ring'], ['api6d', 'API 6D Pressure Test'], ['calc', 'Seat Leak Test']] as [TabKey, string][]).map(([k, label]) => (
+        {([['oring', 'Standard O-Ring'], ['api6d', 'API 6D'], ['api598', 'API 598'], ['calc', 'Seat Leak Test']] as [TabKey, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)} className={`px-4 py-2 text-sm font-medium rounded-t-lg transition ${tab === k ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
             {label}
           </button>
@@ -251,6 +261,99 @@ export default function EngineeringHubPage() {
                       else if (t.no <= 3) pressure = `${(prVal * 1.1).toFixed(0)} psi`
                       else if (t.no === 4) pressure = '87–102 psi (0.6–0.7 MPa)'
                       else pressure = `${prVal.toFixed(0)} psi`
+                      return (
+                        <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-2 py-1.5 font-semibold">{t.name}</td>
+                          <td className="px-2 py-1.5 text-right font-mono">{pressure}</td>
+                          <td className="px-2 py-1.5">{t.holdingFn(sz)}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {tab === 'api598' && (
+        <div className="space-y-4">
+          <p className="text-xs text-gray-500">API 598 — Valve Inspection and Testing — Pressure Test Requirements</p>
+
+          {/* Reference Table */}
+          <div className="overflow-auto border rounded-lg">
+            <table className="text-sm w-full">
+              <thead className="bg-teal-600 text-white sticky top-0">
+                <tr>
+                  <th className="px-3 py-2 text-center text-xs w-8">No</th>
+                  <th className="px-3 py-2 text-left text-xs">Test</th>
+                  <th className="px-3 py-2 text-left text-xs">Test Medium</th>
+                  <th className="px-3 py-2 text-left text-xs">Test Pressure</th>
+                  <th className="px-3 py-2 text-left text-xs">Min Duration</th>
+                  <th className="px-3 py-2 text-left text-xs">Acceptance Criteria</th>
+                </tr>
+              </thead>
+              <tbody>
+                {API598_TESTS.map((t, i) => (
+                  <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    <td className="px-3 py-2 text-center text-xs font-semibold">{t.no}</td>
+                    <td className="px-3 py-2 text-xs font-semibold text-gray-800">{t.name}</td>
+                    <td className="px-3 py-2 text-xs text-gray-600">{t.medium}</td>
+                    <td className="px-3 py-2 text-xs text-gray-700 font-mono whitespace-pre-line">{t.pressureFormula}</td>
+                    <td className="px-3 py-2 text-xs text-gray-600 whitespace-pre-line">{t.holdingFn(99)}</td>
+                    <td className="px-3 py-2 text-xs text-gray-600 whitespace-pre-line">{t.criteria}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Calculator */}
+          <div className="bg-gray-50 border rounded-lg p-4 space-y-3 max-w-lg">
+            <p className="text-sm font-semibold text-gray-700">Quick Calculator</p>
+            <p className="text-xs text-gray-400">Pilih Pressure Class atau input langsung CWP (psi), lalu masukkan Valve Size (inch)</p>
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="text-xs text-gray-500">Pressure Class</label>
+                <select value={cwp} onChange={e => setCwp(e.target.value)} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1">
+                  <option value="">— Pilih Class —</option>
+                  <option value="285">Class 150 (285 psi)</option>
+                  <option value="740">Class 300 (740 psi)</option>
+                  <option value="1000">Class 400 (1000 psi)</option>
+                  <option value="1500">Class 600 (1500 psi)</option>
+                  <option value="2250">Class 900 (2250 psi)</option>
+                  <option value="3750">Class 1500 (3750 psi)</option>
+                  <option value="6250">Class 2500 (6250 psi)</option>
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="text-xs text-gray-500">CWP (psi)</label>
+                <input type="number" step="1" value={cwp} onChange={e => setCwp(e.target.value)} placeholder="e.g. 1500" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1" />
+              </div>
+              <div className="flex-1">
+                <label className="text-xs text-gray-500">Valve Size (inch)</label>
+                <input type="number" step="1" value={valveSize598} onChange={e => setValveSize598(e.target.value)} placeholder="e.g. 6" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1" />
+              </div>
+            </div>
+            {cwp && valveSize598 && (
+              <div className="mt-2 overflow-auto">
+                <table className="text-xs w-full">
+                  <thead className="bg-teal-100 text-teal-800">
+                    <tr>
+                      <th className="px-2 py-1.5 text-left">Test</th>
+                      <th className="px-2 py-1.5 text-right">Test Pressure</th>
+                      <th className="px-2 py-1.5 text-left">Duration</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {API598_TESTS.map((t, i) => {
+                      const cwpVal = parseFloat(cwp)
+                      const sz = parseFloat(valveSize598)
+                      let pressure = '-'
+                      if (t.no === 1) pressure = `${(cwpVal * 1.5).toFixed(0)} psi`
+                      else if (t.no === 4) pressure = '80 ± 5 psi (5.5 ± 0.5 bar)'
+                      else pressure = `${(cwpVal * 1.1).toFixed(0)} psi`
                       return (
                         <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                           <td className="px-2 py-1.5 font-semibold">{t.name}</td>
