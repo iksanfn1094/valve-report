@@ -53,9 +53,8 @@ type PhotoData = {
 type DocData = {
   id?: string
   component_name: string
-  description: string
-  photo_before: string
-  photo_after: string
+  photo_before: string[]
+  photo_after: string[]
 }
 
 type ValveTestData = {
@@ -592,12 +591,21 @@ export async function exportReportPDF(
     doc.text('DOCUMENTATION', M, y)
     y += 3
 
-    const beforeB64: (string | null)[] = []
-    const afterB64: (string | null)[] = []
+    const allBefore: (string | null)[][] = []
+    const allAfter: (string | null)[][] = []
     for (const d of docItems) {
-      beforeB64.push(d.photo_before ? await fetchImageAsBase64(d.photo_before) : null)
-      afterB64.push(d.photo_after ? await fetchImageAsBase64(d.photo_after) : null)
+      const bArr: (string | null)[] = []
+      for (const url of (d.photo_before || [])) { bArr.push(await fetchImageAsBase64(url)) }
+      allBefore.push(bArr)
+      const aArr: (string | null)[] = []
+      for (const url of (d.photo_after || [])) { aArr.push(await fetchImageAsBase64(url)) }
+      allAfter.push(aArr)
     }
+
+    const maxPhotos = Math.max(1, ...docItems.map(d => Math.max(d.photo_before?.length || 0, d.photo_after?.length || 0)))
+    const IMG_SZ = 22
+    const GAP = 2
+    const photoColW = Math.min(90, maxPhotos * (IMG_SZ + GAP) + 4)
 
     autoTable(doc, {
       startY: y,
@@ -615,21 +623,26 @@ export async function exportReportPDF(
       columnStyles: {
         0: { cellWidth: 8, halign: 'center' },
         1: { cellWidth: 30, halign: 'left' },
-        2: { cellWidth: 76, halign: 'center', minCellHeight: 28 },
-        3: { cellWidth: 76, halign: 'center', minCellHeight: 28 },
+        2: { cellWidth: photoColW, halign: 'center', minCellHeight: IMG_SZ + 4 },
+        3: { cellWidth: photoColW, halign: 'center', minCellHeight: IMG_SZ + 4 },
       },
       didDrawCell: (data) => {
         if (data.section !== 'body') return
         const col = data.column.index
         const rowIdx = data.row.index
-        const b64 = col === 2 ? beforeB64[rowIdx] : col === 3 ? afterB64[rowIdx] : null
-        if (b64 && b64 !== '-') {
-          const imgW = 24, imgH = 24
-          const x = data.cell.x + (data.cell.width - imgW) / 2
-          const y2 = data.cell.y + (data.cell.height - imgH) / 2
-          try { doc.addImage(b64, 'JPEG', x, y2, imgW, imgH) } catch { /* skip */ }
-          doc.setTextColor(255, 255, 255)
-          doc.text(' ', data.cell.x, data.cell.y)
+        const arr = col === 2 ? allBefore[rowIdx] : col === 3 ? allAfter[rowIdx] : null
+        if (arr && arr.length > 0) {
+          const maxPerRow = Math.floor(data.cell.width / (IMG_SZ + GAP))
+          arr.forEach((b64, ci) => {
+            if (!b64) return
+            const row = Math.floor(ci / maxPerRow)
+            const c = ci % maxPerRow
+            const totalInRow = Math.min(maxPerRow, arr.length - row * maxPerRow)
+            const offsetX = (data.cell.width - totalInRow * (IMG_SZ + GAP)) / 2
+            const x = data.cell.x + offsetX + c * (IMG_SZ + GAP)
+            const y2 = data.cell.y + (data.cell.height - IMG_SZ) / 2 + row * (IMG_SZ + GAP)
+            try { doc.addImage(b64, 'JPEG', x, y2, IMG_SZ, IMG_SZ) } catch { /* skip */ }
+          })
         }
       },
     })

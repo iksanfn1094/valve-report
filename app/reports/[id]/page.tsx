@@ -204,7 +204,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   const [items, setItems] = useState<Item[]>([])
   const [photos, setPhotos] = useState<Photo[]>([])
   const [bomItems, setBomItems] = useState<BomItem[]>([])
-  type DocPhotoRow = { id?: string; component_name: string; description: string; photo_before: string; photo_after: string }
+  type DocPhotoRow = { id?: string; component_name: string; photo_before: string[]; photo_after: string[] }
   const [docItems, setDocItems] = useState<DocPhotoRow[]>([])
   const [savingDoc, setSavingDoc] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -288,7 +288,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   }
 
   function addDocItem() {
-    setDocItems([...docItems, { id: undefined, component_name: '', description: '', photo_before: '', photo_after: '' }])
+    setDocItems([...docItems, { id: undefined, component_name: '', photo_before: [], photo_after: [] }])
   }
   function removeDocItem(idx: number) {
     setDocItems(docItems.filter((_, i) => i !== idx))
@@ -304,7 +304,14 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     if (error) return alert('Upload gagal: ' + error.message)
     const { data } = supabase.storage.from('report-photos').getPublicUrl(path)
     const copy = [...docItems]
-    copy[idx] = { ...copy[idx], [side === 'before' ? 'photo_before' : 'photo_after']: data.publicUrl }
+    const field = side === 'before' ? 'photo_before' : 'photo_after'
+    copy[idx] = { ...copy[idx], [field]: [...copy[idx][field], data.publicUrl] }
+    setDocItems(copy)
+  }
+  function removeDocImg(idx: number, side: 'before' | 'after', imgIdx: number) {
+    const copy = [...docItems]
+    const field = side === 'before' ? 'photo_before' : 'photo_after'
+    copy[idx] = { ...copy[idx], [field]: copy[idx][field].filter((_: string, j: number) => j !== imgIdx) }
     setDocItems(copy)
   }
   async function saveDocItems() {
@@ -315,18 +322,16 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     for (const d of existing) {
       await supabase.from('report_documentation').update({
         component_name: d.component_name,
-        description: d.description,
-        photo_before: d.photo_before,
-        photo_after: d.photo_after,
+        photo_before: JSON.stringify(d.photo_before),
+        photo_after: JSON.stringify(d.photo_after),
       }).eq('id', d.id)
     }
     if (newItems.length > 0) {
       const rows = newItems.map((d) => ({
         report_id: id,
         component_name: d.component_name,
-        description: d.description,
-        photo_before: d.photo_before,
-        photo_after: d.photo_after,
+        photo_before: JSON.stringify(d.photo_before),
+        photo_after: JSON.stringify(d.photo_after),
         sort_order: docItems.indexOf(d),
       }))
       const { data, error } = await supabase.from('report_documentation').insert(rows).select()
@@ -402,9 +407,8 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         setDocItems(docRes.data.map((d) => ({
           id: d.id as string,
           component_name: d.component_name ?? '',
-          description: d.description ?? '',
-          photo_before: d.photo_before ?? '',
-          photo_after: d.photo_after ?? '',
+          photo_before: (() => { try { return JSON.parse(d.photo_before || '[]') } catch { return [] as string[] } })(),
+          photo_after: (() => { try { return JSON.parse(d.photo_after || '[]') } catch { return [] as string[] } })(),
         })))
       }
       setLoading(false)
@@ -1407,25 +1411,33 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                       {['Body', 'Bonnet', 'Stem', 'Seat', 'Disc', 'Ball', 'Plug', 'Packing', 'Gasket', 'Bolt', 'Nut', 'Spring', 'Diaphragm', 'Actuator', 'Handwheel', 'Yoke', 'Backseat', 'Guide', 'Thrust Bearing', 'Retainer', 'O-Ring', 'Other'].map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </td>
-                  <td className="border px-1 py-1 text-center">
-                    {row.photo_before ? (
-                      <img src={row.photo_before} alt="Before" className="w-10 h-10 object-cover rounded cursor-pointer mx-auto" onClick={() => setPreviewPhoto(row.photo_before)} />
-                    ) : (
+                  <td className="border px-1 py-1">
+                    <div className="flex flex-wrap items-center gap-1">
+                      {row.photo_before.map((url: string, j: number) => (
+                        <div key={j} className="relative">
+                          <img src={url} alt="" className="w-10 h-10 object-cover rounded cursor-pointer" onClick={() => setPreviewPhoto(url)} />
+                          <button onClick={() => removeDocImg(i, 'before', j)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-3 h-3 text-[8px] flex items-center justify-center leading-none">&#10005;</button>
+                        </div>
+                      ))}
                       <label className="text-blue-600 hover:text-blue-800 cursor-pointer text-xs">
                         + Foto
                         <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadDocPhoto(f, i, 'before') }} />
                       </label>
-                    )}
+                    </div>
                   </td>
-                  <td className="border px-1 py-1 text-center">
-                    {row.photo_after ? (
-                      <img src={row.photo_after} alt="After" className="w-10 h-10 object-cover rounded cursor-pointer mx-auto" onClick={() => setPreviewPhoto(row.photo_after)} />
-                    ) : (
+                  <td className="border px-1 py-1">
+                    <div className="flex flex-wrap items-center gap-1">
+                      {row.photo_after.map((url: string, j: number) => (
+                        <div key={j} className="relative">
+                          <img src={url} alt="" className="w-10 h-10 object-cover rounded cursor-pointer" onClick={() => setPreviewPhoto(url)} />
+                          <button onClick={() => removeDocImg(i, 'after', j)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-3 h-3 text-[8px] flex items-center justify-center leading-none">&#10005;</button>
+                        </div>
+                      ))}
                       <label className="text-blue-600 hover:text-blue-800 cursor-pointer text-xs">
                         + Foto
                         <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadDocPhoto(f, i, 'after') }} />
                       </label>
-                    )}
+                    </div>
                   </td>
                   <td className="border px-1 py-1 text-center"><button onClick={() => removeDocItem(i)} className="text-red-400 hover:text-red-600 text-sm font-bold">&#10005;</button></td>
                 </tr>
