@@ -147,7 +147,8 @@ export async function exportReportPDF(
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
-  doc.text('INSPECTION REPORT', PW / 2, 9, { align: 'center' })
+  const titleText = tab === 'test' ? 'TEST REPORT' : 'INSPECTION REPORT'
+  doc.text(titleText, PW / 2, 9, { align: 'center' })
   doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
   doc.text('PT. VALVINDO MEGAH', PW / 2, 16, { align: 'center' })
@@ -163,8 +164,22 @@ export async function exportReportPDF(
   doc.setTextColor(...BLUE)
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
-  doc.text('JOB INFORMATION', M, y)
-  y += 3
+
+  if (tab === 'test') {
+    doc.text('VALVE INFORMATION', M, y)
+    y += 3
+    const halfW = CW / 2
+    const testInfoFields: [string, string | null][] = [
+      ['Valve Id', report.job_number],
+      ['Size (in.)', report.size],
+    ]
+    testInfoFields.forEach(([label, val]) => {
+      drawField(doc, label, val || '', M, y, halfW, 5.5, 35)
+      y += 5.5
+    })
+    drawField(doc, 'Rating Class', report.class || '', M, y, halfW, 5.5, 35)
+    y += 5.5
+  } else {
 
   const thirdW = CW / 3
   const jobRows = [
@@ -188,8 +203,10 @@ export async function exportReportPDF(
     y += 5.5
   })
   y += 5
+  } // end else (non-test tabs)
 
   // ========== CONSTRUCTION (AS FOUND) ==========
+  if (tab !== 'test') {
   doc.setTextColor(...BLUE)
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
@@ -263,6 +280,7 @@ export async function exportReportPDF(
   })
 
   y += 5
+  } // end CONSTRUCTION (non-test tabs)
 
   // ========== INSPECTION ITEMS TABLE ==========
   if (tab === 'all' || tab === 'inspection') {
@@ -451,7 +469,7 @@ export async function exportReportPDF(
       y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 7
     }
 
-    // Valve Test Photo Records
+    // Valve Test Photo Records - per test type, photos side by side
     let testPhotos: { test_type: string; description: string; photos: string[] }[] = []
     try { testPhotos = JSON.parse(valveTest.test_photos || '[]') } catch { /* empty */ }
     if (testPhotos.length > 0) {
@@ -460,52 +478,40 @@ export async function exportReportPDF(
       doc.setFontSize(9)
       doc.setFont('helvetica', 'bold')
       doc.text('VALVE TEST PHOTO RECORDS', M, y)
-      y += 3
+      y += 5
 
-      const photoColW = [8, 40, 50, 100]
-      autoTable(doc, {
-        startY: y,
-        margin: { left: M, right: M },
-        head: [['No', 'Test Type', 'Description', 'Photos']],
-        body: testPhotos.map((p, i) => [
-          String(i + 1),
-          TEST_LABELS[p.test_type] || p.test_type || '-',
-          p.description || '-',
-          p.photos.length > 0 ? `${p.photos.length} foto` : '-',
-        ]),
-        styles: { fontSize: 6.5, cellPadding: 1.5, lineColor: GRID, lineWidth: 0.2 },
-        headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6.5, fontStyle: 'bold', halign: 'center' },
-        alternateRowStyles: { fillColor: LIGHT_BG },
-        columnStyles: {
-          0: { cellWidth: photoColW[0], halign: 'center' },
-          1: { cellWidth: photoColW[1], halign: 'left' },
-          2: { cellWidth: photoColW[2], halign: 'left' },
-          3: { cellWidth: photoColW[3], halign: 'left' },
-        },
-      })
-      y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 7
+      const IMG_SZ = 40
+      const GAP = 3
+      const maxPerRow = Math.floor(CW / (IMG_SZ + GAP))
 
-      // Download first photo per row as preview
       for (const row of testPhotos) {
-        if (row.photos.length > 0 && row.photos[0]) {
-          np(55)
-          doc.setFontSize(7)
-          doc.setFont('helvetica', 'normal')
-          doc.setTextColor(0, 0, 0)
-          doc.text(`${TEST_LABELS[row.test_type] || row.test_type}${row.description ? ' - ' + row.description : ''}`, M, y)
-          y += 2
-          for (const url of row.photos) {
-            const b64 = await fetchImageAsBase64(url)
-            if (b64) {
-              np(55)
-              try {
-                const imgW = 50, imgH = 50
-                doc.addImage(b64, 'JPEG', M, y, imgW, imgH)
-                y += imgH + 3
-              } catch { /* skip */ }
-            }
-          }
+        if (row.photos.length === 0) continue
+        const label = TEST_LABELS[row.test_type] || row.test_type || '-'
+
+        np(15)
+        doc.setFontSize(7)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(0, 0, 0)
+        doc.text(`${label}${row.description ? ' - ' + row.description : ''}`, M, y)
+        y += 3
+
+        const b64s: string[] = []
+        for (const url of row.photos) {
+          const b64 = await fetchImageAsBase64(url)
+          if (b64) b64s.push(b64)
         }
+
+        for (let j = 0; j < b64s.length; j += maxPerRow) {
+          const chunk = b64s.slice(j, j + maxPerRow)
+          np(IMG_SZ + 3)
+          chunk.forEach((b64, ci) => {
+            try {
+              doc.addImage(b64, 'JPEG', M + ci * (IMG_SZ + GAP), y, IMG_SZ, IMG_SZ)
+            } catch { /* skip */ }
+          })
+          y += IMG_SZ + 3
+        }
+        y += 2
       }
     }
   } // end test tab
