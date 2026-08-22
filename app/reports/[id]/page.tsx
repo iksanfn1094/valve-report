@@ -417,7 +417,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       {/* Header Info */}
       <div className="bg-white rounded-lg shadow border p-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold text-gray-800">Inspection Report: {report.job_number}</h2>
+          <h2 className="text-lg font-bold text-gray-800">{report.job_number}</h2>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
