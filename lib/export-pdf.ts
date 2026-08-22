@@ -29,6 +29,7 @@ type ItemData = {
   recommendation: string[]
   comment: string
   spec_material: string
+  repair_category?: string
 }
 
 type BomData = {
@@ -278,9 +279,10 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
     doc.setLineWidth(0.3)
     doc.rect(rightX + 3, cy, 3.5, 3.5, 'S')
     if (checked) {
-      doc.setFontSize(7)
-      doc.setFont('helvetica', 'bold')
-      doc.text('✓', rightX + 3.3, cy + 3)
+      doc.setLineWidth(0.5)
+      doc.line(rightX + 3.5, cy + 1.8, rightX + 4.5, cy + 0.5)
+      doc.line(rightX + 4.5, cy + 0.5, rightX + 6, cy + 3)
+      doc.setLineWidth(0.2)
     }
     doc.setFontSize(6.5)
     doc.setFont('helvetica', 'normal')
@@ -326,12 +328,20 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
     startY: y,
     margin: { left: M, right: M },
     head: [
-      ['No', 'Component / Part Description', 'Qty', 'Condition', { content: 'Recommendation', colSpan: 3 }, 'Repair Category', 'Foto', 'Material Spec.'],
-      ['', '', '', '', 'C', 'RP', 'RE', '', '', ''],
+      [
+        { content: 'No', rowSpan: 2 },
+        { content: 'Component / Part Description', rowSpan: 2 },
+        { content: 'Qty', rowSpan: 2 },
+        { content: 'Condition', rowSpan: 2 },
+        { content: 'Recommendation', colSpan: 3 },
+        { content: 'Repair Category', rowSpan: 2 },
+        { content: 'Foto', rowSpan: 2 },
+        { content: 'Material Spec.', rowSpan: 2 },
+      ],
+      ['C', 'RP', 'RE'],
     ],
     body: items.map((it) => {
       const rowPhotos = photosByItem.get(it.id || '') || []
-      const hasFoto = rowPhotos.length > 0 ? '✓' : '-'
       return [
         String(it.item_no),
         it.component_name || '-',
@@ -340,25 +350,84 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
         it.recommendation.includes('C') ? '✓' : '',
         it.recommendation.includes('RP') ? '✓' : '',
         it.recommendation.includes('RE') ? '✓' : '',
-        it.recommendation.includes('RE') ? '✓' : it.recommendation.includes('RP') ? '✓' : it.recommendation.includes('C') ? '✓' : '-',
-        hasFoto,
+        it.repair_category || '-',
+        '',
         it.spec_material || '-',
       ]
     }),
     styles: { fontSize: 6, cellPadding: 1, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak' },
-    headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6, fontStyle: 'bold', halign: 'center' },
+    headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6, fontStyle: 'bold', halign: 'center', valign: 'middle' },
     alternateRowStyles: { fillColor: LIGHT_BG },
     columnStyles: {
       0: { cellWidth: 8, halign: 'center' },
-      1: { cellWidth: 30, halign: 'left' },
+      1: { cellWidth: 28, halign: 'left' },
       2: { cellWidth: 10, halign: 'center' },
-      3: { cellWidth: 38, halign: 'left' },
-      4: { cellWidth: 10, halign: 'center' },
-      5: { cellWidth: 10, halign: 'center' },
-      6: { cellWidth: 10, halign: 'center' },
+      3: { cellWidth: 32, halign: 'left' },
+      4: { cellWidth: 8, halign: 'center' },
+      5: { cellWidth: 8, halign: 'center' },
+      6: { cellWidth: 8, halign: 'center' },
       7: { cellWidth: 24, halign: 'center' },
-      8: { cellWidth: 18, halign: 'center' },
-      9: { cellWidth: 30, halign: 'left' },
+      8: { cellWidth: 20, halign: 'center' },
+      9: { cellWidth: 32, halign: 'left' },
+    },
+    didDrawCell: (data) => {
+      if (data.section !== 'body') return
+      const item = items[data.row.index]
+      if (!item) return
+
+      // Draw checkmark for C/RP/RE columns (4,5,6) and Condition col (3) - visible box with check
+      const checkCols = [4, 5, 6]
+      if (checkCols.includes(data.column.index)) {
+        const val = data.cell.raw as string
+        if (val === '✓') {
+          const cx = data.cell.x + data.cell.width / 2
+          const cy = data.cell.y + data.cell.height / 2
+          doc.setDrawColor(0)
+          doc.setLineWidth(0.3)
+          doc.rect(cx - 2.5, cy - 2.5, 5, 5, 'S')
+          doc.setLineWidth(0.6)
+          doc.line(cx - 1.5, cy + 0.5, cx - 0.3, cy - 1.2)
+          doc.line(cx - 0.3, cy - 1.2, cx + 2, cy + 2)
+          doc.setLineWidth(0.2)
+        }
+      }
+
+      // Draw checkmark for Repair Category column (7)
+      if (data.column.index === 7) {
+        const val = data.cell.raw as string
+        if (val && val !== '-') {
+          const cx = data.cell.x + data.cell.width / 2
+          const cy = data.cell.y + data.cell.height / 2
+          doc.setDrawColor(0)
+          doc.setLineWidth(0.3)
+          doc.rect(cx - 2.5, cy - 2.5, 5, 5, 'S')
+          doc.setLineWidth(0.6)
+          doc.line(cx - 1.5, cy + 0.5, cx - 0.3, cy - 1.2)
+          doc.line(cx - 0.3, cy - 1.2, cx + 2, cy + 2)
+          doc.setLineWidth(0.2)
+          doc.setFontSize(5)
+          doc.setFont('helvetica', 'normal')
+          doc.setTextColor(0, 0, 0)
+          doc.text(val, cx + 5, cy + 1.5)
+        }
+      }
+
+      // Draw photos in Foto column (8)
+      if (data.column.index === 8) {
+        const rowPhotos = photosByItem.get(item.id || '') || []
+        if (rowPhotos.length > 0) {
+          const photoSize = 14
+          const gap = 1
+          const startX = data.cell.x + 1
+          const startYCell = data.cell.y + 1
+          rowPhotos.slice(0, 4).forEach((p, pi) => {
+            if (!p.url) return
+            const px = startX + (pi % 4) * (photoSize + gap)
+            const py = startYCell + Math.floor(pi / 4) * (photoSize + gap)
+            try { doc.addImage(p.url, 'JPEG', px, py, photoSize, photoSize) } catch { /* skip */ }
+          })
+        }
+      }
     },
   })
   y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
