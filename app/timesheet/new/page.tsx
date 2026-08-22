@@ -146,46 +146,38 @@ export default function TimesheetPage() {
           <Field label="Customer PO" value={ts.customer_po} onChange={(v) => setField('customer_po', v)} />
           <Field label="Letter Of Assignment" value={ts.letter_of_assignment} onChange={(v) => setField('letter_of_assignment', v)} />
           <Field label="End-User/Project" value={ts.end_user_project} onChange={(v) => setField('end_user_project', v)} />
-          <div className="flex flex-col">
-            <label className="text-xs text-gray-500 mb-1">Allowance</label>
-            <div className="flex gap-4 items-center h-9">
-              <CheckRadio label="Chargeable" checked={ts.allowance === 'chargeable'} onChange={() => setField('allowance', 'chargeable')} />
-              <CheckRadio label="Non Chargeable" checked={ts.allowance === 'non_chargeable'} onChange={() => setField('allowance', 'non_chargeable')} />
-            </div>
-          </div>
-          <Field label="Date" type="date" value={ts.assign_date} onChange={(v) => setField('assign_date', v)} />
           <Field label="Assign Role" value={ts.assign_role} onChange={(v) => setField('assign_role', v)} />
           <Field label="Location" value={ts.location} onChange={(v) => setField('location', v)} />
           <Field label="Service Person" value={ts.service_person} onChange={(v) => setField('service_person', v)} />
           <Field label="Attachment" value={ts.attachment} onChange={(v) => setField('attachment', v)} />
           <Field label="Mobilization Date" type="date" value={ts.mobilization_date} onChange={(v) => setField('mobilization_date', v)} />
         </div>
-      </Section>
-
-      {/* Worksite Type */}
-      <Section title="Type of Worksite">
-        <div className="grid grid-cols-2 gap-2">
-          <Check label="Office" checked={ts.worksite_office} onChange={(v) => setField('worksite_office', v)} />
-          <Check label="Plant/Workshop" checked={ts.worksite_plant} onChange={(v) => setField('worksite_plant', v)} />
-          <Check label="Onshore" checked={ts.worksite_onshore} onChange={(v) => setField('worksite_onshore', v)} />
-          <Check label="Offshore" checked={ts.worksite_offshore} onChange={(v) => setField('worksite_offshore', v)} />
-        </div>
-      </Section>
-
-      {/* Scope & Service Type */}
-      <Section title="Scope & Type of Service">
-        <Field label="Brief Scope of Work" value={ts.brief_scope} onChange={(v) => setField('brief_scope', v)} textarea />
-        <div className="grid grid-cols-2 gap-2 mt-3">
-          <Check label="Workshop" checked={ts.service_workshop} onChange={(v) => setField('service_workshop', v)} />
-          <Check label="Field Service" checked={ts.service_field} onChange={(v) => setField('service_field', v)} />
-          <Check label="ENG./Inspection" checked={ts.service_eng} onChange={(v) => setField('service_eng', v)} />
-          <Check label="Other" checked={ts.service_other} onChange={(v) => setField('service_other', v)} />
-        </div>
-        {ts.service_other && (
-          <div className="mt-2">
-            <Field label="Other (specify)" value={ts.service_other_text} onChange={(v) => setField('service_other_text', v)} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+          <div className="flex flex-col">
+            <label className="text-xs text-gray-500 mb-1">Type of Worksite</label>
+            <div className="grid grid-cols-2 gap-1">
+              <Check label="Office" checked={ts.worksite_office} onChange={(v) => setField('worksite_office', v)} />
+              <Check label="Plant/Workshop" checked={ts.worksite_plant} onChange={(v) => setField('worksite_plant', v)} />
+              <Check label="Onshore" checked={ts.worksite_onshore} onChange={(v) => setField('worksite_onshore', v)} />
+              <Check label="Offshore" checked={ts.worksite_offshore} onChange={(v) => setField('worksite_offshore', v)} />
+            </div>
           </div>
-        )}
+          <div className="flex flex-col">
+            <label className="text-xs text-gray-500 mb-1">Type of Service</label>
+            <div className="grid grid-cols-2 gap-1">
+              <Check label="Workshop" checked={ts.service_workshop} onChange={(v) => setField('service_workshop', v)} />
+              <Check label="Field Service" checked={ts.service_field} onChange={(v) => setField('service_field', v)} />
+              <Check label="ENG./Inspection" checked={ts.service_eng} onChange={(v) => setField('service_eng', v)} />
+              <Check label="Other" checked={ts.service_other} onChange={(v) => setField('service_other', v)} />
+            </div>
+            {ts.service_other && (
+              <Field label="Other (specify)" value={ts.service_other_text} onChange={(v) => setField('service_other_text', v)} />
+            )}
+          </div>
+        </div>
+        <div className="mt-3">
+          <Field label="Brief Scope of Work" value={ts.brief_scope} onChange={(v) => setField('brief_scope', v)} textarea />
+        </div>
       </Section>
 
       {/* Timesheet Table */}
