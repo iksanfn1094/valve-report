@@ -154,6 +154,7 @@ type ValveTest = {
   func100_result: string
   func100_remark: string
   test_rows: string
+  test_photos: string
 }
 
 const RECS = [
@@ -224,6 +225,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     func75_pressure_psi: '', func75_duration_min: '', func75_acceptance: '', func75_start_test: '', func75_finish_test: '', func75_result: '', func75_remark: '',
       func100_pressure_psi: '', func100_duration_min: '', func100_acceptance: 'SMOOTH and LINEAR', func100_start_test: '', func100_finish_test: '', func100_result: '', func100_remark: '',
       test_rows: '[]',
+      test_photos: '[]',
     })
   const [savingTest, setSavingTest] = useState(false)
 
@@ -247,6 +249,33 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     const rows = getTestRows()
     rows.splice(idx, 1)
     setValveTest(prev => ({ ...prev, test_rows: JSON.stringify(rows) }))
+  }
+
+  type TestPhotoRow = { id: string; test_type: string; description: string; photo_url: string }
+  function getTestPhotos(): TestPhotoRow[] {
+    try { return JSON.parse(valveTest.test_photos || '[]') } catch { return [] }
+  }
+  function addTestPhoto() {
+    const photos = getTestPhotos()
+    photos.push({ id: crypto.randomUUID(), test_type: '', description: '', photo_url: '' })
+    setValveTest(prev => ({ ...prev, test_photos: JSON.stringify(photos) }))
+  }
+  function updateTestPhoto(idx: number, field: keyof TestPhotoRow, value: string) {
+    const photos = getTestPhotos()
+    ;(photos[idx] as Record<string, unknown>)[field] = value
+    setValveTest(prev => ({ ...prev, test_photos: JSON.stringify(photos) }))
+  }
+  function removeTestPhoto(idx: number) {
+    const photos = getTestPhotos()
+    photos.splice(idx, 1)
+    setValveTest(prev => ({ ...prev, test_photos: JSON.stringify(photos) }))
+  }
+  async function uploadTestPhoto(file: File, idx: number) {
+    const path = `valve-test-photos/${id}/${Date.now()}-${file.name}`
+    const { error } = await supabase.storage.from('report-photos').upload(path, file)
+    if (error) return alert('Upload gagal: ' + error.message)
+    const { data } = supabase.storage.from('report-photos').getPublicUrl(path)
+    updateTestPhoto(idx, 'photo_url', data.publicUrl)
   }
 
   const fetchPhotos = useCallback(async () => {
@@ -303,6 +332,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           func75_pressure_psi: t.func75_pressure_psi?.toString() ?? '', func75_duration_min: t.func75_duration_min?.toString() ?? '', func75_acceptance: t.func75_acceptance ?? '', func75_start_test: t.func75_start_test ?? '', func75_finish_test: t.func75_finish_test ?? '', func75_result: t.func75_result ?? '', func75_remark: t.func75_remark ?? '',
           func100_pressure_psi: t.func100_pressure_psi?.toString() ?? '', func100_duration_min: t.func100_duration_min?.toString() ?? '', func100_acceptance: t.func100_acceptance ?? 'SMOOTH and LINEAR', func100_start_test: t.func100_start_test ?? '', func100_finish_test: t.func100_finish_test ?? '', func100_result: t.func100_result ?? '', func100_remark: t.func100_remark ?? '',
           test_rows: t.test_rows ?? '[]',
+          test_photos: t.test_photos ?? '[]',
         })
       }
       setLoading(false)
@@ -615,6 +645,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       func75_pressure_psi: toNum(valveTest.func75_pressure_psi), func75_duration_min: toNum(valveTest.func75_duration_min), func75_acceptance: valveTest.func75_acceptance, func75_start_test: valveTest.func75_start_test, func75_finish_test: valveTest.func75_finish_test, func75_result: valveTest.func75_result, func75_remark: valveTest.func75_remark,
       func100_pressure_psi: toNum(valveTest.func100_pressure_psi), func100_duration_min: toNum(valveTest.func100_duration_min), func100_acceptance: valveTest.func100_acceptance, func100_start_test: valveTest.func100_start_test, func100_finish_test: valveTest.func100_finish_test, func100_result: valveTest.func100_result, func100_remark: valveTest.func100_remark,
       test_rows: valveTest.test_rows,
+      test_photos: valveTest.test_photos,
     }
     if (valveTest.id) {
       const { error } = await supabase.from('report_valve_test').update(payload).eq('id', valveTest.id)
@@ -1230,6 +1261,57 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           <button onClick={saveValveTest} disabled={savingTest} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition font-medium disabled:opacity-50">
             {savingTest ? 'Menyimpan...' : 'Simpan Valve Test'}
           </button>
+        </div>
+
+        <h3 className="text-lg font-bold text-gray-800 mt-6">VALVE TEST PHOTO RECORDS</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="bg-blue-900 text-white">
+                <th className="border px-2 py-2 text-center w-8">No</th>
+                <th className="border px-2 py-2 text-left">Test Type</th>
+                <th className="border px-2 py-2 text-left">Description</th>
+                <th className="border px-2 py-2 text-center">Photo</th>
+                <th className="border px-2 py-2 text-center w-8"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {getTestPhotos().map((row, i) => (
+                <tr key={row.id} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
+                  <td className="border px-2 py-1 text-center text-gray-500">{i + 1}</td>
+                  <td className="border px-1 py-1">
+                    <select value={row.test_type} onChange={e => updateTestPhoto(i, 'test_type', e.target.value)} className="w-full border-0 bg-transparent text-xs focus:outline-none">
+                      <option value="">-- Pilih Test --</option>
+                      {TEST_OPTIONS.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
+                    </select>
+                  </td>
+                  <td className="border px-1 py-1">
+                    <input type="text" value={row.description} onChange={e => updateTestPhoto(i, 'description', e.target.value)} className="w-full border-0 bg-transparent text-xs focus:outline-none" placeholder="Deskripsi foto..." />
+                  </td>
+                  <td className="border px-1 py-1 text-center">
+                    {row.photo_url ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <img src={row.photo_url} alt="" className="w-10 h-10 object-cover rounded cursor-pointer" onClick={() => setPreviewPhoto(row.photo_url)} />
+                        <button onClick={() => updateTestPhoto(i, 'photo_url', '')} className="text-red-400 hover:text-red-600 text-xs">✕</button>
+                      </div>
+                    ) : (
+                      <label className="text-blue-600 hover:text-blue-800 cursor-pointer text-xs">
+                        + Foto
+                        <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadTestPhoto(f, i) }} />
+                      </label>
+                    )}
+                  </td>
+                  <td className="border px-1 py-1 text-center"><button onClick={() => removeTestPhoto(i)} className="text-red-400 hover:text-red-600 text-sm font-bold">✕</button></td>
+                </tr>
+              ))}
+              {getTestPhotos().length === 0 && (
+                <tr><td colSpan={5} className="border px-2 py-6 text-center text-gray-400">Belum ada foto. Klik &quot;+ Tambah Baris&quot; untuk menambah.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex gap-2 mt-3">
+          <button onClick={addTestPhoto} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-300 transition font-medium">+ Tambah Baris</button>
         </div>
       </div>
       )}
