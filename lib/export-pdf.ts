@@ -277,17 +277,17 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
     const cy = startY2 + 10 + ci * 5
     doc.setDrawColor(0)
     doc.setLineWidth(0.3)
-    doc.rect(rightX + 3, cy, 3.5, 3.5, 'S')
+    doc.rect(rightX + 3, cy, 3, 3, 'S')
     if (checked) {
       doc.setLineWidth(0.5)
-      doc.line(rightX + 3.5, cy + 1.8, rightX + 4.5, cy + 0.5)
-      doc.line(rightX + 4.5, cy + 0.5, rightX + 6, cy + 3)
+      doc.line(rightX + 3.5, cy + 1.5, rightX + 4.2, cy + 2.5)
+      doc.line(rightX + 4.2, cy + 2.5, rightX + 5.5, cy + 0.5)
       doc.setLineWidth(0.2)
     }
     doc.setFontSize(6.5)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(0, 0, 0)
-    doc.text(label, rightX + 9, cy + 3)
+    doc.text(label, rightX + 9, cy + 2.8)
   })
   doc.setFontSize(8)
   doc.setFont('helvetica', 'bold')
@@ -295,15 +295,12 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
   const recs: [string, string][] = [['C', 'Cleaning'], ['RP', 'Repair'], ['RE', 'Replace']]
   recs.forEach(([code, label], ci) => {
     const cy = startY2 + 31 + ci * 4
-    doc.setDrawColor(0)
-    doc.setLineWidth(0.3)
-    doc.rect(rightX + 3, cy - 1, 3.5, 3.5, 'S')
     doc.setFontSize(6)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(0, 0, 0)
-    doc.text(code, rightX + 9, cy + 1.5)
+    doc.text(code, rightX + 3, cy + 1.5)
     doc.setFont('helvetica', 'normal')
-    doc.text(label, rightX + 16, cy + 1.5)
+    doc.text(label, rightX + 10, cy + 1.5)
   })
   return Math.max(y, startY2 + boxH + 3)
 }
@@ -322,7 +319,7 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
   doc.text('INCOMING INSP. CHECK (CONDITION AS FOUND)', M, y)
-  y += 6
+  y += 8
 
   autoTable(doc, {
     startY: y,
@@ -375,7 +372,7 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
       const item = items[data.row.index]
       if (!item) return
 
-      // Draw checkmark for C/RP/RE columns (4,5,6) and Condition col (3) - visible box with check
+      // Draw flipped checkmark for C/RP/RE columns (4,5,6) - smaller box
       const checkCols = [4, 5, 6]
       if (checkCols.includes(data.column.index)) {
         const val = data.cell.raw as string
@@ -384,33 +381,15 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
           const cy = data.cell.y + data.cell.height / 2
           doc.setDrawColor(0)
           doc.setLineWidth(0.3)
-          doc.rect(cx - 2.5, cy - 2.5, 5, 5, 'S')
-          doc.setLineWidth(0.6)
-          doc.line(cx - 1.5, cy + 0.5, cx - 0.3, cy - 1.2)
-          doc.line(cx - 0.3, cy - 1.2, cx + 2, cy + 2)
+          doc.rect(cx - 2, cy - 2, 4, 4, 'S')
+          doc.setLineWidth(0.5)
+          doc.line(cx - 1.5, cy + 0.2, cx - 0.3, cy - 1)
+          doc.line(cx - 0.3, cy - 1, cx + 1.5, cy + 1.5)
           doc.setLineWidth(0.2)
         }
       }
 
-      // Draw checkmark for Repair Category column (7)
-      if (data.column.index === 7) {
-        const val = data.cell.raw as string
-        if (val && val !== '-') {
-          const cx = data.cell.x + data.cell.width / 2
-          const cy = data.cell.y + data.cell.height / 2
-          doc.setDrawColor(0)
-          doc.setLineWidth(0.3)
-          doc.rect(cx - 2.5, cy - 2.5, 5, 5, 'S')
-          doc.setLineWidth(0.6)
-          doc.line(cx - 1.5, cy + 0.5, cx - 0.3, cy - 1.2)
-          doc.line(cx - 0.3, cy - 1.2, cx + 2, cy + 2)
-          doc.setLineWidth(0.2)
-          doc.setFontSize(5)
-          doc.setFont('helvetica', 'normal')
-          doc.setTextColor(0, 0, 0)
-          doc.text(val, cx + 5, cy + 1.5)
-        }
-      }
+      // Repair Category (7) - just text, no checkbox
 
       // Draw photos in Foto column (8)
       if (data.column.index === 8) {
