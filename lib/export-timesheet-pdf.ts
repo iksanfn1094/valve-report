@@ -42,6 +42,39 @@ function drawField(
   doc.text(value || '', x + labelW, y + h - 1.7)
 }
 
+function justifyText(doc: jsPDF, text: string, maxWidth: number): string[] {
+  const lines = doc.splitTextToSize(text, maxWidth)
+  if (lines.length <= 1) return lines
+  const result: string[] = []
+  for (let i = 0; i < lines.length; i++) {
+    if (i === lines.length - 1) {
+      result.push(lines[i])
+    } else {
+      const words = lines[i].split(' ')
+      if (words.length <= 1) { result.push(lines[i]); continue }
+      let line = words[0]
+      for (let j = 1; j < words.length; j++) {
+        line += ' ' + words[j]
+      }
+      while (doc.getTextWidth(line) < maxWidth && words.length > 1) {
+        let addedSpace = false
+        for (let j = 0; j < words.length - 1; j++) {
+          words[j] = words[j] + ' '
+          line = words.join(' ')
+          if (doc.getTextWidth(line) >= maxWidth) {
+            words[j] = words[j].trimEnd()
+            break
+          }
+          addedSpace = true
+        }
+        if (!addedSpace) break
+      }
+      result.push(line)
+    }
+  }
+  return result
+}
+
 function cb(doc: jsPDF, x: number, y: number, checked: boolean) {
   doc.setDrawColor(150, 150, 150)
   doc.setFillColor(255, 255, 255)
@@ -109,10 +142,10 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.setTextColor(...LABEL_C)
   doc.text('Allowance', M + colW + 1.5, y + FH - 1.7)
   doc.setTextColor(0, 0, 0)
-  cb(doc, M + colW + LW_R, y + FH - 0.2, ts.allowance === 'chargeable')
-  doc.text('Chargeable', M + colW + LW_R + 4, y + FH - 0.5)
-  cb(doc, M + colW + LW_R + 30, y + FH - 0.2, ts.allowance === 'non_chargeable')
-  doc.text('Non Chargeable', M + colW + LW_R + 34, y + FH - 0.5)
+  cb(doc, M + colW + LW_R, y + FH - 1.5, ts.allowance === 'chargeable')
+  doc.text('Chargeable', M + colW + LW_R + 4, y + FH - 1.8)
+  cb(doc, M + colW + LW_R + 30, y + FH - 1.5, ts.allowance === 'non_chargeable')
+  doc.text('Non Chargeable', M + colW + LW_R + 34, y + FH - 1.8)
   y += FH
 
   // Row 4: Location (left, taller, word wrap) | Service Person (right, aligned top)
@@ -248,7 +281,7 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.setFontSize(6.5)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(0, 0, 0)
-  const scopeLines = doc.splitTextToSize(ts.brief_scope || '', contentCol - 6)
+  const scopeLines = justifyText(doc, ts.brief_scope || '', contentCol - 6)
   doc.text(scopeLines, M + labelCol + 3, y + 10)
 
   y += scopeH + 4
@@ -370,7 +403,7 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(0, 0, 0)
   const stmt = 'The service has been completed and to the best of my knowledge and belief, is in substantial compliance with the provisions of the Purchase Order. The service is completed without safety incident and has satisfied Customer in terms of quality of service. The worksite is left in clean and deemed safe.'
-  const stmtLines = doc.splitTextToSize(stmt, stmtW - 4)
+  const stmtLines = justifyText(doc, stmt, stmtW - 4)
   doc.text(stmtLines, M + 2, y)
 
   const stmtBottom = y + stmtLines.length * 3
