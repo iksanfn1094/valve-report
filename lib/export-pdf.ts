@@ -643,7 +643,7 @@ export async function exportReportPDF(
             const y2 = data.cell.y + (data.cell.height - IMG_SZ) / 2 + row * (IMG_SZ + GAP)
             try { doc.addImage(b64, 'JPEG', x, y2, IMG_SZ, IMG_SZ) } catch { /* skip */ }
           })
-        } else {
+        } else if (col === 2 || col === 3) {
           doc.setFontSize(7)
           doc.setFont('helvetica', 'italic')
           doc.setTextColor(150, 150, 150)
