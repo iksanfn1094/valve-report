@@ -517,7 +517,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     const toNum = (v: string) => v ? Number(v) : null
     const payload = {
       report_id: id,
-      spec_api6d: valveTest.spec_api6d, spec_api598: valveTest.spec_api598, spec_fci70_2: valveTest.spec_fci70_2, spec_3_15_psi: valveTest.spec_3_15_psi, spec_sop_no: valveTest.spec_sop_no, spec_others: valveTest.spec_others, spec_cv: valveTest.spec_cv,
+      spec_api6d: valveTest.spec_api6d, spec_api598: valveTest.spec_api598, spec_fci70_2: valveTest.spec_fci70_2, spec_3_15_psi: valveTest.spec_3_15_psi, spec_sop_no: valveTest.spec_sop_no, spec_others: valveTest.spec_others, spec_cv: toNum(valveTest.spec_cv),
       shell_pressure_psi: toNum(valveTest.shell_pressure_psi), shell_duration_min: toNum(valveTest.shell_duration_min), shell_acceptance: valveTest.shell_acceptance, shell_start_test: valveTest.shell_start_test, shell_finish_test: valveTest.shell_finish_test, shell_result: valveTest.shell_result, shell_remark: valveTest.shell_remark,
       seat_pressure_psi: toNum(valveTest.seat_pressure_psi), seat_duration_min: toNum(valveTest.seat_duration_min), seat_acceptance: valveTest.seat_acceptance, seat_start_test: valveTest.seat_start_test, seat_finish_test: valveTest.seat_finish_test, seat_result: valveTest.seat_result, seat_remark: valveTest.seat_remark,
       func0_pressure_psi: toNum(valveTest.func0_pressure_psi), func0_duration_min: toNum(valveTest.func0_duration_min), func0_acceptance: valveTest.func0_acceptance, func0_start_test: valveTest.func0_start_test, func0_finish_test: valveTest.func0_finish_test, func0_result: valveTest.func0_result, func0_remark: valveTest.func0_remark,
@@ -527,9 +527,11 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       func100_pressure_psi: toNum(valveTest.func100_pressure_psi), func100_duration_min: toNum(valveTest.func100_duration_min), func100_acceptance: valveTest.func100_acceptance, func100_start_test: valveTest.func100_start_test, func100_finish_test: valveTest.func100_finish_test, func100_result: valveTest.func100_result, func100_remark: valveTest.func100_remark,
     }
     if (valveTest.id) {
-      await supabase.from('report_valve_test').update(payload).eq('id', valveTest.id)
+      const { error } = await supabase.from('report_valve_test').update(payload).eq('id', valveTest.id)
+      if (error) { setSavingTest(false); return alert('Error update: ' + error.message) }
     } else {
-      const { data } = await supabase.from('report_valve_test').insert(payload).select().single()
+      const { data, error } = await supabase.from('report_valve_test').insert(payload).select().single()
+      if (error) { setSavingTest(false); return alert('Error insert: ' + error.message) }
       if (data) setValveTest(prev => ({ ...prev, id: data.id }))
     }
     setSavingTest(false)
