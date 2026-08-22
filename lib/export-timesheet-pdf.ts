@@ -2,52 +2,32 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
 type TimesheetData = {
-  customer: string
-  internal_so_no: string
-  customer_po: string
-  letter_of_assignment: string
-  end_user_project: string
-  allowance: string
-  assign_date: string
-  assign_role: string
-  location: string
-  service_person: string
-  attachment: string
-  mobilization_date: string
-  worksite_office: boolean
-  worksite_plant: boolean
-  worksite_onshore: boolean
-  worksite_offshore: boolean
-  brief_scope: string
-  service_workshop: boolean
-  service_field: boolean
-  service_eng: boolean
-  service_other: boolean
-  service_other_text: string
-  summary_of_service: string
-  status_service: string
-  nonconformance: boolean | null
-  incident_spill: boolean | null
-  tools_damage: boolean | null
-  packing_list_no: string
-  demobilization_date: string
-  service_person_name: string
-  customer_rep_name: string
+  customer: string; internal_so_no: string; customer_po: string
+  letter_of_assignment: string; end_user_project: string; allowance: string
+  assign_date: string; assign_role: string; location: string; service_person: string
+  attachment: string; mobilization_date: string
+  worksite_office: boolean; worksite_plant: boolean
+  worksite_onshore: boolean; worksite_offshore: boolean; brief_scope: string
+  service_workshop: boolean; service_field: boolean; service_eng: boolean
+  service_other: boolean; service_other_text: string; summary_of_service: string
+  status_service: string; nonconformance: boolean | null; incident_spill: boolean | null
+  tools_damage: boolean | null; packing_list_no: string; demobilization_date: string
+  service_person_name: string; customer_rep_name: string
 }
 
 type EntryData = {
-  entry_date: string
-  time_start: string
-  time_end: string
-  overtime: string
-  description: string
+  entry_date: string; time_start: string; time_end: string
+  overtime: string; description: string
 }
 
 const BLUE: [number, number, number] = [25, 60, 120]
 const GRID: [number, number, number] = [180, 180, 180]
 const LABEL_C: [number, number, number] = [100, 100, 100]
 
-function drawField(doc: jsPDF, label: string, value: string, x: number, y: number, w: number, h: number, labelW: number) {
+function drawField(
+  doc: jsPDF, label: string, value: string,
+  x: number, y: number, w: number, h: number, labelW: number
+) {
   doc.setFillColor(245, 245, 245)
   doc.rect(x, y, w, h, 'F')
   doc.setDrawColor(...GRID)
@@ -59,13 +39,21 @@ function drawField(doc: jsPDF, label: string, value: string, x: number, y: numbe
   doc.text(label, x + 1.5, y + h - 1.7)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(0, 0, 0)
-  doc.text(value || '-', x + labelW, y + h - 1.7)
+  doc.text(value || '', x + labelW, y + h - 1.7)
 }
 
-function checkLabel(val: boolean | null): string {
-  if (val === true) return '[x] Yes  [ ] No'
-  if (val === false) return '[ ] Yes  [x] No'
-  return '[ ] Yes  [ ] No'
+function cb(doc: jsPDF, x: number, y: number, checked: boolean) {
+  doc.setDrawColor(150, 150, 150)
+  doc.setFillColor(255, 255, 255)
+  doc.setLineWidth(0.3)
+  doc.rect(x, y - 3, 3, 3, 'FD')
+  if (checked) {
+    doc.setDrawColor(25, 60, 120)
+    doc.setLineWidth(0.4)
+    doc.line(x + 0.5, y - 1.5, x + 1.2, y - 0.3)
+    doc.line(x + 1.2, y - 0.3, x + 2.5, y - 2.8)
+    doc.setLineWidth(0.2)
+  }
 }
 
 export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
@@ -77,124 +65,144 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
     if (y + need > PH - M) { doc.addPage(); y = M }
   }
 
-  // Header
+  // ========== HEADER ==========
   doc.setFillColor(...BLUE)
-  doc.rect(0, 0, PW, 18, 'F')
+  doc.rect(0, 0, PW, 20, 'F')
   doc.setTextColor(255, 255, 255)
-  doc.setFontSize(14)
+  doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
-  doc.text('TIMESHEET', PW / 2, 8, { align: 'center' })
-  doc.setFontSize(8)
-  doc.setFont('helvetica', 'normal')
-  doc.text('PT. VALVINDO MEGAH', PW / 2, 14, { align: 'center' })
-
-  y = 23
-
-  // Project Information
-  doc.setTextColor(...BLUE)
+  doc.text('SERVICE TIMESHEET', PW / 2, 9, { align: 'center' })
   doc.setFontSize(9)
-  doc.setFont('helvetica', 'bold')
-  doc.text('PROJECT INFORMATION', M, y)
-  y += 3
+  doc.setFont('helvetica', 'normal')
+  doc.text('PT. VALVINDO MEGAH', PW / 2, 16, { align: 'center' })
 
-  const thirdW = CW / 3
+  try { doc.addImage('/logo.png', 'PNG', 2, 1, 22, 18) } catch {}
+
+  y = 25
+
+  // ========== PROJECT INFORMATION ==========
   const halfW = CW / 2
-  const qtrW = CW / 4
+  const FH = 5.5
 
-  // Row 1
-  drawField(doc, 'Customer', ts.customer, M, y, halfW, 5.5, 35)
-  drawField(doc, 'Internal S/O No.', ts.internal_so_no, M + halfW, y, halfW, 5.5, 35)
-  y += 5.5
+  // Row 1: Customer | Internal S/O No.
+  drawField(doc, 'Customer', ts.customer, M, y, halfW, FH, 30)
+  drawField(doc, 'Internal S/O No.', ts.internal_so_no, M + halfW, y, halfW, FH, 35)
+  y += FH
 
-  // Row 2
-  drawField(doc, 'Customer PO', ts.customer_po, M, y, halfW, 5.5, 35)
-  drawField(doc, 'Letter Of Assignment', ts.letter_of_assignment, M + halfW, y, halfW, 5.5, 35)
-  y += 5.5
+  // Row 2: Customer PO | Letter Of Assignment
+  drawField(doc, 'Customer PO', ts.customer_po, M, y, halfW, FH, 30)
+  drawField(doc, 'Letter Of Assignment', ts.letter_of_assignment, M + halfW, y, halfW, FH, 35)
+  y += FH
 
-  // Row 3
-  drawField(doc, 'End-User/Project', ts.end_user_project, M, y, halfW, 5.5, 35)
-  drawField(doc, 'Allowance', ts.allowance === 'chargeable' ? 'Chargeable' : ts.allowance === 'non_chargeable' ? 'Non Chargeable' : '', M + halfW, y, halfW, 5.5, 35)
-  y += 5.5
+  // Row 3: End-User/Project | Allowance (checkboxes)
+  drawField(doc, 'End-User/Project', ts.end_user_project, M, y, halfW, FH, 30)
+  doc.setFillColor(245, 245, 245)
+  doc.rect(M + halfW, y, halfW, FH, 'F')
+  doc.setDrawColor(...GRID)
+  doc.setLineWidth(0.2)
+  doc.rect(M + halfW, y, halfW, FH, 'S')
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...LABEL_C)
+  doc.text('Allowance', M + halfW + 1.5, y + FH - 1.7)
+  doc.setTextColor(0, 0, 0)
+  doc.setFont('helvetica', 'normal')
+  cb(doc, M + halfW + 25, y + FH - 0.2, ts.allowance === 'chargeable')
+  doc.text('Chargeable', M + halfW + 29, y + FH - 0.5)
+  cb(doc, M + halfW + 55, y + FH - 0.2, ts.allowance === 'non_chargeable')
+  doc.text('Non Chargeable', M + halfW + 59, y + FH - 0.5)
+  y += FH
 
-  // Row 4
-  drawField(doc, 'Date', ts.assign_date, M, y, thirdW, 5.5, 20)
-  drawField(doc, 'Assign Role', ts.assign_role, M + thirdW, y, thirdW, 5.5, 25)
-  drawField(doc, 'Mobilization Date', ts.mobilization_date, M + thirdW * 2, y, thirdW, 5.5, 35)
-  y += 5.5
+  // Row 4: Date | Assign Role | Mobilization Date
+  const thirdW = CW / 3
+  drawField(doc, 'Date', ts.assign_date, M, y, thirdW, FH, 15)
+  drawField(doc, 'Assign Role', ts.assign_role, M + thirdW, y, thirdW, FH, 25)
+  drawField(doc, 'Mobilization Date', ts.mobilization_date, M + thirdW * 2, y, thirdW, FH, 35)
+  y += FH
 
-  // Row 5
-  drawField(doc, 'Location', ts.location, M, y, halfW, 5.5, 25)
-  drawField(doc, 'Service Person', ts.service_person, M + halfW, y, halfW, 5.5, 30)
-  y += 5.5
+  // Row 5: Location | Service Person
+  drawField(doc, 'Location', ts.location, M, y, halfW, FH, 25)
+  drawField(doc, 'Service Person', ts.service_person, M + halfW, y, halfW, FH, 30)
+  y += FH
 
-  // Row 6
-  drawField(doc, 'Attachment', ts.attachment, M, y, CW, 5.5, 25)
-  y += 7
+  // Row 6: Attachment (full width)
+  drawField(doc, 'Attachment', ts.attachment, M, y, CW, FH, 25)
+  y += FH + 3
 
-  // Type of Worksite
-  doc.setTextColor(...BLUE)
-  doc.setFontSize(9)
+  // ========== TYPE OF WORKSITE & BRIEF SCOPE (side by side) ==========
+  const leftCol = CW * 0.5
+  const rightCol = CW * 0.5
+  const rightX = M + leftCol
+
+  doc.setDrawColor(...GRID)
+  doc.setLineWidth(0.2)
+  doc.rect(M, y, leftCol, 20, 'S')
+  doc.rect(rightX, y, rightCol, 20, 'S')
+
+  // Left: Type of Worksite
+  doc.setFontSize(7)
   doc.setFont('helvetica', 'bold')
-  doc.text('TYPE OF WORKSITE', M, y)
-  y += 3
+  doc.setTextColor(...BLUE)
+  doc.text('Type of Worksite', M + 2, y + 4)
+  doc.setFontSize(6)
+  doc.setFont('helvetica', 'normal')
+  doc.text('(check all that apply)', M + 2, y + 7.5)
 
-  const ws: string[] = []
-  if (ts.worksite_office) ws.push('[x] Office')
-  else ws.push('[ ] Office')
-  if (ts.worksite_plant) ws.push('[x] Plant/Workshop')
-  else ws.push('[ ] Plant/Workshop')
-  if (ts.worksite_onshore) ws.push('[x] Onshore')
-  else ws.push('[ ] Onshore')
-  if (ts.worksite_offshore) ws.push('[x] Offshore')
-  else ws.push('[ ] Offshore')
+  doc.setFontSize(7)
+  doc.setTextColor(0, 0, 0)
+  const wsY = y + 12
+  cb(doc, M + 2, wsY, ts.worksite_office)
+  doc.text('Office', M + 6, wsY - 0.5)
+  cb(doc, M + 30, wsY, ts.worksite_plant)
+  doc.text('Plant/Workshop', M + 34, wsY - 0.5)
+  cb(doc, M + 2, wsY + 5, ts.worksite_onshore)
+  doc.text('Onshore', M + 6, wsY + 4.5)
+  cb(doc, M + 30, wsY + 5, ts.worksite_offshore)
+  doc.text('Offshore', M + 34, wsY + 4.5)
+
+  // Right: Brief Scope of Work
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...BLUE)
+  doc.text('Brief Scope of Work', rightX + 2, y + 4)
+  doc.setFontSize(6.5)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(0, 0, 0)
+  const scopeLines = doc.splitTextToSize(ts.brief_scope || '', rightCol - 6)
+  doc.text(scopeLines, rightX + 3, y + 10)
+
+  y += 23
+
+  // ========== TYPE OF SERVICE ==========
+  doc.setDrawColor(...GRID)
+  doc.setLineWidth(0.2)
+  doc.rect(M, y, CW, 12, 'S')
+
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...BLUE)
+  doc.text('Type of Service', M + 2, y + 4)
 
   doc.setFontSize(7)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(0, 0, 0)
-  doc.text(ws.join('     '), M + 2, y)
-  y += 6
-
-  // Brief Scope
-  doc.setTextColor(...BLUE)
-  doc.setFontSize(9)
-  doc.setFont('helvetica', 'bold')
-  doc.text('BRIEF SCOPE OF WORK', M, y)
-  y += 3
-  doc.setFontSize(7)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(0, 0, 0)
-  const scopeLines = doc.splitTextToSize(ts.brief_scope || '-', CW - 4)
-  doc.text(scopeLines, M + 2, y)
-  y += scopeLines.length * 3.5 + 3
-
-  // Type of Service
-  doc.setTextColor(...BLUE)
-  doc.setFontSize(9)
-  doc.setFont('helvetica', 'bold')
-  doc.text('TYPE OF SERVICE', M, y)
-  y += 3
-
-  const sv: string[] = []
-  if (ts.service_workshop) sv.push('[x] Workshop')
-  else sv.push('[ ] Workshop')
-  if (ts.service_field) sv.push('[x] Field Service')
-  else sv.push('[ ] Field Service')
-  if (ts.service_eng) sv.push('[x] ENG./Inspection')
-  else sv.push('[ ] ENG./Inspection')
-  if (ts.service_other) sv.push('[x] Other')
-  else sv.push('[ ] Other')
-
-  doc.setFontSize(7)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(0, 0, 0)
-  doc.text(sv.join('     '), M + 2, y)
+  const svY = y + 10
+  cb(doc, M + 2, svY, ts.service_workshop)
+  doc.text('Workshop', M + 6, svY - 0.5)
+  cb(doc, M + 35, svY, ts.service_field)
+  doc.text('Field Service', M + 39, svY - 0.5)
+  cb(doc, M + 70, svY, ts.service_eng)
+  doc.text('ENG./Inspection', M + 74, svY - 0.5)
+  cb(doc, M + 115, svY, ts.service_other)
+  doc.text('Other', M + 119, svY - 0.5)
   if (ts.service_other && ts.service_other_text) {
-    y += 4
-    doc.text('(' + ts.service_other_text + ')', M + 2, y)
+    doc.setFontSize(6)
+    doc.text('(' + ts.service_other_text + ')', M + 135, svY - 0.5)
   }
-  y += 6
 
-  // Timesheet Table
+  y += 15
+
+  // ========== TIMESHEET TABLE ==========
   np(30)
   doc.setTextColor(...BLUE)
   doc.setFontSize(9)
@@ -202,127 +210,166 @@ export function exportTimesheetPDF(ts: TimesheetData, entries: EntryData[]) {
   doc.text('TIMESHEET', M, y)
   y += 2
 
+  const bodyRows: string[][] = []
+  for (let i = 0; i < 20; i++) {
+    const e = entries[i]
+    bodyRows.push([
+      String(i + 1),
+      e?.entry_date || '',
+      e ? (e.time_start || '') + (e.time_end ? ' - ' + e.time_end : '') : '',
+      e?.overtime || '',
+      e?.description || '',
+    ])
+  }
+
   autoTable(doc, {
     startY: y,
     margin: { left: M, right: M },
-    head: [['No', 'Date', 'Time In', 'Time Out', 'Overtime', 'Description of Work']],
-    body: entries.map((e, i) => [
-      String(i + 1),
-      e.entry_date || '-',
-      e.time_start || '-',
-      e.time_end || '-',
-      e.overtime || '-',
-      e.description || '-',
-    ]),
-    styles: { fontSize: 7, cellPadding: 2, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak' },
-    headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 7, fontStyle: 'bold', halign: 'center' },
+    head: [['No', 'Date', 'Time', 'Over time', 'Description of Work']],
+    body: bodyRows,
+    styles: {
+      fontSize: 7, cellPadding: 2, lineColor: GRID, lineWidth: 0.2,
+      overflow: 'linebreak', valign: 'middle',
+    },
+    headStyles: {
+      fillColor: BLUE, textColor: [255, 255, 255], fontSize: 7,
+      fontStyle: 'bold', halign: 'center', minCellHeight: 6,
+    },
+    alternateRowStyles: { fillColor: [250, 250, 250] },
     columnStyles: {
       0: { cellWidth: 10, halign: 'center' },
-      1: { cellWidth: 25, halign: 'center' },
-      2: { cellWidth: 22, halign: 'center' },
+      1: { cellWidth: 28, halign: 'center' },
+      2: { cellWidth: 30, halign: 'center' },
       3: { cellWidth: 22, halign: 'center' },
-      4: { cellWidth: 18, halign: 'center' },
-      5: { cellWidth: CW - 97, halign: 'left' },
+      4: { cellWidth: CW - 90, halign: 'left' },
     },
   })
-  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6
+  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 5
 
-  // Summary
-  np(40)
+  // ========== SUMMARY OF SERVICE ==========
+  np(50)
   doc.setTextColor(...BLUE)
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
-  doc.text('SUMMARY OF SERVICE', M, y)
+  doc.text('Summary of Service', M, y)
   y += 3
 
   doc.setFontSize(7)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(0, 0, 0)
-  const summaryLines = doc.splitTextToSize(ts.summary_of_service || '-', CW - 4)
+  const summaryLines = doc.splitTextToSize(ts.summary_of_service || '', CW * 0.55)
   doc.text(summaryLines, M + 2, y)
-  y += summaryLines.length * 3.5 + 4
+  const summaryBottom = y + summaryLines.length * 3
 
-  doc.text('Status of Service:          ' + (ts.status_service === 'close' ? '[x] Close' : ts.status_service === 'followup' ? '[x] Follow-up required' : '[ ] Close  [ ] Follow-up required'), M + 2, y)
-  y += 4
-  doc.text('Nonconformance found?     ' + checkLabel(ts.nonconformance), M + 2, y)
-  y += 4
-  doc.text('Any incident/spill?       ' + checkLabel(ts.incident_spill), M + 2, y)
-  y += 4
+  // Right side: Status checkboxes
+  const rsx = M + CW * 0.55
+  const rsy = y - 3
 
-  const tdText = ts.tools_damage === true ? '[x] Yes  [ ] No  [ ] N/A' :
-    ts.tools_damage === false ? '[ ] Yes  [x] No  [ ] N/A' :
-    '[ ] Yes  [ ] No  [x] N/A'
-  doc.text('Any tools/equip. damage?  ' + tdText, M + 2, y)
-  y += 4
-  doc.text('Packing List No.: ' + (ts.packing_list_no || '-'), M + 2, y)
-  y += 4
-  doc.text('Demobilization Date: ' + (ts.demobilization_date || '-'), M + 2, y)
-  y += 8
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(0, 0, 0)
+  doc.text('Status of Service?', rsx, rsy + 2)
+  cb(doc, rsx, rsy + 7, ts.status_service === 'close')
+  doc.text('Close', rsx + 4, rsy + 6.5)
+  cb(doc, rsx + 25, rsy + 7, ts.status_service === 'followup')
+  doc.text('Follow-up required', rsx + 29, rsy + 6.5)
 
-  // Statement
+  doc.text('Nonconformance found?', rsx, rsy + 13)
+  cb(doc, rsx, rsy + 18, ts.nonconformance === true)
+  doc.text('Yes', rsx + 4, rsy + 17.5)
+  cb(doc, rsx + 18, rsy + 18, ts.nonconformance === false)
+  doc.text('No', rsx + 22, rsy + 17.5)
+
+  doc.text('Any incident/spill?', rsx, rsy + 24)
+  cb(doc, rsx, rsy + 29, ts.incident_spill === true)
+  doc.text('Yes', rsx + 4, rsy + 28.5)
+  cb(doc, rsx + 18, rsy + 29, ts.incident_spill === false)
+  doc.text('No', rsx + 22, rsy + 28.5)
+
+  doc.text('Any tools/equip. damage?', rsx, rsy + 35)
+  cb(doc, rsx, rsy + 40, ts.tools_damage === true)
+  doc.text('Yes', rsx + 4, rsy + 39.5)
+  cb(doc, rsx + 18, rsy + 40, ts.tools_damage === false)
+  doc.text('No', rsx + 22, rsy + 39.5)
+  cb(doc, rsx + 35, rsy + 40, ts.tools_damage === null)
+  doc.text('N/A', rsx + 39, rsy + 39.5)
+
+  y = Math.max(summaryBottom, rsy + 45) + 3
+
+  // Packing List & Demob Date
+  drawField(doc, 'Packing List No. (if any)', ts.packing_list_no, M, y, halfW, FH, 40)
+  drawField(doc, 'Demobilization Date', ts.demobilization_date, M + halfW, y, halfW, FH, 35)
+  y += FH + 4
+
+  // ========== STATEMENT ==========
   np(35)
   doc.setTextColor(...BLUE)
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
-  doc.text('STATEMENT OF COMPLETENESS', M, y)
+  doc.text('Statement of completeness of the work:', M, y)
   y += 3
+
+  const stmtW = CW * 0.65
+  const sigBoxW = CW * 0.35 - 2
 
   doc.setFontSize(6.5)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(0, 0, 0)
   const stmt = 'The service has been completed and to the best of my knowledge and belief, is in substantial compliance with the provisions of the Purchase Order. The service is completed without safety incident and has satisfied Customer in terms of quality of service. The worksite is left in clean and deemed safe.'
-  const stmtLines = doc.splitTextToSize(stmt, CW - 4)
+  const stmtLines = doc.splitTextToSize(stmt, stmtW - 4)
   doc.text(stmtLines, M + 2, y)
-  y += stmtLines.length * 3 + 6
 
-  // Signature boxes
-  const sigW = CW / 2 - 2
-  const sigH = 22
+  const stmtBottom = y + stmtLines.length * 3
 
-  // Service Person
+  // Signature boxes (right side)
+  const sigX = M + stmtW + 2
+  const sigH = 28
+  const sigY = y - 3
+
+  // Service Person sig
   doc.setDrawColor(...GRID)
   doc.setLineWidth(0.3)
-  doc.rect(M, y, sigW, sigH, 'S')
+  doc.rect(sigX, sigY, sigBoxW, sigH / 2 - 1, 'S')
   doc.setFontSize(6)
   doc.setFont('helvetica', 'bold')
-  doc.text('Service Person', M + sigW / 2, y + 4, { align: 'center' })
-  doc.setFontSize(7)
-  doc.text(ts.service_person_name || '-', M + sigW / 2, y + 12, { align: 'center' })
+  doc.text('Service Person', sigX + sigBoxW / 2, sigY + 3, { align: 'center' })
+  doc.setFontSize(6.5)
+  doc.text(ts.service_person_name || '-', sigX + sigBoxW / 2, sigY + 8, { align: 'center' })
   doc.setDrawColor(120, 120, 120)
   doc.setLineWidth(0.2)
-  doc.line(M + 3, y + sigH - 5, M + sigW - 3, y + sigH - 5)
-  doc.setFontSize(5)
+  doc.line(sigX + 3, sigY + sigH / 2 - 4, sigX + sigBoxW - 3, sigY + sigH / 2 - 4)
+  doc.setFontSize(4.5)
   doc.setTextColor(140, 140, 140)
-  doc.text('Name / Sign / Date', M + sigW / 2, y + sigH - 2, { align: 'center' })
+  doc.text('(name/sign/date)', sigX + sigBoxW / 2, sigY + sigH / 2 - 2, { align: 'center' })
 
-  // Customer Rep
-  const crx = M + sigW + 4
+  // Customer Rep sig
+  const crSigY = sigY + sigH / 2 + 1
   doc.setDrawColor(...GRID)
   doc.setLineWidth(0.3)
-  doc.rect(crx, y, sigW, sigH, 'S')
+  doc.rect(sigX, crSigY, sigBoxW, sigH / 2 - 1, 'S')
   doc.setFontSize(6)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(0, 0, 0)
-  doc.text('Customer Representative', crx + sigW / 2, y + 4, { align: 'center' })
-  doc.setFontSize(7)
-  doc.text(ts.customer_rep_name || '-', crx + sigW / 2, y + 12, { align: 'center' })
+  doc.text('Customer Representative', sigX + sigBoxW / 2, crSigY + 3, { align: 'center' })
+  doc.setFontSize(6.5)
+  doc.text(ts.customer_rep_name || '-', sigX + sigBoxW / 2, crSigY + 8, { align: 'center' })
   doc.setDrawColor(120, 120, 120)
   doc.setLineWidth(0.2)
-  doc.line(crx + 3, y + sigH - 5, crx + sigW - 3, y + sigH - 5)
-  doc.setFontSize(5)
+  doc.line(sigX + 3, crSigY + sigH / 2 - 4, sigX + sigBoxW - 3, crSigY + sigH / 2 - 4)
+  doc.setFontSize(4.5)
   doc.setTextColor(140, 140, 140)
-  doc.text('Name / Sign / Date', crx + sigW / 2, y + sigH - 2, { align: 'center' })
+  doc.text('(name/sign/date)', sigX + sigBoxW / 2, crSigY + sigH / 2 - 2, { align: 'center' })
 
-  y += sigH
+  y = Math.max(stmtBottom, crSigY + sigH / 2) + 6
 
-  // Footer
+  // ========== FOOTER ==========
   const tp = doc.getNumberOfPages()
   for (let i = 1; i <= tp; i++) {
     doc.setPage(i)
     doc.setFontSize(7)
     doc.setTextColor(150, 150, 150)
-    doc.text(`Timesheet - ${ts.customer || 'Draft'} | Page ${i} of ${tp}`, PW / 2, PH - 5, { align: 'center' })
+    doc.text(`Service Timesheet - ${ts.customer || 'Draft'} | Page ${i} of ${tp}`, PW / 2, PH - 5, { align: 'center' })
   }
 
-  doc.save(`Timesheet-${ts.customer || 'Draft'}.pdf`)
+  doc.save(`Service-Timesheet-${ts.customer || 'Draft'}.pdf`)
 }
