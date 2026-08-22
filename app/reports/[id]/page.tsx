@@ -157,6 +157,17 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   const [uploading, setUploading] = useState<string | null>(null)
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('inspection')
+  const [valveTest, setValveTest] = useState<ValveTest>({
+    spec_api6d: false, spec_api598: false, spec_fci70_2: false, spec_sop_no: '', spec_others: '',
+    shell_pressure_psi: '', shell_duration_min: '', shell_acceptance: 'NO VISIBLE LEAKAGE & PRESSURE DROP', shell_start_test: '', shell_finish_test: '', shell_result: '', shell_remark: '',
+    seat_pressure_psi: '', seat_duration_min: '', seat_acceptance: 'ALLOWABLE LEAK 0.25 SCFH', seat_start_test: '', seat_finish_test: '', seat_result: '', seat_remark: '',
+    func0_pressure_psi: '', func0_duration_min: '', func0_acceptance: 'SMOOTH and LINEAR', func0_start_test: '', func0_finish_test: '', func0_result: '', func0_remark: '',
+    func25_pressure_psi: '', func25_duration_min: '', func25_acceptance: '', func25_start_test: '', func25_finish_test: '', func25_result: '', func25_remark: '',
+    func50_pressure_psi: '', func50_duration_min: '', func50_acceptance: 'SMOOTH and LINEAR', func50_start_test: '', func50_finish_test: '', func50_result: '', func50_remark: '',
+    func75_pressure_psi: '', func75_duration_min: '', func75_acceptance: '', func75_start_test: '', func75_finish_test: '', func75_result: '', func75_remark: '',
+    func100_pressure_psi: '', func100_duration_min: '', func100_acceptance: 'SMOOTH and LINEAR', func100_start_test: '', func100_finish_test: '', func100_result: '', func100_remark: '',
+  })
+  const [savingTest, setSavingTest] = useState(false)
 
   const fetchPhotos = useCallback(async () => {
     const { data } = await supabase
@@ -194,6 +205,20 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         })))
       }
       if (bomRes.data) setBomItems(bomRes.data)
+      const testRes = await supabase.from('report_valve_test').select('*').eq('report_id', id).single()
+      if (testRes.data) {
+        const t = testRes.data
+        setValveTest({
+          spec_api6d: t.spec_api6d ?? false, spec_api598: t.spec_api598 ?? false, spec_fci70_2: t.spec_fci70_2 ?? false, spec_sop_no: t.spec_sop_no ?? '', spec_others: t.spec_others ?? '',
+          shell_pressure_psi: t.shell_pressure_psi?.toString() ?? '', shell_duration_min: t.shell_duration_min?.toString() ?? '', shell_acceptance: t.shell_acceptance ?? 'NO VISIBLE LEAKAGE & PRESSURE DROP', shell_start_test: t.shell_start_test ?? '', shell_finish_test: t.shell_finish_test ?? '', shell_result: t.shell_result ?? '', shell_remark: t.shell_remark ?? '',
+          seat_pressure_psi: t.seat_pressure_psi?.toString() ?? '', seat_duration_min: t.seat_duration_min?.toString() ?? '', seat_acceptance: t.seat_acceptance ?? 'ALLOWABLE LEAK 0.25 SCFH', seat_start_test: t.seat_start_test ?? '', seat_finish_test: t.seat_finish_test ?? '', seat_result: t.seat_result ?? '', seat_remark: t.seat_remark ?? '',
+          func0_pressure_psi: t.func0_pressure_psi?.toString() ?? '', func0_duration_min: t.func0_duration_min?.toString() ?? '', func0_acceptance: t.func0_acceptance ?? 'SMOOTH and LINEAR', func0_start_test: t.func0_start_test ?? '', func0_finish_test: t.func0_finish_test ?? '', func0_result: t.func0_result ?? '', func0_remark: t.func0_remark ?? '',
+          func25_pressure_psi: t.func25_pressure_psi?.toString() ?? '', func25_duration_min: t.func25_duration_min?.toString() ?? '', func25_acceptance: t.func25_acceptance ?? '', func25_start_test: t.func25_start_test ?? '', func25_finish_test: t.func25_finish_test ?? '', func25_result: t.func25_result ?? '', func25_remark: t.func25_remark ?? '',
+          func50_pressure_psi: t.func50_pressure_psi?.toString() ?? '', func50_duration_min: t.func50_duration_min?.toString() ?? '', func50_acceptance: t.func50_acceptance ?? 'SMOOTH and LINEAR', func50_start_test: t.func50_start_test ?? '', func50_finish_test: t.func50_finish_test ?? '', func50_result: t.func50_result ?? '', func50_remark: t.func50_remark ?? '',
+          func75_pressure_psi: t.func75_pressure_psi?.toString() ?? '', func75_duration_min: t.func75_duration_min?.toString() ?? '', func75_acceptance: t.func75_acceptance ?? '', func75_start_test: t.func75_start_test ?? '', func75_finish_test: t.func75_finish_test ?? '', func75_result: t.func75_result ?? '', func75_remark: t.func75_remark ?? '',
+          func100_pressure_psi: t.func100_pressure_psi?.toString() ?? '', func100_duration_min: t.func100_duration_min?.toString() ?? '', func100_acceptance: t.func100_acceptance ?? 'SMOOTH and LINEAR', func100_start_test: t.func100_start_test ?? '', func100_finish_test: t.func100_finish_test ?? '', func100_result: t.func100_result ?? '', func100_remark: t.func100_remark ?? '',
+        })
+      }
       setLoading(false)
       await fetchPhotos()
 
@@ -479,6 +504,34 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     }
     setSaving(false)
     alert('BOM tersimpan!')
+  }
+
+  function updateTestField(field: keyof ValveTest, value: string | boolean) {
+    setValveTest(prev => ({ ...prev, [field]: value }))
+  }
+
+  async function saveValveTest() {
+    setSavingTest(true)
+    const toNum = (v: string) => v ? Number(v) : null
+    const payload = {
+      report_id: id,
+      spec_api6d: valveTest.spec_api6d, spec_api598: valveTest.spec_api598, spec_fci70_2: valveTest.spec_fci70_2, spec_sop_no: valveTest.spec_sop_no, spec_others: valveTest.spec_others,
+      shell_pressure_psi: toNum(valveTest.shell_pressure_psi), shell_duration_min: toNum(valveTest.shell_duration_min), shell_acceptance: valveTest.shell_acceptance, shell_start_test: valveTest.shell_start_test, shell_finish_test: valveTest.shell_finish_test, shell_result: valveTest.shell_result, shell_remark: valveTest.shell_remark,
+      seat_pressure_psi: toNum(valveTest.seat_pressure_psi), seat_duration_min: toNum(valveTest.seat_duration_min), seat_acceptance: valveTest.seat_acceptance, seat_start_test: valveTest.seat_start_test, seat_finish_test: valveTest.seat_finish_test, seat_result: valveTest.seat_result, seat_remark: valveTest.seat_remark,
+      func0_pressure_psi: toNum(valveTest.func0_pressure_psi), func0_duration_min: toNum(valveTest.func0_duration_min), func0_acceptance: valveTest.func0_acceptance, func0_start_test: valveTest.func0_start_test, func0_finish_test: valveTest.func0_finish_test, func0_result: valveTest.func0_result, func0_remark: valveTest.func0_remark,
+      func25_pressure_psi: toNum(valveTest.func25_pressure_psi), func25_duration_min: toNum(valveTest.func25_duration_min), func25_acceptance: valveTest.func25_acceptance, func25_start_test: valveTest.func25_start_test, func25_finish_test: valveTest.func25_finish_test, func25_result: valveTest.func25_result, func25_remark: valveTest.func25_remark,
+      func50_pressure_psi: toNum(valveTest.func50_pressure_psi), func50_duration_min: toNum(valveTest.func50_duration_min), func50_acceptance: valveTest.func50_acceptance, func50_start_test: valveTest.func50_start_test, func50_finish_test: valveTest.func50_finish_test, func50_result: valveTest.func50_result, func50_remark: valveTest.func50_remark,
+      func75_pressure_psi: toNum(valveTest.func75_pressure_psi), func75_duration_min: toNum(valveTest.func75_duration_min), func75_acceptance: valveTest.func75_acceptance, func75_start_test: valveTest.func75_start_test, func75_finish_test: valveTest.func75_finish_test, func75_result: valveTest.func75_result, func75_remark: valveTest.func75_remark,
+      func100_pressure_psi: toNum(valveTest.func100_pressure_psi), func100_duration_min: toNum(valveTest.func100_duration_min), func100_acceptance: valveTest.func100_acceptance, func100_start_test: valveTest.func100_start_test, func100_finish_test: valveTest.func100_finish_test, func100_result: valveTest.func100_result, func100_remark: valveTest.func100_remark,
+    }
+    if (valveTest.id) {
+      await supabase.from('report_valve_test').update(payload).eq('id', valveTest.id)
+    } else {
+      const { data } = await supabase.from('report_valve_test').insert(payload).select().single()
+      if (data) setValveTest(prev => ({ ...prev, id: data.id }))
+    }
+    setSavingTest(false)
+    alert('Valve Test tersimpan!')
   }
 
   const REPORT_FIELDS: { key: keyof Report; label: string; type?: string }[] = [
@@ -971,8 +1024,71 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       </div>
       </>)}
 
+      {activeTab === 'test' && (
+      <div className="bg-white rounded-lg shadow border p-4 space-y-4">
+        <h3 className="text-lg font-bold text-gray-800">VALVE TESTED ACCORDANCE WITH</h3>
+        <div className="flex flex-wrap gap-4 text-sm">
+          <label className="flex items-center gap-2"><input type="checkbox" checked={valveTest.spec_api6d} onChange={e => updateTestField('spec_api6d', e.target.checked)} className="accent-blue-600" /><span className="font-medium">API 6D</span></label>
+          <label className="flex items-center gap-2"><input type="checkbox" checked={valveTest.spec_api598} onChange={e => updateTestField('spec_api598', e.target.checked)} className="accent-blue-600" /><span className="font-medium">API 598</span></label>
+          <label className="flex items-center gap-2"><input type="checkbox" checked={valveTest.spec_fci70_2} onChange={e => updateTestField('spec_fci70_2', e.target.checked)} className="accent-blue-600" /><span className="font-medium">FCI-70-2</span></label>
+          <div className="flex items-center gap-2"><span className="text-gray-500 text-xs">SOP NO.</span><input type="text" value={valveTest.spec_sop_no} onChange={e => updateTestField('spec_sop_no', e.target.value)} className="border border-gray-300 rounded px-2 py-1 text-sm w-32" /></div>
+          <div className="flex items-center gap-2"><span className="text-gray-500 text-xs">OTHERS</span><input type="text" value={valveTest.spec_others} onChange={e => updateTestField('spec_others', e.target.value)} className="border border-gray-300 rounded px-2 py-1 text-sm w-32" /></div>
+        </div>
+
+        <h3 className="text-sm font-bold text-gray-700">ACCEPTANCE STANDARD</h3>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="bg-blue-900 text-white">
+                <th className="border px-2 py-2 text-left" rowSpan={2}>DESCRIPTION TEST</th>
+                <th className="border px-2 py-1 text-center" colSpan={2}>DURATION</th>
+                <th className="border px-2 py-2 text-center" rowSpan={2}>ACCEPTANCE CRITERIA</th>
+                <th className="border px-2 py-2 text-center" rowSpan={2}>START TEST</th>
+                <th className="border px-2 py-2 text-center" rowSpan={2}>FINISH TEST</th>
+                <th className="border px-2 py-2 text-center" rowSpan={2}>RESULT</th>
+                <th className="border px-2 py-2 text-center" rowSpan={2}>REMARK/NOTES</th>
+              </tr>
+              <tr className="bg-blue-800 text-white">
+                <th className="border px-2 py-1 text-center">PRESSURE (Psi)</th>
+                <th className="border px-2 py-1 text-center">TIME (Minutes)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {([
+                { label: 'HYDROSTATIC SHELL TEST', prefix: 'shell', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
+                { label: 'SEAT LEAK TEST', prefix: 'seat', criteria: 'ALLOWABLE LEAK 0.25 SCFH' },
+                { label: 'FUNCTION TEST 0%', prefix: 'func0', criteria: 'SMOOTH and LINEAR' },
+                { label: 'FUNCTION TEST 25%', prefix: 'func25', criteria: '' },
+                { label: 'FUNCTION TEST 50%', prefix: 'func50', criteria: 'SMOOTH and LINEAR' },
+                { label: 'FUNCTION TEST 75%', prefix: 'func75', criteria: '' },
+                { label: 'FUNCTION TEST 100%', prefix: 'func100', criteria: 'SMOOTH and LINEAR' },
+              ] as const).map((row, i) => (
+                <tr key={row.prefix} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
+                  <td className="border px-2 py-1 font-semibold whitespace-nowrap">{row.label}</td>
+                  <td className="border px-1 py-1"><input type="number" value={(valveTest as any)[`${row.prefix}_pressure_psi`]} onChange={e => updateTestField(`${row.prefix}_pressure_psi` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" placeholder="Psi" /></td>
+                  <td className="border px-1 py-1"><input type="number" value={(valveTest as any)[`${row.prefix}_duration_min`]} onChange={e => updateTestField(`${row.prefix}_duration_min` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" placeholder="min" /></td>
+                  <td className="border px-2 py-1 text-center text-gray-600">{row.criteria}</td>
+                  <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${row.prefix}_start_test`]} onChange={e => updateTestField(`${row.prefix}_start_test` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" /></td>
+                  <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${row.prefix}_finish_test`]} onChange={e => updateTestField(`${row.prefix}_finish_test` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" /></td>
+                  <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${row.prefix}_result`]} onChange={e => updateTestField(`${row.prefix}_result` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" placeholder="PASS/FAIL" /></td>
+                  <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${row.prefix}_remark`]} onChange={e => updateTestField(`${row.prefix}_remark` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-xs focus:outline-none" /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="flex gap-2 mt-3">
+          <button onClick={saveValveTest} disabled={savingTest} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition font-medium disabled:opacity-50">
+            {savingTest ? 'Menyimpan...' : 'Simpan Valve Test'}
+          </button>
+        </div>
+      </div>
+      )}
+
       {/* Placeholder for other tabs */}
-      {activeTab !== 'inspection' && activeTab !== 'documentation' && (
+      {activeTab !== 'inspection' && activeTab !== 'documentation' && activeTab !== 'test' && (
         <div className="bg-white rounded-lg shadow border p-8 text-center">
           <p className="text-gray-400 text-sm">Fitur ini akan segera tersedia.</p>
         </div>
