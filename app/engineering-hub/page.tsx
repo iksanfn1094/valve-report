@@ -59,29 +59,73 @@ export default function EngineeringHubPage() {
       {tab === 'oring' && (
         <div className="space-y-3">
           <div className="flex flex-col sm:flex-row gap-3">
-            <input type="text" placeholder="Search by Dash No, ID, CS..." value={search} onChange={e => setSearch(e.target.value)} className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none" />
+            <input type="text" placeholder="Search by ID, CS..." value={search} onChange={e => setSearch(e.target.value)} className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none" />
             <select value={csFilter} onChange={e => setCsFilter(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none">
               {csGroups.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
             </select>
           </div>
           <p className="text-xs text-gray-500">ISO 3601-1 Class A / AS568 (USA) — {filtered.length} sizes</p>
-          <div className="overflow-auto max-h-[500px] border rounded-lg">
-            <table className="w-full text-sm">
-              <thead className="bg-teal-600 text-white sticky top-0">
-                <tr>
-                  <th className="px-3 py-2 text-right">CS (mm)</th>
-                  <th className="px-3 py-2 text-right">Inner Diameter (mm)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((o, i) => (
-                  <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="px-3 py-1.5 text-right">{o.cs.toFixed(2)}</td>
-                    <td className="px-3 py-1.5 text-right">{o.id.toFixed(2)}</td>
+          <div className="flex gap-6 items-start">
+            {/* Table */}
+            <div className="overflow-auto max-h-[500px] border rounded-lg" style={{ minWidth: 0, flex: '0 0 auto' }}>
+              <table className="text-sm" style={{ width: 'auto' }}>
+                <thead className="bg-teal-600 text-white sticky top-0">
+                  <tr>
+                    <th className="px-4 py-1.5 text-right text-xs">CS (mm)</th>
+                    <th className="px-4 py-1.5 text-right text-xs">Inner Diameter (mm)</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filtered.map((o, i) => (
+                    <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className="px-4 py-1 text-right text-xs">{o.cs.toFixed(2)}</td>
+                      <td className="px-4 py-1 text-right text-xs">{o.id.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Illustration */}
+            <div className="flex-shrink-0 flex flex-col items-center gap-2" style={{ width: 220 }}>
+              <svg viewBox="0 0 220 220" width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+                {/* O-ring outer circle */}
+                <circle cx="110" cy="110" r="85" fill="none" stroke="#999" strokeWidth="1.5" strokeDasharray="4,3" />
+                {/* O-ring body (donut) */}
+                <circle cx="110" cy="110" r="75" fill="#6ee7b7" stroke="#059669" strokeWidth="2" />
+                <circle cx="110" cy="110" r="50" fill="white" stroke="#059669" strokeWidth="2" />
+
+                {/* ID dimension line (horizontal through center) */}
+                <line x1="60" y1="110" x2="160" y2="110" stroke="#2563eb" strokeWidth="1" strokeDasharray="3,2" />
+                <line x1="60" y1="105" x2="60" y2="115" stroke="#2563eb" strokeWidth="1.5" />
+                <line x1="160" y1="105" x2="160" y2="115" stroke="#2563eb" strokeWidth="1.5" />
+                <text x="110" y="107" textAnchor="middle" fill="#2563eb" fontSize="11" fontWeight="bold">ID</text>
+
+                {/* CS dimension line (vertical, right side of ring body) */}
+                <line x1="190" y1="35" x2="190" y2="75" stroke="#dc2626" strokeWidth="1" />
+                <line x1="186" y1="35" x2="194" y2="35" stroke="#dc2626" strokeWidth="1.5" />
+                <line x1="186" y1="75" x2="194" y2="75" stroke="#dc2626" strokeWidth="1.5" />
+                <line x1="183" y1="55" x2="197" y2="55" stroke="none" />
+                <rect x="181" y="46" width="22" height="13" rx="2" fill="white" fillOpacity="0.85" />
+                <text x="192" y="56" textAnchor="middle" fill="#dc2626" fontSize="11" fontWeight="bold">CS</text>
+
+                {/* OD dimension line (bottom) */}
+                <line x1="25" y1="195" x2="195" y2="195" stroke="#7c3aed" strokeWidth="1" strokeDasharray="3,2" />
+                <line x1="25" y1="190" x2="25" y2="200" stroke="#7c3aed" strokeWidth="1.5" />
+                <line x1="195" y1="190" x2="195" y2="200" stroke="#7c3aed" strokeWidth="1.5" />
+                <text x="110" y="208" textAnchor="middle" fill="#7c3aed" fontSize="10" fontWeight="bold">OD = ID + 2×CS</text>
+
+                {/* Connector lines from ring to dimension lines */}
+                <line x1="60" y1="110" x2="35" y2="110" stroke="#2563eb" strokeWidth="0.7" strokeDasharray="2,2" />
+                <line x1="160" y1="110" x2="185" y2="110" stroke="#2563eb" strokeWidth="0.7" strokeDasharray="2,2" />
+              </svg>
+              <div className="text-center space-y-1">
+                <p className="text-xs font-semibold text-gray-700">O-Ring Dimensions</p>
+                <p className="text-xs text-blue-600"><b>ID</b> = Inner Diameter</p>
+                <p className="text-xs text-red-600"><b>CS</b> = Cross Section</p>
+                <p className="text-xs text-purple-600"><b>OD</b> = Outer Diameter</p>
+              </div>
+            </div>
           </div>
         </div>
       )}
