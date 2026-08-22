@@ -36,6 +36,13 @@ const menus = [
     href: "/project-control",
     color: "bg-red-600 hover:bg-red-700",
   },
+  {
+    title: "ENGINEERING HUB",
+    tagline: "Calculate. Verify. Engineer.",
+    desc: "Engineering calculations, technical verification & design tools.",
+    href: "/engineering-hub",
+    color: "bg-teal-600 hover:bg-teal-700",
+  },
 ];
 
 export default function Home() {
