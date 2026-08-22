@@ -209,22 +209,93 @@ function drawFooter(doc: jsPDF, report: ReportData, tabLabel: string, PW: number
   }
 }
 
-function drawHeaderInfo(doc: jsPDF, report: ReportData, M: number, CW: number, startY: number): number {
+function drawJobInfo(doc: jsPDF, report: ReportData, M: number, CW: number, startY: number): number {
   let y = startY
-  const colW = CW / 4
-  const fields: [string, string | null][][] = [
-    [['Report No', report.report_no], ['Date', formatTanggal(report.report_date)], ['Project', report.project], ['Customer', report.customer]],
-    [['Valve Type', report.valve_type], ['Manufacture', report.manufacture], ['Size (in.)', report.size], ['Class', report.class]],
-    [['Serial No', report.serial_no], ['End Connection', report.end_connection], ['Operated', report.operated], ['Location', (report as unknown as { location?: string }).location || null]],
-    [['EX Station', report.ex_station], ['RO No', report.ro_no], ['Inspector', report.inspector_name], ['Category', report.category]],
+  doc.setTextColor(...BLUE)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'bold')
+  doc.text('JOB INFORMATION', M, y)
+  y += 3
+  const thirdW = CW / 3
+  const jobRows: [string, string | null][][] = [
+    [
+      ['CUSTOMER', report.customer],
+      ['RO NO.', report.ro_no],
+      ['REPORT NO.', report.report_no],
+    ],
+    [
+      ['PROJECT', report.project],
+      ['EX STATION & P/F', report.ex_station],
+      ['REPORT DATE', formatTanggal(report.report_date)],
+    ],
   ]
-  fields.forEach((row) => {
+  jobRows.forEach((row) => {
     row.forEach(([label, val], ci) => {
-      drawField(doc, label, val || '', M + ci * colW, y, colW, 5.5, colW / 2 + 2)
+      const cx = M + ci * thirdW
+      drawField(doc, label, val || '', cx, y, thirdW, 5.5, thirdW / 2 + 2)
     })
     y += 5.5
   })
   return y + 5
+}
+
+function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number, startY: number): number {
+  let y = startY
+  doc.setTextColor(...BLUE)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'bold')
+  doc.text('CONSTRUCTION (AS FOUND)', M, y)
+  y += 3
+  const leftW = CW * 0.6, rightX = M + leftW
+  const leftFields: [string, string | null][] = [
+    ['Valve Id', report.job_number],
+    ['Valve Type', report.valve_type], ['Manufacture', report.manufacture],
+    ['Size (in.)', report.size], ['Class', report.class],
+    ['S/N', report.serial_no], ['End Connection', report.end_connection],
+    ['Operated', report.operated],
+  ]
+  leftFields.forEach(([label, val]) => {
+    drawField(doc, label, val || '', M, y, leftW, 5.5, 35)
+    y += 5.5
+  })
+  const startY2 = startY
+  doc.setDrawColor(...GRID)
+  doc.setLineWidth(0.3)
+  doc.rect(rightX, startY2, CW * 0.4, 44, 'S')
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(0, 0, 0)
+  doc.text('Repair Category', rightX + 2, startY2 + 8)
+  const cats: [string, boolean][] = [
+    ['Inspection', report.category === 'inspection'],
+    ['Minor', report.category === 'minor'],
+    ['Major', report.category === 'major'],
+  ]
+  cats.forEach(([label, checked], ci) => {
+    const cy = startY2 + 12 + ci * 6
+    doc.setDrawColor(0)
+    doc.setLineWidth(0.3)
+    doc.rect(rightX + 3, cy, 3, 3, 'S')
+    if (checked) { doc.setFontSize(8); doc.text('X', rightX + 3.5, cy + 2.5) }
+    doc.setFontSize(7)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(0, 0, 0)
+    doc.text(label, rightX + 9, cy + 2.5)
+  })
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Recommendation', rightX + 2, startY2 + 33)
+  const recs: [string, string][] = [['C', 'Cleaning'], ['RP', 'Repair'], ['RE', 'Replace']]
+  recs.forEach(([code, label], ci) => {
+    const cy = startY2 + 36 + ci * 3.5
+    doc.setFontSize(6)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(0, 0, 0)
+    doc.text(code, rightX + 6, cy)
+    doc.setFont('helvetica', 'normal')
+    doc.text(label, rightX + 13, cy)
+  })
+  return Math.max(y, startY2 + 48)
 }
 
 function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: number, CW: number, startY: number): number {
@@ -562,7 +633,8 @@ export async function exportReportPDF(
     if (items.length > 0) {
       drawHeader(doc, 'INSPECTION REPORT', PW)
       let y = 25
-      y = drawHeaderInfo(doc, report, M, CW, y)
+      y = drawJobInfo(doc, report, M, CW, y)
+      y = drawConstruction(doc, report, M, CW, y)
       y = drawItemsTable(doc, items, photos, M, CW, y)
       drawSignature(doc, report, M, CW, y, PW, PH)
     }
@@ -606,10 +678,11 @@ export async function exportReportPDF(
     if (tab === 'test' || tab === 'documentation') {
       y = drawValveInfo(doc, report, M, CW, y)
     } else {
-      y = drawHeaderInfo(doc, report, M, CW, y)
+      y = drawJobInfo(doc, report, M, CW, y)
     }
 
     if (tab === 'inspection') {
+      y = drawConstruction(doc, report, M, CW, y)
       y = drawItemsTable(doc, items, photos, M, CW, y)
     }
     if (tab === 'documentation') {
