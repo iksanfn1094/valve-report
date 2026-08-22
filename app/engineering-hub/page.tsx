@@ -22,6 +22,9 @@ export default function EngineeringHubPage() {
 
   const csGroups = [
     { label: 'All', value: 'all' },
+    { label: 'CS 1.02mm (-001)', value: '1.02' },
+    { label: 'CS 1.27mm (-002)', value: '1.27' },
+    { label: 'CS 1.52mm (-003)', value: '1.52' },
     { label: 'CS 1.78mm (0xx)', value: '1.78' },
     { label: 'CS 2.62mm (1xx)', value: '2.62' },
     { label: 'CS 3.53mm (2xx)', value: '3.53' },
