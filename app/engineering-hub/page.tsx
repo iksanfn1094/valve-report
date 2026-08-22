@@ -3,7 +3,15 @@
 import { useState } from 'react'
 import { ORING_SIZES } from '@/lib/oring-data'
 
-type TabKey = 'oring' | 'calc'
+type TabKey = 'oring' | 'api6d' | 'calc'
+
+const API6D_TESTS = [
+  { no: 1, name: 'Hydrostatic Shell Test', medium: 'Water', pressureFormula: '≥ 1.5 × PR', holdingFn: (sz: number) => sz <= 4 ? '2 min' : sz <= 10 ? '5 min' : sz <= 18 ? '15 min' : '30 min', criteria: 'No visible leakage dari pressure-containing parts' },
+  { no: 2, name: 'Hydrostatic Seat Test', medium: 'Water', pressureFormula: '≥ 1.1 × PR', holdingFn: (sz: number) => sz <= 4 ? '2 min' : sz <= 18 ? '5 min' : '10 min', criteria: 'Soft seat: ISO 5208 Rate A\nMetal seat: ISO 5208 Rate CD' },
+  { no: 3, name: 'High-Pressure Gas Seat Test', medium: 'Inert gas (N₂)', pressureFormula: '≥ 1.1 × PR', holdingFn: (sz: number) => sz <= 18 ? '15 min' : '30 min', criteria: 'Sesuai API 6D gas seat test criteria' },
+  { no: 4, name: 'Low-Pressure Gas Seat Test', medium: 'Air / inert gas', pressureFormula: '0.6–0.7 MPa\n(≈87–102 psi)', holdingFn: (sz: number) => sz <= 18 ? '15 min' : '30 min', criteria: 'Soft seat: ISO 5208 Rate A\nMetal seat: mengikuti API 6D' },
+  { no: 5, name: 'Backseat Test', medium: 'Water', pressureFormula: 'Sesuai PR', holdingFn: (sz: number) => sz <= 4 ? '2 min' : '5 min', criteria: 'No visible leakage' },
+]
 
 export default function EngineeringHubPage() {
   const [tab, setTab] = useState<TabKey>('oring')
@@ -11,6 +19,8 @@ export default function EngineeringHubPage() {
   const [csFilter, setCsFilter] = useState<string>('all')
   const [calcVals, setCalcVals] = useState([''])
   const [calcResult, setCalcResult] = useState<number | null>(null)
+  const [pr, setPr] = useState('')
+  const [valveSize, setValveSize] = useState('')
 
   const csGroups = [
     { label: 'All', value: 'all' },
@@ -40,7 +50,7 @@ export default function EngineeringHubPage() {
       <h1 className="text-xl font-bold text-teal-700">Engineering Hub</h1>
 
       <div className="flex gap-2 border-b border-gray-200 pb-0">
-        {([['oring', 'Standard O-Ring'], ['calc', 'Seat Leak Test']] as [TabKey, string][]).map(([k, label]) => (
+        {([['oring', 'Standard O-Ring'], ['api6d', 'API 6D Pressure Test'], ['calc', 'Seat Leak Test']] as [TabKey, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)} className={`px-4 py-2 text-sm font-medium rounded-t-lg transition ${tab === k ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
             {label}
           </button>
@@ -159,6 +169,87 @@ export default function EngineeringHubPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {tab === 'api6d' && (
+        <div className="space-y-4">
+          <p className="text-xs text-gray-500">API 6D — Pipeline and Piping Valve Standard — Pressure Test Requirements</p>
+
+          {/* Reference Table */}
+          <div className="overflow-auto border rounded-lg">
+            <table className="text-sm w-full">
+              <thead className="bg-teal-600 text-white sticky top-0">
+                <tr>
+                  <th className="px-3 py-2 text-center text-xs w-8">No</th>
+                  <th className="px-3 py-2 text-left text-xs">Pressure Test</th>
+                  <th className="px-3 py-2 text-left text-xs">Test Medium</th>
+                  <th className="px-3 py-2 text-left text-xs">Min Test Pressure</th>
+                  <th className="px-3 py-2 text-left text-xs">Holding Time</th>
+                  <th className="px-3 py-2 text-left text-xs">Leakage / Acceptance Criteria</th>
+                </tr>
+              </thead>
+              <tbody>
+                {API6D_TESTS.map((t, i) => (
+                  <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    <td className="px-3 py-2 text-center text-xs font-semibold">{t.no}</td>
+                    <td className="px-3 py-2 text-xs font-semibold text-gray-800">{t.name}</td>
+                    <td className="px-3 py-2 text-xs text-gray-600">{t.medium}</td>
+                    <td className="px-3 py-2 text-xs text-gray-700 font-mono whitespace-pre-line">{t.pressureFormula}</td>
+                    <td className="px-3 py-2 text-xs text-gray-600 whitespace-pre-line">{t.holdingFn(99)}</td>
+                    <td className="px-3 py-2 text-xs text-gray-600 whitespace-pre-line">{t.criteria}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Calculator */}
+          <div className="bg-gray-50 border rounded-lg p-4 space-y-3 max-w-lg">
+            <p className="text-sm font-semibold text-gray-700">Quick Calculator</p>
+            <p className="text-xs text-gray-400">Masukkan Pressure Rating (bar) dan Valve Size (inch) untuk hitung test pressure & holding time</p>
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="text-xs text-gray-500">Pressure Rating (bar)</label>
+                <input type="number" step="1" value={pr} onChange={e => setPr(e.target.value)} placeholder="e.g. 100" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1" />
+              </div>
+              <div className="flex-1">
+                <label className="text-xs text-gray-500">Valve Size (inch)</label>
+                <input type="number" step="1" value={valveSize} onChange={e => setValveSize(e.target.value)} placeholder="e.g. 6" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1" />
+              </div>
+            </div>
+            {pr && valveSize && (
+              <div className="mt-2 overflow-auto">
+                <table className="text-xs w-full">
+                  <thead className="bg-teal-100 text-teal-800">
+                    <tr>
+                      <th className="px-2 py-1.5 text-left">Test</th>
+                      <th className="px-2 py-1.5 text-right">Test Pressure</th>
+                      <th className="px-2 py-1.5 text-left">Holding Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {API6D_TESTS.map((t, i) => {
+                      const prVal = parseFloat(pr)
+                      const sz = parseFloat(valveSize)
+                      let pressure = '-'
+                      if (t.no === 1) pressure = `${(prVal * 1.5).toFixed(1)} bar`
+                      else if (t.no <= 3) pressure = `${(prVal * 1.1).toFixed(1)} bar`
+                      else if (t.no === 4) pressure = '0.6–0.7 MPa (87–102 psi)'
+                      else pressure = `${prVal.toFixed(1)} bar`
+                      return (
+                        <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-2 py-1.5 font-semibold">{t.name}</td>
+                          <td className="px-2 py-1.5 text-right font-mono">{pressure}</td>
+                          <td className="px-2 py-1.5">{t.holdingFn(sz)}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
