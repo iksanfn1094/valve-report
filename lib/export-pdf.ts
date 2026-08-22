@@ -168,16 +168,15 @@ export async function exportReportPDF(
   if (tab === 'test') {
     doc.text('VALVE INFORMATION', M, y)
     y += 3
-    const halfW = CW / 2
-    const testInfoFields: [string, string | null][] = [
+    const thirdW = CW / 3
+    const testInfoRow: [string, string | null][] = [
       ['Valve Id', report.job_number],
       ['Size (in.)', report.size],
+      ['Rating Class', report.class],
     ]
-    testInfoFields.forEach(([label, val]) => {
-      drawField(doc, label, val || '', M, y, halfW, 5.5, 35)
-      y += 5.5
+    testInfoRow.forEach(([label, val], ci) => {
+      drawField(doc, label, val || '', M + ci * thirdW, y, thirdW, 5.5, thirdW / 2 + 2)
     })
-    drawField(doc, 'Rating Class', report.class || '', M, y, halfW, 5.5, 35)
     y += 5.5
   } else {
 
@@ -435,7 +434,7 @@ export async function exportReportPDF(
       doc.text('ACCEPTANCE STANDARD', M, y)
       y += 3
 
-      const testColW = [40, 20, 16, 50, 20, 20, 16, 26]
+      const testColW = [36, 18, 14, 42, 18, 18, 14, 22]
       const testHeaders = ['DESCRIPTION TEST', 'PRESSURE (Psi)', 'TIME (Min)', 'ACCEPTANCE CRITERIA', 'START', 'FINISH', 'RESULT', 'REMARK']
 
       const testBody = testRows.map(key => {
@@ -452,8 +451,8 @@ export async function exportReportPDF(
         margin: { left: M, right: M },
         head: [testHeaders],
         body: testBody,
-        styles: { fontSize: 6.5, cellPadding: 1.5, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak' },
-        headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6.5, fontStyle: 'bold', halign: 'center' },
+        styles: { fontSize: 6, cellPadding: 1, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak' },
+        headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6, fontStyle: 'bold', halign: 'center' },
         alternateRowStyles: { fillColor: LIGHT_BG },
         columnStyles: {
           0: { cellWidth: testColW[0], halign: 'left' },
