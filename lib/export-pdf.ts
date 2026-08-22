@@ -622,7 +622,7 @@ export async function exportReportPDF(
       alternateRowStyles: { fillColor: LIGHT_BG },
       columnStyles: {
         0: { cellWidth: 8, halign: 'center' },
-        1: { cellWidth: 30, halign: 'left' },
+        1: { cellWidth: 30, halign: 'center' },
         2: { cellWidth: photoColW, halign: 'center', minCellHeight: IMG_SZ + 4 },
         3: { cellWidth: photoColW, halign: 'center', minCellHeight: IMG_SZ + 4 },
       },
