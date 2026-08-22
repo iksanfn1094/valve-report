@@ -205,25 +205,29 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     func50_pressure_psi: '', func50_duration_min: '', func50_acceptance: 'SMOOTH and LINEAR', func50_start_test: '', func50_finish_test: '', func50_result: '', func50_remark: '',
     func75_pressure_psi: '', func75_duration_min: '', func75_acceptance: '', func75_start_test: '', func75_finish_test: '', func75_result: '', func75_remark: '',
       func100_pressure_psi: '', func100_duration_min: '', func100_acceptance: 'SMOOTH and LINEAR', func100_start_test: '', func100_finish_test: '', func100_result: '', func100_remark: '',
-      test_rows: JSON.stringify(TEST_OPTIONS.map(t => t.key)),
+      test_rows: '[]',
     })
   const [savingTest, setSavingTest] = useState(false)
-  const [newTestKey, setNewTestKey] = useState('')
 
   function getTestRows(): string[] {
-    try { return JSON.parse(valveTest.test_rows) } catch { return TEST_OPTIONS.map(t => t.key) }
+    try { return JSON.parse(valveTest.test_rows) } catch { return [] }
   }
 
   function addTestRow() {
-    if (!newTestKey) return
     const rows = getTestRows()
-    if (rows.includes(newTestKey)) return alert('Test sudah ada!')
-    setValveTest(prev => ({ ...prev, test_rows: JSON.stringify([...rows, newTestKey]) }))
-    setNewTestKey('')
+    rows.push('')
+    setValveTest(prev => ({ ...prev, test_rows: JSON.stringify(rows) }))
   }
 
-  function removeTestRow(key: string) {
-    const rows = getTestRows().filter(k => k !== key)
+  function updateTestRowKey(idx: number, key: string) {
+    const rows = getTestRows()
+    rows[idx] = key
+    setValveTest(prev => ({ ...prev, test_rows: JSON.stringify(rows) }))
+  }
+
+  function removeTestRow(idx: number) {
+    const rows = getTestRows()
+    rows.splice(idx, 1)
     setValveTest(prev => ({ ...prev, test_rows: JSON.stringify(rows) }))
   }
 
@@ -278,7 +282,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           func50_pressure_psi: t.func50_pressure_psi?.toString() ?? '', func50_duration_min: t.func50_duration_min?.toString() ?? '', func50_acceptance: t.func50_acceptance ?? 'SMOOTH and LINEAR', func50_start_test: t.func50_start_test ?? '', func50_finish_test: t.func50_finish_test ?? '', func50_result: t.func50_result ?? '', func50_remark: t.func50_remark ?? '',
           func75_pressure_psi: t.func75_pressure_psi?.toString() ?? '', func75_duration_min: t.func75_duration_min?.toString() ?? '', func75_acceptance: t.func75_acceptance ?? '', func75_start_test: t.func75_start_test ?? '', func75_finish_test: t.func75_finish_test ?? '', func75_result: t.func75_result ?? '', func75_remark: t.func75_remark ?? '',
           func100_pressure_psi: t.func100_pressure_psi?.toString() ?? '', func100_duration_min: t.func100_duration_min?.toString() ?? '', func100_acceptance: t.func100_acceptance ?? 'SMOOTH and LINEAR', func100_start_test: t.func100_start_test ?? '', func100_finish_test: t.func100_finish_test ?? '', func100_result: t.func100_result ?? '', func100_remark: t.func100_remark ?? '',
-          test_rows: t.test_rows ?? JSON.stringify(TEST_OPTIONS.map(t => t.key)),
+          test_rows: t.test_rows ?? '[]',
         })
       }
       setLoading(false)
@@ -1160,36 +1164,36 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
             <tbody>
               {getTestRows().map((key, i) => {
                 const opt = TEST_OPTIONS.find(t => t.key === key)
-                if (!opt) return null
                 const isSeat = key === 'seat'
-                const criteria = isSeat ? (valveTest.spec_cv ? `ALLOWABLE LEAK ${(Number(valveTest.spec_cv) * 0.186).toFixed(2)} SCFH` : 'ALLOWABLE LEAK 0.00 SCFH') : opt.criteria
+                const criteria = isSeat ? (valveTest.spec_cv ? `ALLOWABLE LEAK ${(Number(valveTest.spec_cv) * 0.186).toFixed(2)} SCFH` : 'ALLOWABLE LEAK 0.00 SCFH') : (opt?.criteria ?? '')
                 return (
-                  <tr key={key} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
-                    <td className="border px-2 py-1 font-semibold whitespace-nowrap">{opt.label}</td>
-                    <td className="border px-1 py-1"><input type="number" value={(valveTest as any)[`${key}_pressure_psi`] ?? ''} onChange={e => updateTestField(`${key}_pressure_psi` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" placeholder="Psi" /></td>
-                    <td className="border px-1 py-1"><input type="number" value={(valveTest as any)[`${key}_duration_min`] ?? ''} onChange={e => updateTestField(`${key}_duration_min` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" placeholder="min" /></td>
-                    <td className="border px-2 py-1 text-center text-gray-600">{criteria}</td>
-                    <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${key}_start_test`] ?? ''} onChange={e => updateTestField(`${key}_start_test` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" /></td>
-                    <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${key}_finish_test`] ?? ''} onChange={e => updateTestField(`${key}_finish_test` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" /></td>
-                    <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${key}_result`] ?? ''} onChange={e => updateTestField(`${key}_result` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" placeholder="PASS/FAIL" /></td>
-                    <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${key}_remark`] ?? ''} onChange={e => updateTestField(`${key}_remark` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-xs focus:outline-none" /></td>
-                    <td className="border px-1 py-1 text-center"><button onClick={() => removeTestRow(key)} className="text-red-400 hover:text-red-600 text-sm font-bold">✕</button></td>
+                  <tr key={i} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
+                    <td className="border px-1 py-1 w-52">
+                      <select value={key} onChange={e => updateTestRowKey(i, e.target.value)} className="w-full border-0 bg-transparent text-xs font-semibold focus:outline-none">
+                        <option value="">-- Pilih Test --</option>
+                        {TEST_OPTIONS.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
+                      </select>
+                    </td>
+                    <td className="border px-1 py-1"><input type="number" value={(valveTest as any)[`${key}_pressure_psi`] ?? ''} onChange={e => updateTestField(`${key}_pressure_psi` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" placeholder="Psi" disabled={!key} /></td>
+                    <td className="border px-1 py-1"><input type="number" value={(valveTest as any)[`${key}_duration_min`] ?? ''} onChange={e => updateTestField(`${key}_duration_min` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" placeholder="min" disabled={!key} /></td>
+                    <td className="border px-2 py-1 text-center text-gray-600 text-xs">{criteria}</td>
+                    <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${key}_start_test`] ?? ''} onChange={e => updateTestField(`${key}_start_test` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" disabled={!key} /></td>
+                    <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${key}_finish_test`] ?? ''} onChange={e => updateTestField(`${key}_finish_test` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" disabled={!key} /></td>
+                    <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${key}_result`] ?? ''} onChange={e => updateTestField(`${key}_result` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" placeholder="PASS/FAIL" disabled={!key} /></td>
+                    <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${key}_remark`] ?? ''} onChange={e => updateTestField(`${key}_remark` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-xs focus:outline-none" disabled={!key} /></td>
+                    <td className="border px-1 py-1 text-center"><button onClick={() => removeTestRow(i)} className="text-red-400 hover:text-red-600 text-sm font-bold">✕</button></td>
                   </tr>
                 )
               })}
+              {getTestRows().length === 0 && (
+                <tr><td colSpan={9} className="border px-2 py-6 text-center text-gray-400">Belum ada test. Klik &quot;+ Tambah Baris&quot; untuk menambah.</td></tr>
+              )}
             </tbody>
           </table>
         </div>
 
-        <div className="flex items-center gap-2 mt-3">
-          <select value={newTestKey} onChange={e => setNewTestKey(e.target.value)} className="border border-gray-300 rounded px-2 py-1.5 text-sm">
-            <option value="">-- Pilih Test --</option>
-            {TEST_OPTIONS.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
-          </select>
-          <button onClick={addTestRow} className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-green-700 transition font-medium">+ Tambah Test</button>
-        </div>
-
         <div className="flex gap-2 mt-3">
+          <button onClick={addTestRow} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-300 transition font-medium">+ Tambah Baris</button>
           <button onClick={saveValveTest} disabled={savingTest} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition font-medium disabled:opacity-50">
             {savingTest ? 'Menyimpan...' : 'Simpan Valve Test'}
           </button>
