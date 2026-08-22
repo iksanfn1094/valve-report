@@ -139,12 +139,25 @@ type ValveTest = {
   func100_finish_test: string
   func100_result: string
   func100_remark: string
+  test_rows: string
 }
 
 const RECS = [
   { value: 'C', label: 'C (Clean)', desc: 'Bersih, tidak perlu perbaikan' },
   { value: 'RP', label: 'RP (Repair)', desc: 'Perlu perbaikan' },
   { value: 'RE', label: 'RE (Replace)', desc: 'Perlu penggantian' },
+]
+
+const TEST_OPTIONS = [
+  { key: 'actuator', label: 'ACTUATOR LEAK TEST', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
+  { key: 'shell', label: 'HYDROSTATIC SHELL TEST', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
+  { key: 'hp_seat', label: 'HIGH-PRESSURE SEAT TEST', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
+  { key: 'seat', label: 'LOW-PRESSURE SEAT LEAK TEST', criteria: '' },
+  { key: 'func0', label: 'FUNCTION TEST 0%', criteria: 'SMOOTH and LINEAR' },
+  { key: 'func25', label: 'FUNCTION TEST 25%', criteria: '' },
+  { key: 'func50', label: 'FUNCTION TEST 50%', criteria: 'SMOOTH and LINEAR' },
+  { key: 'func75', label: 'FUNCTION TEST 75%', criteria: '' },
+  { key: 'func100', label: 'FUNCTION TEST 100%', criteria: 'SMOOTH and LINEAR' },
 ]
 
 const MONTHS_EN = [
@@ -191,9 +204,28 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     func25_pressure_psi: '', func25_duration_min: '', func25_acceptance: '', func25_start_test: '', func25_finish_test: '', func25_result: '', func25_remark: '',
     func50_pressure_psi: '', func50_duration_min: '', func50_acceptance: 'SMOOTH and LINEAR', func50_start_test: '', func50_finish_test: '', func50_result: '', func50_remark: '',
     func75_pressure_psi: '', func75_duration_min: '', func75_acceptance: '', func75_start_test: '', func75_finish_test: '', func75_result: '', func75_remark: '',
-    func100_pressure_psi: '', func100_duration_min: '', func100_acceptance: 'SMOOTH and LINEAR', func100_start_test: '', func100_finish_test: '', func100_result: '', func100_remark: '',
-  })
+      func100_pressure_psi: '', func100_duration_min: '', func100_acceptance: 'SMOOTH and LINEAR', func100_start_test: '', func100_finish_test: '', func100_result: '', func100_remark: '',
+      test_rows: JSON.stringify(TEST_OPTIONS.map(t => t.key)),
+    })
   const [savingTest, setSavingTest] = useState(false)
+  const [newTestKey, setNewTestKey] = useState('')
+
+  function getTestRows(): string[] {
+    try { return JSON.parse(valveTest.test_rows) } catch { return TEST_OPTIONS.map(t => t.key) }
+  }
+
+  function addTestRow() {
+    if (!newTestKey) return
+    const rows = getTestRows()
+    if (rows.includes(newTestKey)) return alert('Test sudah ada!')
+    setValveTest(prev => ({ ...prev, test_rows: JSON.stringify([...rows, newTestKey]) }))
+    setNewTestKey('')
+  }
+
+  function removeTestRow(key: string) {
+    const rows = getTestRows().filter(k => k !== key)
+    setValveTest(prev => ({ ...prev, test_rows: JSON.stringify(rows) }))
+  }
 
   const fetchPhotos = useCallback(async () => {
     const { data } = await supabase
@@ -246,6 +278,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           func50_pressure_psi: t.func50_pressure_psi?.toString() ?? '', func50_duration_min: t.func50_duration_min?.toString() ?? '', func50_acceptance: t.func50_acceptance ?? 'SMOOTH and LINEAR', func50_start_test: t.func50_start_test ?? '', func50_finish_test: t.func50_finish_test ?? '', func50_result: t.func50_result ?? '', func50_remark: t.func50_remark ?? '',
           func75_pressure_psi: t.func75_pressure_psi?.toString() ?? '', func75_duration_min: t.func75_duration_min?.toString() ?? '', func75_acceptance: t.func75_acceptance ?? '', func75_start_test: t.func75_start_test ?? '', func75_finish_test: t.func75_finish_test ?? '', func75_result: t.func75_result ?? '', func75_remark: t.func75_remark ?? '',
           func100_pressure_psi: t.func100_pressure_psi?.toString() ?? '', func100_duration_min: t.func100_duration_min?.toString() ?? '', func100_acceptance: t.func100_acceptance ?? 'SMOOTH and LINEAR', func100_start_test: t.func100_start_test ?? '', func100_finish_test: t.func100_finish_test ?? '', func100_result: t.func100_result ?? '', func100_remark: t.func100_remark ?? '',
+          test_rows: t.test_rows ?? JSON.stringify(TEST_OPTIONS.map(t => t.key)),
         })
       }
       setLoading(false)
@@ -555,6 +588,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       func50_pressure_psi: toNum(valveTest.func50_pressure_psi), func50_duration_min: toNum(valveTest.func50_duration_min), func50_acceptance: valveTest.func50_acceptance, func50_start_test: valveTest.func50_start_test, func50_finish_test: valveTest.func50_finish_test, func50_result: valveTest.func50_result, func50_remark: valveTest.func50_remark,
       func75_pressure_psi: toNum(valveTest.func75_pressure_psi), func75_duration_min: toNum(valveTest.func75_duration_min), func75_acceptance: valveTest.func75_acceptance, func75_start_test: valveTest.func75_start_test, func75_finish_test: valveTest.func75_finish_test, func75_result: valveTest.func75_result, func75_remark: valveTest.func75_remark,
       func100_pressure_psi: toNum(valveTest.func100_pressure_psi), func100_duration_min: toNum(valveTest.func100_duration_min), func100_acceptance: valveTest.func100_acceptance, func100_start_test: valveTest.func100_start_test, func100_finish_test: valveTest.func100_finish_test, func100_result: valveTest.func100_result, func100_remark: valveTest.func100_remark,
+      test_rows: valveTest.test_rows,
     }
     if (valveTest.id) {
       const { error } = await supabase.from('report_valve_test').update(payload).eq('id', valveTest.id)
@@ -1116,6 +1150,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 <th className="border px-2 py-2 text-center" rowSpan={2}>FINISH TEST</th>
                 <th className="border px-2 py-2 text-center" rowSpan={2}>RESULT</th>
                 <th className="border px-2 py-2 text-center" rowSpan={2}>REMARK/NOTES</th>
+                <th className="border px-2 py-2 text-center" rowSpan={2}></th>
               </tr>
               <tr className="bg-blue-900 text-white">
                 <th className="border px-2 py-1 text-center">PRESSURE (Psi)</th>
@@ -1123,30 +1158,35 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
               </tr>
             </thead>
             <tbody>
-              {([
-                { label: 'ACTUATOR LEAK TEST', prefix: 'actuator', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
-                { label: 'HYDROSTATIC SHELL TEST', prefix: 'shell', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
-                { label: 'HIGH-PRESSURE SEAT TEST', prefix: 'hp_seat', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
-                { label: 'LOW-PRESSURE SEAT LEAK TEST', prefix: 'seat', criteria: valveTest.spec_cv ? `ALLOWABLE LEAK ${(Number(valveTest.spec_cv) * 0.186).toFixed(2)} SCFH` : 'ALLOWABLE LEAK 0.00 SCFH' },
-                { label: 'FUNCTION TEST 0%', prefix: 'func0', criteria: 'SMOOTH and LINEAR' },
-                { label: 'FUNCTION TEST 25%', prefix: 'func25', criteria: '' },
-                { label: 'FUNCTION TEST 50%', prefix: 'func50', criteria: 'SMOOTH and LINEAR' },
-                { label: 'FUNCTION TEST 75%', prefix: 'func75', criteria: '' },
-                { label: 'FUNCTION TEST 100%', prefix: 'func100', criteria: 'SMOOTH and LINEAR' },
-              ] as const).map((row, i) => (
-                <tr key={row.prefix} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
-                  <td className="border px-2 py-1 font-semibold whitespace-nowrap">{row.label}</td>
-                  <td className="border px-1 py-1"><input type="number" value={(valveTest as any)[`${row.prefix}_pressure_psi`]} onChange={e => updateTestField(`${row.prefix}_pressure_psi` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" placeholder="Psi" /></td>
-                  <td className="border px-1 py-1"><input type="number" value={(valveTest as any)[`${row.prefix}_duration_min`]} onChange={e => updateTestField(`${row.prefix}_duration_min` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" placeholder="min" /></td>
-                  <td className="border px-2 py-1 text-center text-gray-600">{row.criteria}</td>
-                  <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${row.prefix}_start_test`]} onChange={e => updateTestField(`${row.prefix}_start_test` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" /></td>
-                  <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${row.prefix}_finish_test`]} onChange={e => updateTestField(`${row.prefix}_finish_test` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" /></td>
-                  <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${row.prefix}_result`]} onChange={e => updateTestField(`${row.prefix}_result` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" placeholder="PASS/FAIL" /></td>
-                  <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${row.prefix}_remark`]} onChange={e => updateTestField(`${row.prefix}_remark` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-xs focus:outline-none" /></td>
-                </tr>
-              ))}
+              {getTestRows().map((key, i) => {
+                const opt = TEST_OPTIONS.find(t => t.key === key)
+                if (!opt) return null
+                const isSeat = key === 'seat'
+                const criteria = isSeat ? (valveTest.spec_cv ? `ALLOWABLE LEAK ${(Number(valveTest.spec_cv) * 0.186).toFixed(2)} SCFH` : 'ALLOWABLE LEAK 0.00 SCFH') : opt.criteria
+                return (
+                  <tr key={key} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
+                    <td className="border px-2 py-1 font-semibold whitespace-nowrap">{opt.label}</td>
+                    <td className="border px-1 py-1"><input type="number" value={(valveTest as any)[`${key}_pressure_psi`] ?? ''} onChange={e => updateTestField(`${key}_pressure_psi` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" placeholder="Psi" /></td>
+                    <td className="border px-1 py-1"><input type="number" value={(valveTest as any)[`${key}_duration_min`] ?? ''} onChange={e => updateTestField(`${key}_duration_min` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" placeholder="min" /></td>
+                    <td className="border px-2 py-1 text-center text-gray-600">{criteria}</td>
+                    <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${key}_start_test`] ?? ''} onChange={e => updateTestField(`${key}_start_test` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" /></td>
+                    <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${key}_finish_test`] ?? ''} onChange={e => updateTestField(`${key}_finish_test` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" /></td>
+                    <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${key}_result`] ?? ''} onChange={e => updateTestField(`${key}_result` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" placeholder="PASS/FAIL" /></td>
+                    <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${key}_remark`] ?? ''} onChange={e => updateTestField(`${key}_remark` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-xs focus:outline-none" /></td>
+                    <td className="border px-1 py-1 text-center"><button onClick={() => removeTestRow(key)} className="text-red-400 hover:text-red-600 text-sm font-bold">✕</button></td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
+        </div>
+
+        <div className="flex items-center gap-2 mt-3">
+          <select value={newTestKey} onChange={e => setNewTestKey(e.target.value)} className="border border-gray-300 rounded px-2 py-1.5 text-sm">
+            <option value="">-- Pilih Test --</option>
+            {TEST_OPTIONS.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
+          </select>
+          <button onClick={addTestRow} className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-green-700 transition font-medium">+ Tambah Test</button>
         </div>
 
         <div className="flex gap-2 mt-3">

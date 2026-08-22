@@ -95,6 +95,7 @@ create table report_valve_test (
   func100_result text,
   func100_remark text,
   -- Meta
+  test_rows text default '["actuator","shell","hp_seat","seat","func0","func25","func50","func75","func100"]',
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -129,3 +130,4 @@ ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS actuator_start_test text;
 ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS actuator_finish_test text;
 ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS actuator_result text;
 ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS actuator_remark text;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS test_rows text default '["actuator","shell","hp_seat","seat","func0","func25","func50","func75","func100"]';
