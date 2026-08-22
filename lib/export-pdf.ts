@@ -607,8 +607,8 @@ export async function exportReportPDF(
         String(i + 1),
         d.component_name || '-',
         d.description || '-',
-        beforeB64[i] || '-',
-        afterB64[i] || '-',
+        ' ',
+        ' ',
       ]),
       styles: { fontSize: 6, cellPadding: 1, lineColor: GRID, lineWidth: 0.2 },
       headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6, fontStyle: 'bold', halign: 'center' },
@@ -630,6 +630,8 @@ export async function exportReportPDF(
           const x = data.cell.x + (data.cell.width - imgW) / 2
           const y2 = data.cell.y + (data.cell.height - imgH) / 2
           try { doc.addImage(b64, 'JPEG', x, y2, imgW, imgH) } catch { /* skip */ }
+          doc.setTextColor(255, 255, 255)
+          doc.text(' ', data.cell.x, data.cell.y)
         }
       },
     })
