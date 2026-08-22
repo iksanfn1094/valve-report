@@ -565,16 +565,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       shell_duration_min: shellDuration,
       seat_pressure_psi: seatPressure,
       seat_duration_min: seatDuration,
-      func0_pressure_psi: seatPressure,
-      func0_duration_min: seatDuration,
-      func25_pressure_psi: seatPressure,
-      func25_duration_min: seatDuration,
-      func50_pressure_psi: seatPressure,
-      func50_duration_min: seatDuration,
-      func75_pressure_psi: seatPressure,
-      func75_duration_min: seatDuration,
-      func100_pressure_psi: seatPressure,
-      func100_duration_min: seatDuration,
     }))
   }
 
