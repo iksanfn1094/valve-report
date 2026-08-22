@@ -166,7 +166,7 @@ export async function exportReportPDF(
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
-  const titleText = tab === 'test' ? 'TEST REPORT' : 'INSPECTION REPORT'
+  const titleText = tab === 'test' ? 'TEST REPORT' : tab === 'documentation' ? 'DOCUMENTATION REPORT' : 'INSPECTION REPORT'
   doc.text(titleText, PW / 2, 9, { align: 'center' })
   doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
@@ -184,7 +184,7 @@ export async function exportReportPDF(
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
 
-  if (tab === 'test') {
+  if (tab === 'test' || tab === 'documentation') {
     doc.text('VALVE INFORMATION', M, y)
     y += 3
     const qtrW = CW / 4
@@ -226,7 +226,7 @@ export async function exportReportPDF(
   } // end else (non-test tabs)
 
   // ========== CONSTRUCTION (AS FOUND) ==========
-  if (tab !== 'test') {
+  if (tab !== 'test' && tab !== 'documentation') {
   doc.setTextColor(...BLUE)
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
