@@ -10,6 +10,7 @@ create table report_valve_test (
   spec_api6d boolean default false,
   spec_api598 boolean default false,
   spec_fci70_2 boolean default false,
+  spec_3_15_psi boolean default false,
   spec_sop_no text,
   spec_cv numeric,
   spec_others text,
@@ -82,3 +83,4 @@ create trigger trigger_valve_test_updated
 
 -- Tambahan: kolom CV (jalankan jika table sudah ada sebelumnya)
 ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS spec_cv numeric;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS spec_3_15_psi boolean default false;
