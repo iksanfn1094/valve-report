@@ -621,7 +621,7 @@ export async function exportReportPDF(
       headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6, fontStyle: 'bold', halign: 'center' },
       alternateRowStyles: { fillColor: LIGHT_BG },
       columnStyles: {
-        0: { cellWidth: 8, halign: 'center' },
+        0: { cellWidth: 8, halign: 'center', valign: 'middle' },
         1: { cellWidth: 30, halign: 'center', valign: 'middle' },
         2: { cellWidth: photoColW, halign: 'center', minCellHeight: IMG_SZ + 4 },
         3: { cellWidth: photoColW, halign: 'center', minCellHeight: IMG_SZ + 4 },
