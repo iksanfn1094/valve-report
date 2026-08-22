@@ -168,16 +168,18 @@ export async function exportReportPDF(
   if (tab === 'test') {
     doc.text('VALVE INFORMATION', M, y)
     y += 3
-    const thirdW = CW / 3
+    const qtrW = CW / 4
     const testInfoRow: [string, string | null][] = [
       ['Valve Id', report.job_number],
+      ['Valve Type', report.valve_type],
       ['Size (in.)', report.size],
       ['Rating Class', report.class],
     ]
     testInfoRow.forEach(([label, val], ci) => {
-      drawField(doc, label, val || '', M + ci * thirdW, y, thirdW, 5.5, thirdW / 2 + 2)
+      drawField(doc, label, val || '', M + ci * qtrW, y, qtrW, 5.5, qtrW / 2 + 2)
     })
     y += 5.5
+    y += 5
   } else {
 
   const thirdW = CW / 3
@@ -439,9 +441,14 @@ export async function exportReportPDF(
 
       const testBody = testRows.map(key => {
         const p = (field: string) => ((valveTest as unknown as Record<string, string>)[`${key}_${field}`]) || '-'
+        let acceptance = p('acceptance')
+        if (key === 'seat') {
+          const cv = parseFloat(valveTest.spec_cv) || 0
+          acceptance = cv ? `ALLOWABLE LEAK ${(cv * 0.186).toFixed(2)} SCFH` : 'ALLOWABLE LEAK 0.00 SCFH'
+        }
         return [
           TEST_LABELS[key] || key,
-          p('pressure_psi'), p('duration_min'), p('acceptance'),
+          p('pressure_psi'), p('duration_min'), acceptance,
           p('start_test'), p('finish_test'), p('result'), p('remark'),
         ]
       })
