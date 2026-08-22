@@ -511,7 +511,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           )}
           <Link
             href={`/reports/${id}/bom`}
-            className="px-4 py-2 text-sm font-medium rounded-t-lg transition whitespace-nowrap bg-gray-100 text-gray-600 hover:bg-gray-200 ml-auto"
+            className="px-4 py-2 text-sm font-medium rounded-t-lg transition whitespace-nowrap bg-gray-100 text-gray-600 hover:bg-gray-200 ml-auto hidden"
           >
             BOM
           </Link>
@@ -521,7 +521,12 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       {/* Items Table */}
       {activeTab === 'inspection' && (
       <div className="bg-white rounded-lg shadow border p-4">
-        <h3 className="text-lg font-bold text-gray-800 mb-3">Incoming Insp. Check (Condition As Found)</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-bold text-gray-800">Incoming Insp. Check (Condition As Found)</h3>
+          <Link href={`/reports/${id}/bom`} className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 transition">
+            BOM
+          </Link>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
