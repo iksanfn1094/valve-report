@@ -65,10 +65,10 @@ export default function EngineeringHubPage() {
       {tab === 'oring' && (
         <div className="space-y-3">
           <div className="flex flex-col sm:flex-row gap-3">
-            <input type="text" placeholder="Search by ID, CS..." value={search} onChange={e => setSearch(e.target.value)} className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none" />
             <select value={csFilter} onChange={e => setCsFilter(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none">
               {csGroups.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
             </select>
+            <input type="text" placeholder="Search by ID, CS..." value={search} onChange={e => setSearch(e.target.value)} className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <p className="text-xs text-gray-500">ISO 3601-1 Class A / AS568 (USA) — {filtered.length} sizes</p>
           <div className="flex gap-6 items-start">
