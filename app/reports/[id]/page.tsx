@@ -887,9 +887,10 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                     onChange={(e) => updateReportField(key, e.target.value)}
                     onBlur={(e) => updateReportField(key, e.target.value)}
                   />
-        )}
-        </div>
-      </div>
+                )}
+              </div>
+            ))}
+          </div>
 
         <div className="flex items-center gap-3 mt-3 pt-3 border-t">
           <span className="text-sm text-gray-500">Status:</span>
