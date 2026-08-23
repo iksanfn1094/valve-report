@@ -385,7 +385,10 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
       if (!item) return
       const b64s = photosBase64.get(item.id || '') || []
       if (b64s.length > 0) {
-        data.cell.height = Math.max(data.cell.height, 34)
+        data.cell.styles.minCellHeight = 34
+        if (data.column.index === 9) {
+          data.cell.styles.cellPadding = { top: 2, bottom: 2, left: 1, right: 1 }
+        }
       }
     },
     didDrawCell: (data) => {
@@ -417,7 +420,6 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
         const b64s = photosBase64.get(item.id || '') || []
         if (b64s.length > 0) {
           const photoSize = 30
-          const gap = 2
           b64s.slice(0, 1).forEach((b64) => {
             const px = data.cell.x + (data.cell.width - photoSize) / 2
             const py = data.cell.y + (data.cell.height - photoSize) / 2
