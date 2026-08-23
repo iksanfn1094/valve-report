@@ -376,7 +376,7 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
       6: { cellWidth: 7, halign: 'center' },
       7: { cellWidth: 16, halign: 'center' },
       8: { cellWidth: 24, halign: 'left' },
-      9: { cellWidth: 30, halign: 'center' },
+      9: { cellWidth: 30, halign: 'center', valign: 'middle' },
       10: { cellWidth: 28, halign: 'left' },
     },
     didParseCell: (data) => {
