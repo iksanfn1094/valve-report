@@ -201,10 +201,10 @@ export default function TimesheetDetailPage({ params }: { params: Promise<{ id: 
             <thead>
               <tr className="bg-blue-900 text-white">
                 <th className="border px-2 py-2 text-xs w-8">No</th>
-                <th className="border px-2 py-2 text-xs">Date</th>
-                <th className="border px-2 py-2 text-xs">Time In</th>
-                <th className="border px-2 py-2 text-xs">Time Out</th>
-                <th className="border px-2 py-2 text-xs">Overtime</th>
+                <th className="border px-2 py-2 text-xs w-24">Date</th>
+                <th className="border px-2 py-2 text-xs w-20">Time In</th>
+                <th className="border px-2 py-2 text-xs w-20">Time Out</th>
+                <th className="border px-2 py-2 text-xs w-16">Overtime</th>
                 <th className="border px-2 py-2 text-xs">Description of Work</th>
                 <th className="border px-2 py-2 text-xs w-8"></th>
               </tr>
@@ -230,8 +230,8 @@ export default function TimesheetDetailPage({ params }: { params: Promise<{ id: 
                       value={e.overtime} onChange={(ev) => setEntry(idx, 'overtime', ev.target.value)} />
                   </td>
                   <td className="border px-1 py-1">
-                    <input type="text" className="w-full border-0 bg-transparent text-xs focus:outline-none"
-                      style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}
+                    <textarea className="w-full border-0 bg-transparent text-xs focus:outline-none resize-y"
+                      rows={2}
                       value={e.description} onChange={(ev) => setEntry(idx, 'description', ev.target.value)} />
                   </td>
                   <td className="border px-2 py-1 text-center">
