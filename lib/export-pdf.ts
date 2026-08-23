@@ -318,16 +318,19 @@ function drawResumeSection(doc: jsPDF, report: ReportData, M: number, CW: number
   ]
 
   for (const [title, content] of sections) {
+    doc.setTextColor(...BLUE)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.text(title, M, y)
+    y += 2
+
     autoTable(doc, {
       startY: y,
       margin: { left: M, right: M },
-      head: [[title]],
       body: [[content || '-']],
       styles: { fontSize: 8, cellPadding: 4, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak', minCellHeight: 30 },
-      headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', halign: 'center' },
-      columnStyles: { 0: { cellWidth: 'auto' } },
     })
-    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 3
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 5
   }
 
   return y
