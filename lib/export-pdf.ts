@@ -319,7 +319,7 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
   doc.text('INCOMING INSP. CHECK (CONDITION AS FOUND)', M, y)
-  y += 6
+  y += 10
 
   autoTable(doc, {
     startY: y,
@@ -363,8 +363,8 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
       4: { cellWidth: 8, halign: 'center' },
       5: { cellWidth: 8, halign: 'center' },
       6: { cellWidth: 8, halign: 'center' },
-      7: { cellWidth: 24, halign: 'center' },
-      8: { cellWidth: 28, halign: 'center', minCellHeight: 28 },
+      7: { cellWidth: 20, halign: 'center' },
+      8: { cellWidth: 28, halign: 'center', minCellHeight: 30 },
       9: { cellWidth: 32, halign: 'left' },
     },
     didDrawCell: (data) => {
@@ -407,7 +407,7 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
       if (data.column.index === 8) {
         const rowPhotos = photosByItem.get(item.id || '') || []
         if (rowPhotos.length > 0) {
-          const photoSize = 22
+          const photoSize = 24
           const gap = 2
           const maxPerRow = Math.floor(data.cell.width / (photoSize + gap))
           const totalPhotosWidth = Math.min(rowPhotos.length, maxPerRow) * (photoSize + gap) - gap
