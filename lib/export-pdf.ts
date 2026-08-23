@@ -311,25 +311,24 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
 function drawResumeSection(doc: jsPDF, report: ReportData, M: number, CW: number, startY: number): number {
   let y = startY
 
-  const rows: [string, string | null][] = [
+  const sections: [string, string | null][] = [
     ['FINDINGS', report.findings],
     ['RECOMMENDATIONS', report.recommendations?.replace(/\b(C\s+Cleaning|RP\s+Repair|RE\s+Replace)\b/g, '').replace(/\s{2,}/g, ' ').trim() || null],
     ['CONCLUSION', report.conclusion],
   ]
 
-  const labelW = 35
-  autoTable(doc, {
-    startY: y,
-    margin: { left: M, right: M },
-    head: [],
-    body: rows.map(([label, content]) => [label, content || '-']),
-    styles: { fontSize: 8, cellPadding: 4, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak', minCellHeight: 30 },
-    columnStyles: {
-      0: { cellWidth: labelW, fontStyle: 'bold', fillColor: BLUE, textColor: [255, 255, 255], halign: 'center', valign: 'middle' },
-      1: { cellWidth: CW - labelW },
-    },
-  })
-  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 5
+  for (const [title, content] of sections) {
+    autoTable(doc, {
+      startY: y,
+      margin: { left: M, right: M },
+      head: [[title]],
+      body: [[content || '-']],
+      styles: { fontSize: 8, cellPadding: 4, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak', minCellHeight: 30 },
+      headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', halign: 'center' },
+      columnStyles: { 0: { cellWidth: 'auto' } },
+    })
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 3
+  }
 
   return y
 }
