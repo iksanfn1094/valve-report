@@ -243,7 +243,7 @@ function drawJobInfo(doc: jsPDF, report: ReportData, M: number, CW: number, star
   return y + 5
 }
 
-function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number, startY: number): number {
+function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number, startY: number, showRecommendation = true): number {
   let y = startY
   doc.setTextColor(...BLUE)
   doc.setFontSize(9)
@@ -292,19 +292,21 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
     doc.setTextColor(0, 0, 0)
     doc.text(label, rightX + 9, cy + 2.8)
   })
-  doc.setFontSize(8)
-  doc.setFont('helvetica', 'bold')
-  doc.text('Recommendation', rightX + 2, startY2 + 28)
-  const recs: [string, string][] = [['C', 'Cleaning'], ['RP', 'Repair'], ['RE', 'Replace']]
-  recs.forEach(([code, label], ci) => {
-    const cy = startY2 + 31 + ci * 4
-    doc.setFontSize(6)
+  if (showRecommendation) {
+    doc.setFontSize(8)
     doc.setFont('helvetica', 'bold')
-    doc.setTextColor(0, 0, 0)
-    doc.text(code, rightX + 3, cy + 1.5)
-    doc.setFont('helvetica', 'normal')
-    doc.text(label, rightX + 10, cy + 1.5)
-  })
+    doc.text('Recommendation', rightX + 2, startY2 + 28)
+    const recs: [string, string][] = [['C', 'Cleaning'], ['RP', 'Repair'], ['RE', 'Replace']]
+    recs.forEach(([code, label], ci) => {
+      const cy = startY2 + 31 + ci * 4
+      doc.setFontSize(6)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(0, 0, 0)
+      doc.text(code, rightX + 3, cy + 1.5)
+      doc.setFont('helvetica', 'normal')
+      doc.text(label, rightX + 10, cy + 1.5)
+    })
+  }
   return Math.max(y, startY2 + boxH + 5)
 }
 
@@ -745,7 +747,7 @@ export async function exportReportPDF(
       drawHeader(doc, 'RESUME REPORT', PW)
       let y = 25
       y = drawJobInfo(doc, report, M, CW, y)
-      y = drawConstruction(doc, report, M, CW, y)
+      y = drawConstruction(doc, report, M, CW, y, false)
       y = drawResumeSection(doc, report, M, CW, y)
       drawSignature(doc, report, M, CW, y, PW, PH)
       drawFooter(doc, report, 'Resume', PW, PH)
