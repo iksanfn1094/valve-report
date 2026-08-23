@@ -302,7 +302,7 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
     doc.setFont('helvetica', 'normal')
     doc.text(label, rightX + 10, cy + 1.5)
   })
-  return Math.max(y, startY2 + boxH + 5)
+  return Math.max(y, startY2 + boxH + 3)
 }
 
 async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: number, CW: number, startY: number): Promise<number> {
@@ -332,7 +332,7 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
   doc.text('INCOMING INSP. CHECK (CONDITION AS FOUND)', M, y)
-  y += 5
+  y += 3
 
   autoTable(doc, {
     startY: y,
@@ -431,7 +431,13 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
             const col = pi % maxPerRow
             const px = data.cell.x + offsetX + col * (photoSize + gap)
             const py = data.cell.y + offsetY + row * (photoSize + gap)
-            try { doc.addImage(b64, 'JPEG', px, py, photoSize, photoSize) } catch { /* skip */ }
+            const PW = 210, PH = 297, MARGIN = 10
+            if (py + photoSize > PH - MARGIN) {
+              doc.addPage()
+              try { doc.addImage(b64, 'JPEG', MARGIN + col * (photoSize + gap), MARGIN, photoSize, photoSize) } catch { /* skip */ }
+            } else {
+              try { doc.addImage(b64, 'JPEG', px, py, photoSize, photoSize) } catch { /* skip */ }
+            }
           })
         }
       }
