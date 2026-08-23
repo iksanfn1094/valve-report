@@ -407,7 +407,7 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
       if (data.column.index === 8) {
         const rowPhotos = photosByItem.get(item.id || '') || []
         if (rowPhotos.length > 0) {
-          const photoSize = 24
+          const photoSize = 30
           const gap = 2
           const maxPerRow = Math.floor(data.cell.width / (photoSize + gap))
           const totalPhotosWidth = Math.min(rowPhotos.length, maxPerRow) * (photoSize + gap) - gap
