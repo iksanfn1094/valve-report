@@ -302,7 +302,7 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
     doc.setFont('helvetica', 'normal')
     doc.text(label, rightX + 10, cy + 1.5)
   })
-  return Math.max(y, startY2 + boxH + 3)
+  return Math.max(y, startY2 + boxH + 5)
 }
 
 async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: number, CW: number, PW: number, PH: number, startY: number): Promise<number> {
