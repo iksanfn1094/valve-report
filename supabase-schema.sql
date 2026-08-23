@@ -23,6 +23,9 @@ create table report_inspection (
   category text check (category in ('inspection','minor','major')),
   inspector_name text,
   engineering_name text,
+  findings text,
+  recommendations text,
+  conclusion text,
   status text default 'draft' check (status in ('draft','submitted','approved')),
   created_at timestamptz default now(),
   updated_at timestamptz default now()

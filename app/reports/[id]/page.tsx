@@ -26,6 +26,9 @@ type Report = {
   engineering_name: string | null
   category: string | null
   status: string
+  findings: string | null
+  recommendations: string | null
+  conclusion: string | null
 }
 
 type Item = {
@@ -916,9 +919,58 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       </div>
 
       {/* Items Table */}
-      {activeTab === 'resume' && (
-        <div className="bg-white rounded-lg shadow border p-8 text-center">
-          <p className="text-gray-400 text-sm">This feature will be available soon.</p>
+      {activeTab === 'resume' && report && (
+        <div className="bg-white rounded-lg shadow border p-4">
+          <h3 className="text-lg font-bold text-gray-800 mb-4">Resume</h3>
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="bg-blue-900 text-white">
+                <th className="border px-3 py-2 text-xs w-48">Section</th>
+                <th className="border px-3 py-2 text-xs">Content</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="border px-3 py-2 font-semibold bg-gray-50">FINDINGS</td>
+                <td className="border px-0 py-0">
+                  <textarea
+                    className="w-full border-0 bg-transparent text-sm p-2 focus:outline-none resize-y min-h-[120px]"
+                    rows={6}
+                    placeholder="Enter findings..."
+                    value={report.findings || ''}
+                    onChange={(e) => setReport({ ...report, findings: e.target.value })}
+                    onBlur={(e) => updateReportField('findings', e.target.value)}
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td className="border px-3 py-2 font-semibold bg-gray-50">RECOMMENDATIONS</td>
+                <td className="border px-0 py-0">
+                  <textarea
+                    className="w-full border-0 bg-transparent text-sm p-2 focus:outline-none resize-y min-h-[120px]"
+                    rows={6}
+                    placeholder="Enter recommendations..."
+                    value={report.recommendations || ''}
+                    onChange={(e) => setReport({ ...report, recommendations: e.target.value })}
+                    onBlur={(e) => updateReportField('recommendations', e.target.value)}
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td className="border px-3 py-2 font-semibold bg-gray-50">CONCLUSION</td>
+                <td className="border px-0 py-0">
+                  <textarea
+                    className="w-full border-0 bg-transparent text-sm p-2 focus:outline-none resize-y min-h-[120px]"
+                    rows={6}
+                    placeholder="Enter conclusion..."
+                    value={report.conclusion || ''}
+                    onChange={(e) => setReport({ ...report, conclusion: e.target.value })}
+                    onBlur={(e) => updateReportField('conclusion', e.target.value)}
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       )}
 
