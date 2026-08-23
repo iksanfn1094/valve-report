@@ -377,8 +377,26 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
       6: { cellWidth: 7, halign: 'center' },
       7: { cellWidth: 16, halign: 'center' },
       8: { cellWidth: 27, halign: 'left' },
-      9: { cellWidth: 30, halign: 'center', minCellHeight: 32 },
+      9: { cellWidth: 30, halign: 'center' },
       10: { cellWidth: 30, halign: 'left' },
+    },
+    didParseCell: (data) => {
+      if (data.section !== 'body') return
+      if (data.column.index === 9) {
+        const item = items[data.row.index]
+        if (!item) return
+        const b64s = photosBase64.get(item.id || '') || []
+        if (b64s.length > 0) {
+          const photoSize = 28
+          const gap = 2
+          const maxPerRow = Math.floor(data.cell.width / (photoSize + gap))
+          const totalRows = Math.ceil(Math.min(b64s.length, maxPerRow * 2) / maxPerRow)
+          const needed = totalRows * (photoSize + gap) - gap + 4
+          if (needed > data.cell.height) {
+            data.cell.height = needed
+          }
+        }
+      }
     },
     didDrawCell: (data) => {
       if (data.section !== 'body') return
@@ -431,13 +449,7 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
             const col = pi % maxPerRow
             const px = data.cell.x + offsetX + col * (photoSize + gap)
             const py = data.cell.y + offsetY + row * (photoSize + gap)
-            const PW = 210, PH = 297, MARGIN = 10
-            if (py + photoSize > PH - MARGIN) {
-              doc.addPage()
-              try { doc.addImage(b64, 'JPEG', MARGIN + col * (photoSize + gap), MARGIN, photoSize, photoSize) } catch { /* skip */ }
-            } else {
-              try { doc.addImage(b64, 'JPEG', px, py, photoSize, photoSize) } catch { /* skip */ }
-            }
+            try { doc.addImage(b64, 'JPEG', px, py, photoSize, photoSize) } catch { /* skip */ }
           })
         }
       }
