@@ -91,9 +91,9 @@ export default function ReportsList() {
   }, [])
 
   async function deleteReport(reportId: string) {
-    if (!confirm('Hapus report ini? Semua data terkait (items, BOM, foto) akan ikut terhapus.')) return
+    if (!confirm('Delete this report? All related data (items, BOM, photos) will also be deleted.')) return
     const { error } = await supabase.from('report_inspection').delete().eq('id', reportId)
-    if (error) return alert('Gagal hapus: ' + error.message)
+    if (error) return alert('Delete failed: ' + error.message)
     setReports(reports.filter((r) => r.id !== reportId))
   }
 
@@ -241,7 +241,7 @@ export default function ReportsList() {
                 <th className="border px-3 py-2">Class</th>
                 <th className="border px-3 py-2">Category</th>
                 <th className="border px-3 py-2">Status</th>
-                <th className="border px-3 py-2">Aksi</th>
+                <th className="border px-3 py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -268,7 +268,7 @@ export default function ReportsList() {
                   <td className="border px-3 py-2">
                     <div className="flex gap-2">
                       <Link href={`/reports/${r.id}`} className="text-blue-600 hover:underline text-sm">
-                        Buka
+                        Open
                       </Link>
                       <button
                         onClick={() => generatePdf(r.id)}
@@ -281,7 +281,7 @@ export default function ReportsList() {
                         onClick={() => deleteReport(r.id)}
                         className="text-red-500 hover:text-red-700 text-sm"
                       >
-                        Hapus
+                        Delete
                       </button>
                     </div>
                   </td>
