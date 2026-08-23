@@ -368,16 +368,16 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
     alternateRowStyles: { fillColor: LIGHT_BG },
     columnStyles: {
       0: { cellWidth: 7, halign: 'center' },
-      1: { cellWidth: 28, halign: 'left' },
+      1: { cellWidth: 30, halign: 'left' },
       2: { cellWidth: 8, halign: 'center' },
-      3: { cellWidth: 28, halign: 'left' },
+      3: { cellWidth: 30, halign: 'left' },
       4: { cellWidth: 7, halign: 'center' },
       5: { cellWidth: 7, halign: 'center' },
       6: { cellWidth: 7, halign: 'center' },
       7: { cellWidth: 16, halign: 'center' },
-      8: { cellWidth: 24, halign: 'left' },
+      8: { cellWidth: 26, halign: 'left' },
       9: { cellWidth: 32, halign: 'center', valign: 'middle' },
-      10: { cellWidth: 18, halign: 'left' },
+      10: { cellWidth: 20, halign: 'left' },
     },
     didParseCell: (data) => {
       if (data.section !== 'body') return
