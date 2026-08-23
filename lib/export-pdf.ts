@@ -345,7 +345,7 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
         { content: 'Recommendation', colSpan: 3 },
         { content: 'Repair Category', rowSpan: 2 },
         { content: 'Comment / Notes / Dimension', rowSpan: 2 },
-        { content: 'Foto', rowSpan: 2 },
+        { content: 'Photo', rowSpan: 2 },
         { content: 'Material Spec.', rowSpan: 2 },
       ],
       ['C', 'RP', 'RE'],

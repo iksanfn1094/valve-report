@@ -592,7 +592,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   }
 
   async function deletePhoto(photoId: string, storagePath: string) {
-    if (!confirm('Hapus foto ini?')) return
+    if (!confirm('Delete this photo?')) return
     await supabase.storage.from('report-photos').remove([storagePath])
     await supabase.from('report_photos').delete().eq('id', photoId)
     await fetchPhotos()
@@ -931,7 +931,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 <th className="border px-1 py-1 text-xs" colSpan={3}>Recommendation</th>
                 <th className="border px-1 py-1 text-xs w-28" rowSpan={2}>Repair Category</th>
                 <th className="border px-1 py-1 text-xs" rowSpan={2}>Comment / Notes / Dimension</th>
-                <th className="border px-1 py-1 text-xs w-24" rowSpan={2}>Foto</th>
+                <th className="border px-1 py-1 text-xs w-24" rowSpan={2}>Photo</th>
                 <th className="border px-1 py-1 text-xs w-32" rowSpan={2}>Material Specification</th>
                 <th className="border px-1 py-1 text-xs w-8" rowSpan={2}></th>
               </tr>
@@ -1073,7 +1073,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                             {uploading === item.id ? (
                               <span className="text-yellow-600">Uploading...</span>
                             ) : (
-                              <span>+ Foto</span>
+                              <span>+ Photo</span>
                             )}
                           </label>
                         ) : (
@@ -1126,7 +1126,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           </button>
         </div>
         <p className="text-xs text-gray-400 mt-2">
-          * Klik &quot;+ Foto&quot; untuk upload foto per komponen. Baris harus disimpan dulu sebelum bisa upload foto.
+          * Click &quot;+ Photo&quot; to upload photo per component. Row must be saved first before uploading.
         </p>
       </div>
 
@@ -1352,7 +1352,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                     </select>
                   </td>
                   <td className="border px-1 py-1">
-                    <input type="text" value={row.description} onChange={e => updateTestPhoto(i, 'description', e.target.value)} className="w-full border-0 bg-transparent text-xs focus:outline-none" placeholder="Deskripsi foto..." />
+                    <input type="text" value={row.description} onChange={e => updateTestPhoto(i, 'description', e.target.value)} className="w-full border-0 bg-transparent text-xs focus:outline-none" placeholder="Photo description..." />
                   </td>
                   <td className="border px-1 py-1">
                     <div className="flex flex-wrap items-center gap-1">
@@ -1363,7 +1363,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                         </div>
                       ))}
                       <label className="text-blue-600 hover:text-blue-800 cursor-pointer text-xs">
-                        + Foto
+                        + Photo
                         <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadTestPhoto(f, i) }} />
                       </label>
                     </div>
@@ -1372,7 +1372,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 </tr>
               ))}
               {getTestPhotos().length === 0 && (
-                <tr><td colSpan={5} className="border px-2 py-6 text-center text-gray-400">Belum ada foto. Klik &quot;+ Tambah Baris&quot; untuk menambah.</td></tr>
+                <tr><td colSpan={5} className="border px-2 py-6 text-center text-gray-400">No photos yet. Click &quot;+ Add Row&quot; to add.</td></tr>
               )}
             </tbody>
           </table>
@@ -1420,7 +1420,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                         </div>
                       ))}
                       <label className="text-blue-600 hover:text-blue-800 cursor-pointer text-xs">
-                        + Foto
+                        + Photo
                         <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadDocPhoto(f, i, 'before') }} />
                       </label>
                     </div>
@@ -1434,7 +1434,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                         </div>
                       ))}
                       <label className="text-blue-600 hover:text-blue-800 cursor-pointer text-xs">
-                        + Foto
+                        + Photo
                         <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadDocPhoto(f, i, 'after') }} />
                       </label>
                     </div>
