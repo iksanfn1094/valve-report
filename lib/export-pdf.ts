@@ -363,7 +363,7 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
       '',
       it.spec_material || '-',
     ]),
-    styles: { fontSize: 6, cellPadding: 1, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak' },
+    styles: { fontSize: 6, cellPadding: 1, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak', valign: 'middle' },
     headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6, fontStyle: 'bold', halign: 'center', valign: 'middle' },
     alternateRowStyles: { fillColor: LIGHT_BG },
     columnStyles: {
@@ -376,22 +376,8 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
       6: { cellWidth: 7, halign: 'center' },
       7: { cellWidth: 16, halign: 'center' },
       8: { cellWidth: 24, halign: 'left' },
-      9: { cellWidth: 30, halign: 'center', valign: 'middle' },
+      9: { cellWidth: 30, halign: 'center', valign: 'middle', minCellHeight: 34 },
       10: { cellWidth: 28, halign: 'left' },
-    },
-    didParseCell: (data) => {
-      if (data.section !== 'body') return
-      const item = items[data.row.index]
-      if (!item) return
-      const b64s = photosBase64.get(item.id || '') || []
-      if (b64s.length > 0) {
-        const photoH = 28
-        const gap = 2
-        const needed = photoH + gap + 4
-        if (needed > data.cell.height) {
-          data.cell.height = needed
-        }
-      }
     },
     didDrawCell: (data) => {
       if (data.section !== 'body') return
