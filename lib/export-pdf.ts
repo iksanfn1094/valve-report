@@ -382,19 +382,17 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
     },
     didParseCell: (data) => {
       if (data.section !== 'body') return
-      if (data.column.index === 9) {
-        const item = items[data.row.index]
-        if (!item) return
-        const b64s = photosBase64.get(item.id || '') || []
-        if (b64s.length > 0) {
-          const photoSize = 28
-          const gap = 2
-          const maxPerRow = Math.floor(data.cell.width / (photoSize + gap))
-          const totalRows = Math.ceil(Math.min(b64s.length, maxPerRow * 2) / maxPerRow)
-          const needed = totalRows * (photoSize + gap) - gap + 4
-          if (needed > data.cell.height) {
-            data.cell.height = needed
-          }
+      const item = items[data.row.index]
+      if (!item) return
+      const b64s = photosBase64.get(item.id || '') || []
+      if (b64s.length > 0) {
+        const photoSize = 28
+        const gap = 2
+        const maxPerRow = Math.floor(30 / (photoSize + gap))
+        const totalRows = Math.ceil(Math.min(b64s.length, maxPerRow * 2) / maxPerRow)
+        const needed = totalRows * (photoSize + gap) - gap + 4
+        if (needed > data.cell.height) {
+          data.cell.height = needed
         }
       }
     },
