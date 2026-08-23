@@ -830,6 +830,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       <div className="bg-white rounded-lg shadow border px-4 pt-3">
         <div className="flex gap-1 border-b border-gray-200 overflow-x-auto">
           {[
+            { key: 'resume', label: 'Resume', active: 'bg-teal-600 text-white' },
             { key: 'inspection', label: 'Inspection', active: 'bg-blue-600 text-white' },
             { key: 'documentation', label: 'Documentation', active: 'bg-yellow-600 text-white' },
             { key: 'penetrant', label: 'Liquid Penetrant', active: 'bg-orange-600 text-white' },
@@ -915,6 +916,12 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       </div>
 
       {/* Items Table */}
+      {activeTab === 'resume' && (
+        <div className="bg-white rounded-lg shadow border p-8 text-center">
+          <p className="text-gray-400 text-sm">This feature will be available soon.</p>
+        </div>
+      )}
+
       {activeTab === 'inspection' && (<>
       <div className="bg-white rounded-lg shadow border p-4">
         <div className="flex items-center justify-between mb-3">
@@ -1458,7 +1465,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       )}
 
       {/* Placeholder for other tabs */}
-      {activeTab !== 'inspection' && activeTab !== 'documentation' && activeTab !== 'test' && (
+      {activeTab !== 'inspection' && activeTab !== 'documentation' && activeTab !== 'resume' && activeTab !== 'test' && (
         <div className="bg-white rounded-lg shadow border p-8 text-center">
           <p className="text-gray-400 text-sm">This feature will be available soon.</p>
         </div>
