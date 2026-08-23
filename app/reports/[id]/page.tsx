@@ -830,9 +830,9 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       <div className="bg-white rounded-lg shadow border px-4 pt-3">
         <div className="flex gap-1 border-b border-gray-200 overflow-x-auto">
           {[
-            { key: 'inspection', label: 'Inspection', active: 'bg-blue-600 text-white' },
-            { key: 'documentation', label: 'Documentation', active: 'bg-yellow-600 text-white' },
-            { key: 'penetrant', label: 'Liquid Penetrant', active: 'bg-orange-600 text-white' },
+            { key: 'inspection', label: 'Technical Report - Inspection', active: 'bg-blue-600 text-white' },
+            { key: 'documentation', label: 'Technical Report - Documentation', active: 'bg-yellow-600 text-white' },
+            { key: 'penetrant', label: 'Technical Report - Liquid Penetrant', active: 'bg-orange-600 text-white' },
             { key: 'torque', label: 'Torque & Anti-static', active: 'bg-purple-600 text-white' },
             { key: 'test', label: 'Test', active: 'bg-red-600 text-white' },
             { key: 'packaging', label: 'Packaging', active: 'bg-green-600 text-white' },
