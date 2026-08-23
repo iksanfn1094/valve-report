@@ -364,20 +364,20 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
       '',
       it.spec_material || '-',
     ]),
-    styles: { fontSize: 6, cellPadding: 1, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak' },
+    styles: { fontSize: 6, cellPadding: 1, lineColor: GRID, lineWidth: 0.2, overflow: 'visible' },
     headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6, fontStyle: 'bold', halign: 'center', valign: 'middle' },
     alternateRowStyles: { fillColor: LIGHT_BG },
     columnStyles: {
       0: { cellWidth: 7, halign: 'center' },
-      1: { cellWidth: 23, halign: 'left' },
+      1: { cellWidth: 22, halign: 'left' },
       2: { cellWidth: 8, halign: 'center' },
-      3: { cellWidth: 28, halign: 'left' },
+      3: { cellWidth: 26, halign: 'left' },
       4: { cellWidth: 7, halign: 'center' },
       5: { cellWidth: 7, halign: 'center' },
       6: { cellWidth: 7, halign: 'center' },
-      7: { cellWidth: 16, halign: 'center' },
-      8: { cellWidth: 27, halign: 'left' },
-      9: { cellWidth: 30, halign: 'center' },
+      7: { cellWidth: 14, halign: 'center' },
+      8: { cellWidth: 22, halign: 'left' },
+      9: { cellWidth: 34, halign: 'center' },
       10: { cellWidth: 30, halign: 'left' },
     },
     didParseCell: (data) => {
@@ -389,7 +389,7 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
         const photoW = 30
         const photoH = 30
         const gap = 2
-        const colW = 30
+        const colW = 34
         const maxPerRow = Math.max(1, Math.floor(colW / (photoW + gap)))
         const totalRows = Math.ceil(Math.min(b64s.length, maxPerRow * 2) / maxPerRow)
         const needed = totalRows * (photoH + gap) - gap + 4
