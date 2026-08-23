@@ -797,6 +797,6 @@ export async function exportReportPDF(
     }
   }
 
-  const fn = `IR-${report.job_number}${report.report_no ? '-' + report.report_no : ''}.pdf`
+  const fn = `${report.job_number}-FinalReport.pdf`
   doc.save(fn)
 }
