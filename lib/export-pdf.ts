@@ -388,7 +388,7 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
       if (b64s.length > 0) {
         const photoSize = 30
         const gap = 2
-        const maxPerRow = Math.floor(30 / (photoSize + gap))
+        const maxPerRow = Math.max(1, Math.floor(data.cell.width / (photoSize + gap)))
         const totalRows = Math.ceil(Math.min(b64s.length, maxPerRow * 2) / maxPerRow)
         const needed = totalRows * (photoSize + gap) - gap + 4
         if (needed > data.cell.height) {
