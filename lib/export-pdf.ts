@@ -18,6 +18,9 @@ type ReportData = {
   inspector_name: string | null
   ro_no: string | null
   category: string | null
+  findings: string | null
+  recommendations: string | null
+  conclusion: string | null
 }
 
 type ItemData = {
@@ -303,6 +306,36 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
     doc.text(label, rightX + 10, cy + 1.5)
   })
   return Math.max(y, startY2 + boxH + 5)
+}
+
+function drawResumeSection(doc: jsPDF, report: ReportData, M: number, CW: number, startY: number): number {
+  let y = startY
+
+  const sections: [string, string | null][] = [
+    ['FINDINGS', report.findings],
+    ['RECOMMENDATIONS', report.recommendations],
+    ['CONCLUSION', report.conclusion],
+  ]
+
+  for (const [title, content] of sections) {
+    doc.setTextColor(...BLUE)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.text(title, M, y)
+    y += 2
+
+    autoTable(doc, {
+      startY: y,
+      margin: { left: M, right: M },
+      head: [[title]],
+      body: [[content || '-']],
+      styles: { fontSize: 8, cellPadding: 4, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak', minCellHeight: 30 },
+      headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', halign: 'center' },
+    })
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 5
+  }
+
+  return y
 }
 
 async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: number, CW: number, PW: number, PH: number, startY: number): Promise<number> {
@@ -710,6 +743,15 @@ export async function exportReportPDF(
     drawFooter(doc, report, 'Full Report', PW, PH)
   } else {
     // Single tab mode
+    if (tab === 'resume') {
+      drawHeader(doc, 'RESUME REPORT', PW)
+      let y = 25
+      y = drawJobInfo(doc, report, M, CW, y)
+      y = drawConstruction(doc, report, M, CW, y)
+      y = drawResumeSection(doc, report, M, CW, y)
+      drawSignature(doc, report, M, CW, y, PW, PH)
+      drawFooter(doc, report, 'Resume', PW, PH)
+    } else {
     drawHeader(doc, tab === 'test' ? 'TEST REPORT' : tab === 'documentation' ? 'DOCUMENTATION REPORT' : 'INSPECTION REPORT', PW)
     let y = 25
 
@@ -735,6 +777,7 @@ export async function exportReportPDF(
 
     drawSignature(doc, report, M, CW, y, PW, PH)
     drawFooter(doc, report, tab.charAt(0).toUpperCase() + tab.slice(1), PW, PH)
+    }
   }
 
   const fn = `IR-${report.job_number}${report.report_no ? '-' + report.report_no : ''}.pdf`
