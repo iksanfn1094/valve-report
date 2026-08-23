@@ -305,7 +305,7 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
   return Math.max(y, startY2 + boxH + 3)
 }
 
-async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: number, CW: number, startY: number): Promise<number> {
+async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: number, CW: number, PW: number, PH: number, startY: number): Promise<number> {
   let y = startY
   if (items.length === 0) return y
 
@@ -345,7 +345,6 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
         { content: 'Recommendation', colSpan: 3 },
         { content: 'Repair Category', rowSpan: 2 },
         { content: 'Comment / Notes / Dimension', rowSpan: 2 },
-        { content: 'Foto', rowSpan: 2 },
         { content: 'Material Spec.', rowSpan: 2 },
       ],
       ['C', 'RP', 'RE'],
@@ -360,7 +359,6 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
       '',
       it.repair_category || '-',
       it.comment || '-',
-      '',
       it.spec_material || '-',
     ]),
     styles: { fontSize: 6, cellPadding: 1, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak' },
@@ -368,80 +366,81 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
     alternateRowStyles: { fillColor: LIGHT_BG },
     columnStyles: {
       0: { cellWidth: 7, halign: 'center' },
-      1: { cellWidth: 22, halign: 'left' },
+      1: { cellWidth: 28, halign: 'left' },
       2: { cellWidth: 8, halign: 'center' },
-      3: { cellWidth: 26, halign: 'left' },
-      4: { cellWidth: 7, halign: 'center' },
-      5: { cellWidth: 7, halign: 'center' },
-      6: { cellWidth: 7, halign: 'center' },
-      7: { cellWidth: 16, halign: 'center' },
-      8: { cellWidth: 24, halign: 'left' },
-      9: { cellWidth: 30, halign: 'center' },
-      10: { cellWidth: 30, halign: 'left' },
-    },
-    didParseCell: (data) => {
-      if (data.section !== 'body') return
-      const item = items[data.row.index]
-      if (!item) return
-      const b64s = photosBase64.get(item.id || '') || []
-      if (b64s.length > 0) {
-        const photoH = 28
-        const gap = 2
-        const totalRows = Math.ceil(b64s.length / 1)
-        const needed = totalRows * (photoH + gap) - gap + 4
-        if (needed > data.cell.height) {
-          data.cell.height = needed
-        }
-      }
+      3: { cellWidth: 32, halign: 'left' },
+      4: { cellWidth: 8, halign: 'center' },
+      5: { cellWidth: 8, halign: 'center' },
+      6: { cellWidth: 8, halign: 'center' },
+      7: { cellWidth: 18, halign: 'center' },
+      8: { cellWidth: 32, halign: 'left' },
+      9: { cellWidth: 39, halign: 'left' },
     },
     didDrawCell: (data) => {
       if (data.section !== 'body') return
       const item = items[data.row.index]
       if (!item) return
-
       if (data.column.index === 4 && item.recommendation.includes('C')) {
-        const cx = data.cell.x + data.cell.width / 2
-        const cy = data.cell.y + data.cell.height / 2
-        doc.setDrawColor(0)
-        doc.setLineWidth(0.4)
+        const cx = data.cell.x + data.cell.width / 2, cy = data.cell.y + data.cell.height / 2
+        doc.setDrawColor(0); doc.setLineWidth(0.4)
         doc.line(cx - 1.5, cy - 0.3, cx - 0.3, cy + 0.8)
         doc.line(cx - 0.3, cy + 0.8, cx + 2, cy - 1.2)
         doc.setLineWidth(0.2)
       }
       if (data.column.index === 5 && item.recommendation.includes('RP')) {
-        const cx = data.cell.x + data.cell.width / 2
-        const cy = data.cell.y + data.cell.height / 2
-        doc.setDrawColor(0)
-        doc.setLineWidth(0.4)
+        const cx = data.cell.x + data.cell.width / 2, cy = data.cell.y + data.cell.height / 2
+        doc.setDrawColor(0); doc.setLineWidth(0.4)
         doc.line(cx - 1.5, cy - 0.3, cx - 0.3, cy + 0.8)
         doc.line(cx - 0.3, cy + 0.8, cx + 2, cy - 1.2)
         doc.setLineWidth(0.2)
       }
       if (data.column.index === 6 && item.recommendation.includes('RE')) {
-        const cx = data.cell.x + data.cell.width / 2
-        const cy = data.cell.y + data.cell.height / 2
-        doc.setDrawColor(0)
-        doc.setLineWidth(0.4)
+        const cx = data.cell.x + data.cell.width / 2, cy = data.cell.y + data.cell.height / 2
+        doc.setDrawColor(0); doc.setLineWidth(0.4)
         doc.line(cx - 1.5, cy - 0.3, cx - 0.3, cy + 0.8)
         doc.line(cx - 0.3, cy + 0.8, cx + 2, cy - 1.2)
         doc.setLineWidth(0.2)
       }
-
-      if (data.column.index === 9) {
-        const b64s = photosBase64.get(item.id || '') || []
-        if (b64s.length > 0) {
-          const photoSize = 28
-          const gap = 2
-          const startX = data.cell.x + (data.cell.width - photoSize) / 2
-          b64s.slice(0, 10).forEach((b64, pi) => {
-            const py = data.cell.y + 2 + pi * (photoSize + gap)
-            try { doc.addImage(b64, 'JPEG', startX, py, photoSize, photoSize) } catch { /* skip */ }
-          })
-        }
-      }
     },
   })
-  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
+  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6
+
+  // Draw photos separately below the table
+  const hasAnyPhotos = items.some((it) => (photosBase64.get(it.id || '') || []).length > 0)
+  if (hasAnyPhotos) {
+    doc.setTextColor(...BLUE)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.text('PHOTO ITEMS', M, y)
+    y += 5
+
+    const photoSize = 30
+    const gap = 4
+    const photosPerRow = Math.floor(CW / (photoSize + gap))
+
+    for (const item of items) {
+      const b64s = photosBase64.get(item.id || '') || []
+      if (b64s.length === 0) continue
+
+      doc.setFontSize(7)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(0, 0, 0)
+      doc.text(`${item.item_no}. ${item.component_name || '-'}`, M, y)
+      y += 4
+
+      for (let pi = 0; pi < b64s.length; pi += photosPerRow) {
+        if (y + photoSize + 4 > PH - M) { doc.addPage(); y = M }
+        const chunk = b64s.slice(pi, pi + photosPerRow)
+        chunk.forEach((b64, ci) => {
+          const px = M + ci * (photoSize + gap)
+          try { doc.addImage(b64, 'JPEG', px, y, photoSize, photoSize) } catch { /* skip */ }
+        })
+        y += photoSize + gap
+      }
+      y += 2
+    }
+  }
+
   return y
 }
 
@@ -684,7 +683,7 @@ export async function exportReportPDF(
       let y = 25
       y = drawJobInfo(doc, report, M, CW, y)
       y = drawConstruction(doc, report, M, CW, y)
-      y = await drawItemsTable(doc, items, photos, M, CW, y)
+      y = await drawItemsTable(doc, items, photos, M, CW, PW, PH, y)
       drawSignature(doc, report, M, CW, y, PW, PH)
     }
 
@@ -732,7 +731,7 @@ export async function exportReportPDF(
 
     if (tab === 'inspection') {
       y = drawConstruction(doc, report, M, CW, y)
-      y = await drawItemsTable(doc, items, photos, M, CW, y)
+      y = await drawItemsTable(doc, items, photos, M, CW, PW, PH, y)
     }
     if (tab === 'documentation') {
       y = await drawDocumentationSection(doc, docItems, M, CW, y)
