@@ -305,7 +305,7 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
   return Math.max(y, startY2 + boxH + 2)
 }
 
-function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: number, CW: number, startY: number): number {
+async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: number, CW: number, startY: number): Promise<number> {
   let y = startY
   if (items.length === 0) return y
 
@@ -315,11 +315,24 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
     photosByItem.get(p.item_id)!.push(p)
   }
 
+  // Pre-fetch photos as base64
+  const photosBase64 = new Map<string, string[]>()
+  for (const [itemId, itemPhotos] of photosByItem) {
+    const b64s: string[] = []
+    for (const p of itemPhotos) {
+      if (p.url) {
+        const b64 = await fetchImageAsBase64(p.url)
+        if (b64) b64s.push(b64)
+      }
+    }
+    photosBase64.set(itemId, b64s)
+  }
+
   doc.setTextColor(...BLUE)
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
   doc.text('INCOMING INSP. CHECK (CONDITION AS FOUND)', M, y)
-  y += 12
+  y += 8
 
   autoTable(doc, {
     startY: y,
@@ -332,47 +345,47 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
         { content: 'Condition', rowSpan: 2 },
         { content: 'Recommendation', colSpan: 3 },
         { content: 'Repair Category', rowSpan: 2 },
+        { content: 'Comment / Notes / Dimension', rowSpan: 2 },
         { content: 'Foto', rowSpan: 2 },
         { content: 'Material Spec.', rowSpan: 2 },
       ],
       ['C', 'RP', 'RE'],
     ],
-    body: items.map((it) => {
-      const rowPhotos = photosByItem.get(it.id || '') || []
-      return [
-        String(it.item_no),
-        it.component_name || '-',
-        it.qty?.toString() || '-',
-        it.condition_note || '-',
-        it.recommendation.includes('C') ? '' : '',
-        it.recommendation.includes('RP') ? '' : '',
-        it.recommendation.includes('RE') ? '' : '',
-        it.repair_category || '-',
-        '',
-        it.spec_material || '-',
-      ]
-    }),
+    body: items.map((it) => [
+      String(it.item_no),
+      it.component_name || '-',
+      it.qty?.toString() || '-',
+      it.condition_note || '-',
+      '',
+      '',
+      '',
+      it.repair_category || '-',
+      it.comment || '-',
+      '',
+      it.spec_material || '-',
+    ]),
     styles: { fontSize: 6, cellPadding: 1, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak' },
     headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6, fontStyle: 'bold', halign: 'center', valign: 'middle' },
     alternateRowStyles: { fillColor: LIGHT_BG },
     columnStyles: {
       0: { cellWidth: 8, halign: 'center' },
-      1: { cellWidth: 28, halign: 'left' },
+      1: { cellWidth: 26, halign: 'left' },
       2: { cellWidth: 10, halign: 'center' },
-      3: { cellWidth: 32, halign: 'left' },
+      3: { cellWidth: 28, halign: 'left' },
       4: { cellWidth: 8, halign: 'center' },
       5: { cellWidth: 8, halign: 'center' },
       6: { cellWidth: 8, halign: 'center' },
-      7: { cellWidth: 20, halign: 'center' },
-      8: { cellWidth: 28, halign: 'center', minCellHeight: 30 },
-      9: { cellWidth: 32, halign: 'left' },
+      7: { cellWidth: 18, halign: 'center' },
+      8: { cellWidth: 28, halign: 'left' },
+      9: { cellWidth: 30, halign: 'center', minCellHeight: 32 },
+      10: { cellWidth: 28, halign: 'left' },
     },
     didDrawCell: (data) => {
       if (data.section !== 'body') return
       const item = items[data.row.index]
       if (!item) return
 
-      // Draw checkmark for C/RP/RE columns (4,5,6) - smaller, flipped
+      // Draw checkmark for C/RP/RE columns (4,5,6)
       if (data.column.index === 4 && item.recommendation.includes('C')) {
         const cx = data.cell.x + data.cell.width / 2
         const cy = data.cell.y + data.cell.height / 2
@@ -401,27 +414,24 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
         doc.setLineWidth(0.2)
       }
 
-      // Repair Category (7) - just text, no checkbox
-
-      // Draw photos in Foto column (8) - bigger, square, centered
-      if (data.column.index === 8) {
-        const rowPhotos = photosByItem.get(item.id || '') || []
-        if (rowPhotos.length > 0) {
-          const photoSize = 30
+      // Draw photos in Foto column (9) - pre-fetched base64
+      if (data.column.index === 9) {
+        const b64s = photosBase64.get(item.id || '') || []
+        if (b64s.length > 0) {
+          const photoSize = 28
           const gap = 2
           const maxPerRow = Math.floor(data.cell.width / (photoSize + gap))
-          const totalPhotosWidth = Math.min(rowPhotos.length, maxPerRow) * (photoSize + gap) - gap
+          const totalPhotosWidth = Math.min(b64s.length, maxPerRow) * (photoSize + gap) - gap
           const offsetX = (data.cell.width - totalPhotosWidth) / 2
-          const totalRows = Math.ceil(rowPhotos.length / maxPerRow)
+          const totalRows = Math.ceil(b64s.length / maxPerRow)
           const totalHeight = totalRows * (photoSize + gap) - gap
-          const offsetY = (data.cell.height - totalHeight) / 2
-          rowPhotos.slice(0, maxPerRow * 2).forEach((p, pi) => {
-            if (!p.url) return
+          const offsetY = Math.max(0, (data.cell.height - totalHeight) / 2)
+          b64s.slice(0, maxPerRow * 2).forEach((b64, pi) => {
             const row = Math.floor(pi / maxPerRow)
             const col = pi % maxPerRow
             const px = data.cell.x + offsetX + col * (photoSize + gap)
             const py = data.cell.y + offsetY + row * (photoSize + gap)
-            try { doc.addImage(p.url, 'JPEG', px, py, photoSize, photoSize) } catch { /* skip */ }
+            try { doc.addImage(b64, 'JPEG', px, py, photoSize, photoSize) } catch { /* skip */ }
           })
         }
       }
@@ -670,7 +680,7 @@ export async function exportReportPDF(
       let y = 25
       y = drawJobInfo(doc, report, M, CW, y)
       y = drawConstruction(doc, report, M, CW, y)
-      y = drawItemsTable(doc, items, photos, M, CW, y)
+      y = await drawItemsTable(doc, items, photos, M, CW, y)
       drawSignature(doc, report, M, CW, y, PW, PH)
     }
 
@@ -718,7 +728,7 @@ export async function exportReportPDF(
 
     if (tab === 'inspection') {
       y = drawConstruction(doc, report, M, CW, y)
-      y = drawItemsTable(doc, items, photos, M, CW, y)
+      y = await drawItemsTable(doc, items, photos, M, CW, y)
     }
     if (tab === 'documentation') {
       y = await drawDocumentationSection(doc, docItems, M, CW, y)
