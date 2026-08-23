@@ -302,7 +302,7 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
     doc.setFont('helvetica', 'normal')
     doc.text(label, rightX + 10, cy + 1.5)
   })
-  return Math.max(y, startY2 + boxH + 8)
+  return Math.max(y, startY2 + boxH + 2)
 }
 
 function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: number, CW: number, startY: number): number {
@@ -319,7 +319,7 @@ function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: n
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
   doc.text('INCOMING INSP. CHECK (CONDITION AS FOUND)', M, y)
-  y += 14
+  y += 6
 
   autoTable(doc, {
     startY: y,
