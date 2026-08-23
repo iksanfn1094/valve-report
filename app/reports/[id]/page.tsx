@@ -211,7 +211,8 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState<string | null>(null)
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState('inspection')
+  const [activeTab, setActiveTab] = useState('technical_report')
+  const [activeSubTab, setActiveSubTab] = useState('inspection')
   const [valveTest, setValveTest] = useState<ValveTest>({
     spec_api6d: false, spec_api598: false, spec_fci70_2: false, spec_3_15_psi: false, spec_sop_no: '', spec_others: '', spec_cv: '',
     shell_pressure_psi: '', shell_duration_min: '', shell_acceptance: 'NO VISIBLE LEAKAGE & PRESSURE DROP', shell_start_test: '', shell_finish_test: '', shell_result: '', shell_remark: '',
@@ -830,9 +831,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       <div className="bg-white rounded-lg shadow border px-4 pt-3">
         <div className="flex gap-1 border-b border-gray-200 overflow-x-auto">
           {[
-            { key: 'inspection', label: 'Technical Report - Inspection', active: 'bg-blue-600 text-white' },
-            { key: 'documentation', label: 'Technical Report - Documentation', active: 'bg-yellow-600 text-white' },
-            { key: 'penetrant', label: 'Technical Report - Liquid Penetrant', active: 'bg-orange-600 text-white' },
+            { key: 'technical_report', label: 'Technical Report', active: 'bg-blue-600 text-white' },
             { key: 'torque', label: 'Torque & Anti-static', active: 'bg-purple-600 text-white' },
             { key: 'test', label: 'Test', active: 'bg-red-600 text-white' },
             { key: 'packaging', label: 'Packaging', active: 'bg-green-600 text-white' },
@@ -849,6 +848,28 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 {t.label}
               </button>
             ))}
+        </div>
+        {activeTab === 'technical_report' && (
+          <div className="flex gap-1 mt-1 overflow-x-auto">
+            {[
+              { key: 'inspection', label: 'Inspection', active: 'bg-blue-500 text-white' },
+              { key: 'documentation', label: 'Documentation', active: 'bg-yellow-500 text-white' },
+              { key: 'penetrant', label: 'Liquid Penetrant', active: 'bg-orange-500 text-white' },
+            ].map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setActiveSubTab(t.key)}
+                className={`px-3 py-1 text-xs font-medium rounded transition whitespace-nowrap ${
+                  activeSubTab === t.key
+                    ? t.active
+                    : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
         </div>
       </div>
 
@@ -915,7 +936,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       </div>
 
       {/* Items Table */}
-      {activeTab === 'inspection' && (<>
+      {activeTab === 'technical_report' && activeSubTab === 'inspection' && (<>
       <div className="bg-white rounded-lg shadow border p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-bold text-gray-800">Incoming Insp. Check (Condition As Found)</h3>
@@ -1387,7 +1408,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       )}
 
       {/* Documentation Tab */}
-      {activeTab === 'documentation' && (
+      {activeTab === 'technical_report' && activeSubTab === 'documentation' && (
       <div className="bg-white rounded-lg shadow border p-4">
         <h3 className="text-lg font-bold text-gray-800 mb-3">DOCUMENTATION</h3>
         <div className="overflow-x-auto">
@@ -1458,9 +1479,9 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       )}
 
       {/* Placeholder for other tabs */}
-      {activeTab !== 'inspection' && activeTab !== 'documentation' && activeTab !== 'test' && (
+      {activeTab !== 'technical_report' && activeTab !== 'test' && (
         <div className="bg-white rounded-lg shadow border p-8 text-center">
-          <p className="text-gray-400 text-sm">Fitur ini akan segera tersedia.</p>
+          <p className="text-gray-400 text-sm">This feature will be available soon.</p>
         </div>
       )}
 
