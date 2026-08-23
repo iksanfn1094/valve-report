@@ -386,11 +386,13 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
       if (!item) return
       const b64s = photosBase64.get(item.id || '') || []
       if (b64s.length > 0) {
-        const photoSize = Math.min(28, data.cell.width - 2)
+        const photoW = 30
+        const photoH = 30
         const gap = 2
-        const maxPerRow = Math.max(1, Math.floor(data.cell.width / (photoSize + gap)))
+        const colW = 30
+        const maxPerRow = Math.max(1, Math.floor(colW / (photoW + gap)))
         const totalRows = Math.ceil(Math.min(b64s.length, maxPerRow * 2) / maxPerRow)
-        const needed = totalRows * (photoSize + gap) - gap + 4
+        const needed = totalRows * (photoH + gap) - gap + 4
         if (needed > data.cell.height) {
           data.cell.height = needed
         }
@@ -434,20 +436,23 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
       if (data.column.index === 9) {
         const b64s = photosBase64.get(item.id || '') || []
         if (b64s.length > 0) {
-          const photoSize = Math.min(28, data.cell.width - 2)
+          const photoW = 30
+          const photoH = 30
           const gap = 2
-          const maxPerRow = Math.max(1, Math.floor(data.cell.width / (photoSize + gap)))
-          const totalPhotosWidth = Math.min(b64s.length, maxPerRow) * (photoSize + gap) - gap
-          const offsetX = (data.cell.width - totalPhotosWidth) / 2
-          const totalRows = Math.ceil(b64s.length / maxPerRow)
-          const totalHeight = totalRows * (photoSize + gap) - gap
+          const colW = data.cell.width
+          const maxPerRow = Math.max(1, Math.floor(colW / (photoW + gap)))
+          const visible = b64s.slice(0, maxPerRow * 2)
+          const totalRows = Math.ceil(visible.length / maxPerRow)
+          const totalWidth = Math.min(visible.length, maxPerRow) * (photoW + gap) - gap
+          const offsetX = (colW - totalWidth) / 2
+          const totalHeight = totalRows * (photoH + gap) - gap
           const offsetY = Math.max(0, (data.cell.height - totalHeight) / 2)
-          b64s.slice(0, maxPerRow * 2).forEach((b64, pi) => {
+          visible.forEach((b64, pi) => {
             const row = Math.floor(pi / maxPerRow)
             const col = pi % maxPerRow
-            const px = data.cell.x + offsetX + col * (photoSize + gap)
-            const py = data.cell.y + offsetY + row * (photoSize + gap)
-            try { doc.addImage(b64, 'JPEG', px, py, photoSize, photoSize) } catch { /* skip */ }
+            const px = data.cell.x + offsetX + col * (photoW + gap)
+            const py = data.cell.y + offsetY + row * (photoH + gap)
+            try { doc.addImage(b64, 'JPEG', px, py, photoW, photoH) } catch { /* skip */ }
           })
         }
       }
