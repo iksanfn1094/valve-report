@@ -302,7 +302,7 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
     doc.setFont('helvetica', 'normal')
     doc.text(label, rightX + 10, cy + 1.5)
   })
-  return Math.max(y, startY2 + boxH + 2)
+  return Math.max(y, startY2 + boxH + 5)
 }
 
 async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: number, CW: number, startY: number): Promise<number> {
@@ -332,7 +332,7 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
   doc.text('INCOMING INSP. CHECK (CONDITION AS FOUND)', M, y)
-  y += 6
+  y += 5
 
   autoTable(doc, {
     startY: y,
@@ -369,14 +369,14 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
     alternateRowStyles: { fillColor: LIGHT_BG },
     columnStyles: {
       0: { cellWidth: 7, halign: 'center' },
-      1: { cellWidth: 22, halign: 'left' },
+      1: { cellWidth: 23, halign: 'left' },
       2: { cellWidth: 8, halign: 'center' },
       3: { cellWidth: 28, halign: 'left' },
       4: { cellWidth: 7, halign: 'center' },
       5: { cellWidth: 7, halign: 'center' },
       6: { cellWidth: 7, halign: 'center' },
       7: { cellWidth: 16, halign: 'center' },
-      8: { cellWidth: 26, halign: 'left' },
+      8: { cellWidth: 27, halign: 'left' },
       9: { cellWidth: 30, halign: 'center', minCellHeight: 32 },
       10: { cellWidth: 30, halign: 'left' },
     },
