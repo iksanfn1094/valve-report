@@ -700,8 +700,19 @@ export async function exportReportPDF(
   const PW = 210, PH = 297, M = 10, CW = PW - M * 2
 
   if (tab === 'all') {
-    // ========== INSPECTION SECTION ==========
+    // ========== 1. RESUME SECTION ==========
+    {
+      drawHeader(doc, 'RESUME REPORT', PW)
+      let y = 25
+      y = drawJobInfo(doc, report, M, CW, y)
+      y = drawConstruction(doc, report, M, CW, y, false)
+      y = drawResumeSection(doc, report, M, CW, y)
+      drawSignature(doc, report, M, CW, y, PW, PH)
+    }
+
+    // ========== 2. INSPECTION SECTION ==========
     if (items.length > 0) {
+      doc.addPage()
       drawHeader(doc, 'INSPECTION REPORT', PW)
       let y = 25
       y = drawJobInfo(doc, report, M, CW, y)
@@ -710,7 +721,17 @@ export async function exportReportPDF(
       drawSignature(doc, report, M, CW, y, PW, PH)
     }
 
-    // ========== DOCUMENTATION SECTION ==========
+    // ========== 3. BOM SECTION ==========
+    if (bomItems.length > 0) {
+      doc.addPage()
+      drawHeader(doc, 'BILL OF MATERIAL', PW)
+      let y = 25
+      y = drawValveInfo(doc, report, M, CW, y)
+      y = drawBomTable(doc, bomItems, M, CW, y)
+      drawSignature(doc, report, M, CW, y, PW, PH)
+    }
+
+    // ========== 4. DOCUMENTATION SECTION ==========
     if (docItems.length > 0) {
       doc.addPage()
       drawHeader(doc, 'DOCUMENTATION REPORT', PW)
@@ -720,7 +741,11 @@ export async function exportReportPDF(
       drawSignature(doc, report, M, CW, y, PW, PH)
     }
 
-    // ========== TEST SECTION ==========
+    // ========== 5. LIQUID PENETRANT (placeholder) ==========
+
+    // ========== 6. TORQUE & ANTI-STATIC (placeholder) ==========
+
+    // ========== 7. TEST SECTION ==========
     if (valveTest) {
       doc.addPage()
       drawHeader(doc, 'TEST REPORT', PW)
@@ -730,15 +755,7 @@ export async function exportReportPDF(
       drawSignature(doc, report, M, CW, y, PW, PH)
     }
 
-    // ========== BOM SECTION ==========
-    if (bomItems.length > 0) {
-      doc.addPage()
-      drawHeader(doc, 'BILL OF MATERIAL', PW)
-      let y = 25
-      y = drawValveInfo(doc, report, M, CW, y)
-      y = drawBomTable(doc, bomItems, M, CW, y)
-      drawSignature(doc, report, M, CW, y, PW, PH)
-    }
+    // ========== 8. PACKAGING (placeholder) ==========
 
     drawFooter(doc, report, 'Full Report', PW, PH)
   } else {
