@@ -385,12 +385,7 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
       if (!item) return
       const b64s = photosBase64.get(item.id || '') || []
       if (b64s.length > 0) {
-        const photoH = 30
-        const gap = 2
-        const needed = photoH + gap + 2
-        if (needed > data.cell.height) {
-          data.cell.height = needed
-        }
+        data.cell.height = Math.max(data.cell.height, 34)
       }
     },
     didDrawCell: (data) => {
