@@ -315,7 +315,6 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
     photosByItem.get(p.item_id)!.push(p)
   }
 
-  // Pre-fetch photos as base64
   const photosBase64 = new Map<string, string[]>()
   for (const [itemId, itemPhotos] of photosByItem) {
     const b64s: string[] = []
@@ -364,7 +363,7 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
       '',
       it.spec_material || '-',
     ]),
-    styles: { fontSize: 6, cellPadding: 1, lineColor: GRID, lineWidth: 0.2, overflow: 'visible' },
+    styles: { fontSize: 6, cellPadding: 1, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak' },
     headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6, fontStyle: 'bold', halign: 'center', valign: 'middle' },
     alternateRowStyles: { fillColor: LIGHT_BG },
     columnStyles: {
@@ -375,9 +374,9 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
       4: { cellWidth: 7, halign: 'center' },
       5: { cellWidth: 7, halign: 'center' },
       6: { cellWidth: 7, halign: 'center' },
-      7: { cellWidth: 14, halign: 'center' },
-      8: { cellWidth: 22, halign: 'left' },
-      9: { cellWidth: 34, halign: 'center' },
+      7: { cellWidth: 16, halign: 'center' },
+      8: { cellWidth: 24, halign: 'left' },
+      9: { cellWidth: 30, halign: 'center' },
       10: { cellWidth: 30, halign: 'left' },
     },
     didParseCell: (data) => {
@@ -386,12 +385,9 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
       if (!item) return
       const b64s = photosBase64.get(item.id || '') || []
       if (b64s.length > 0) {
-        const photoW = 30
-        const photoH = 30
+        const photoH = 28
         const gap = 2
-        const colW = 34
-        const maxPerRow = Math.max(1, Math.floor(colW / (photoW + gap)))
-        const totalRows = Math.ceil(Math.min(b64s.length, maxPerRow * 2) / maxPerRow)
+        const totalRows = Math.ceil(b64s.length / 1)
         const needed = totalRows * (photoH + gap) - gap + 4
         if (needed > data.cell.height) {
           data.cell.height = needed
@@ -403,7 +399,6 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
       const item = items[data.row.index]
       if (!item) return
 
-      // Draw checkmark for C/RP/RE columns (4,5,6)
       if (data.column.index === 4 && item.recommendation.includes('C')) {
         const cx = data.cell.x + data.cell.width / 2
         const cy = data.cell.y + data.cell.height / 2
@@ -432,27 +427,15 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
         doc.setLineWidth(0.2)
       }
 
-      // Draw photos in Foto column (9) - pre-fetched base64
       if (data.column.index === 9) {
         const b64s = photosBase64.get(item.id || '') || []
         if (b64s.length > 0) {
-          const photoW = 30
-          const photoH = 30
+          const photoSize = 28
           const gap = 2
-          const colW = data.cell.width
-          const maxPerRow = Math.max(1, Math.floor(colW / (photoW + gap)))
-          const visible = b64s.slice(0, maxPerRow * 2)
-          const totalRows = Math.ceil(visible.length / maxPerRow)
-          const totalWidth = Math.min(visible.length, maxPerRow) * (photoW + gap) - gap
-          const offsetX = (colW - totalWidth) / 2
-          const totalHeight = totalRows * (photoH + gap) - gap
-          const offsetY = Math.max(0, (data.cell.height - totalHeight) / 2)
-          visible.forEach((b64, pi) => {
-            const row = Math.floor(pi / maxPerRow)
-            const col = pi % maxPerRow
-            const px = data.cell.x + offsetX + col * (photoW + gap)
-            const py = data.cell.y + offsetY + row * (photoH + gap)
-            try { doc.addImage(b64, 'JPEG', px, py, photoW, photoH) } catch { /* skip */ }
+          const startX = data.cell.x + (data.cell.width - photoSize) / 2
+          b64s.slice(0, 10).forEach((b64, pi) => {
+            const py = data.cell.y + 2 + pi * (photoSize + gap)
+            try { doc.addImage(b64, 'JPEG', startX, py, photoSize, photoSize) } catch { /* skip */ }
           })
         }
       }
