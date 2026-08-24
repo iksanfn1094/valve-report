@@ -186,98 +186,7 @@ export default function EngineeringHubPage() {
                   <span className="text-xs text-gray-600"><b>OD</b> = Outer Diameter</span>
                 </div>
               </div>
-          </div>
-
-          {/* Calculator */}
-          <div className="bg-gray-50 border rounded-lg p-4 space-y-3 max-w-2xl">
-            <p className="text-sm font-semibold text-gray-700">Quick Calculator</p>
-            <p className="text-xs text-gray-400">Input Rated Working Pressure (psi) dan pilih PSL untuk melihat test pressures & holding time</p>
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <label className="text-xs text-gray-500">Pressure Class</label>
-                <select value={rwp6a} onChange={e => setRwp6a(e.target.value)} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1">
-                  <option value="">— Pilih Class —</option>
-                  <option value="285">Class 150 (285 psi)</option>
-                  <option value="740">Class 300 (740 psi)</option>
-                  <option value="1000">Class 400 (1000 psi)</option>
-                  <option value="1500">Class 600 (1500 psi)</option>
-                  <option value="2250">Class 900 (2250 psi)</option>
-                  <option value="3750">Class 1500 (3750 psi)</option>
-                  <option value="6250">Class 2500 (6250 psi)</option>
-                </select>
               </div>
-              <div className="flex-1">
-                <label className="text-xs text-gray-500">RWP (psi)</label>
-                <input type="number" step="1" value={rwp6a} onChange={e => setRwp6a(e.target.value)} placeholder="e.g. 1500" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1" />
-              </div>
-              <div className="flex-1">
-                <label className="text-xs text-gray-500">PSL Level</label>
-                <select value={psl6a} onChange={e => setPsl6a(e.target.value)} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1">
-                  <option value="">— Pilih PSL —</option>
-                  <option value="1">PSL 1</option>
-                  <option value="2">PSL 2</option>
-                  <option value="3">PSL 3</option>
-                  <option value="3G">PSL 3G</option>
-                  <option value="4">PSL 4</option>
-                </select>
-              </div>
-            </div>
-            {rwp6a && psl6a && (
-              <div className="mt-2 overflow-auto">
-                <table className="text-xs w-full">
-                  <thead className="bg-teal-100 text-teal-800">
-                    <tr>
-                      <th className="px-2 py-1.5 text-left">Test</th>
-                      <th className="px-2 py-1.5 text-right">Test Pressure</th>
-                      <th className="px-2 py-1.5 text-left">Holding Time</th>
-                      <th className="px-2 py-1.5 text-left">Applicability</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {API6A_TESTS.map((t, i) => {
-                      const rwpVal = parseFloat(rwp6a)
-                      let pressure = '-'
-                      let holding = t.holdingTime
-                      let applicable = true
-
-                      if (t.no === 1) {
-                        pressure = `${rwpVal} psi (Hydrostatic)`
-                      } else if (t.no === 2) {
-                        pressure = `${rwpVal} psi (≥ RWP)`
-                      } else if (t.no === 3) {
-                        pressure = 'Per design'
-                        holding = 'Per functional req.'
-                      } else if (t.no === 4) {
-                        applicable = psl6a === '3G' || psl6a === '4'
-                        pressure = applicable ? `${rwpVal} psi (≥ RWP)` : '-'
-                      } else if (t.no === 5) {
-                        applicable = psl6a === '3G' || psl6a === '4'
-                        pressure = applicable ? `${rwpVal} psi (≥ RWP)` : '-'
-                      } else if (t.no === 6) {
-                        applicable = psl6a === '3G' || psl6a === '4'
-                        pressure = applicable ? '270–330 psi\n(300 ± 10%)' : '-'
-                      } else if (t.no === 7) {
-                        pressure = `${rwpVal} psi (per RWP)`
-                      } else if (t.no === 8) {
-                        pressure = 'N/A (mechanical)'
-                        holding = 'N/A'
-                      }
-
-                      if (!applicable) return null
-
-                      return (
-                        <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                          <td className="px-2 py-1.5 font-semibold">{t.name}</td>
-                          <td className="px-2 py-1.5 text-right font-mono whitespace-pre-line">{pressure}</td>
-                          <td className="px-2 py-1.5 whitespace-pre-line">{holding}</td>
-                          <td className="px-2 py-1.5 whitespace-pre-line">{t.applicability}</td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -501,6 +410,98 @@ export default function EngineeringHubPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Calculator */}
+          <div className="bg-gray-50 border rounded-lg p-4 space-y-3 max-w-2xl">
+            <p className="text-sm font-semibold text-gray-700">Quick Calculator</p>
+            <p className="text-xs text-gray-400">Input Rated Working Pressure (psi) dan pilih PSL untuk melihat test pressures & holding time</p>
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="text-xs text-gray-500">Pressure Class</label>
+                <select value={rwp6a} onChange={e => setRwp6a(e.target.value)} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1">
+                  <option value="">— Pilih Class —</option>
+                  <option value="285">Class 150 (285 psi)</option>
+                  <option value="740">Class 300 (740 psi)</option>
+                  <option value="1000">Class 400 (1000 psi)</option>
+                  <option value="1500">Class 600 (1500 psi)</option>
+                  <option value="2250">Class 900 (2250 psi)</option>
+                  <option value="3750">Class 1500 (3750 psi)</option>
+                  <option value="6250">Class 2500 (6250 psi)</option>
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="text-xs text-gray-500">RWP (psi)</label>
+                <input type="number" step="1" value={rwp6a} onChange={e => setRwp6a(e.target.value)} placeholder="e.g. 1500" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1" />
+              </div>
+              <div className="flex-1">
+                <label className="text-xs text-gray-500">PSL Level</label>
+                <select value={psl6a} onChange={e => setPsl6a(e.target.value)} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1">
+                  <option value="">— Pilih PSL —</option>
+                  <option value="1">PSL 1</option>
+                  <option value="2">PSL 2</option>
+                  <option value="3">PSL 3</option>
+                  <option value="3G">PSL 3G</option>
+                  <option value="4">PSL 4</option>
+                </select>
+              </div>
+            </div>
+            {rwp6a && psl6a && (
+              <div className="mt-2 overflow-auto">
+                <table className="text-xs w-full">
+                  <thead className="bg-teal-100 text-teal-800">
+                    <tr>
+                      <th className="px-2 py-1.5 text-left">Test</th>
+                      <th className="px-2 py-1.5 text-right">Test Pressure</th>
+                      <th className="px-2 py-1.5 text-left">Holding Time</th>
+                      <th className="px-2 py-1.5 text-left">Applicability</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {API6A_TESTS.map((t, i) => {
+                      const rwpVal = parseFloat(rwp6a)
+                      let pressure = '-'
+                      let holding = t.holdingTime
+                      let applicable = true
+
+                      if (t.no === 1) {
+                        pressure = `${rwpVal} psi (Hydrostatic)`
+                      } else if (t.no === 2) {
+                        pressure = `${rwpVal} psi (≥ RWP)`
+                      } else if (t.no === 3) {
+                        pressure = 'Per design'
+                        holding = 'Per functional req.'
+                      } else if (t.no === 4) {
+                        applicable = psl6a === '3G' || psl6a === '4'
+                        pressure = applicable ? `${rwpVal} psi (≥ RWP)` : '-'
+                      } else if (t.no === 5) {
+                        applicable = psl6a === '3G' || psl6a === '4'
+                        pressure = applicable ? `${rwpVal} psi (≥ RWP)` : '-'
+                      } else if (t.no === 6) {
+                        applicable = psl6a === '3G' || psl6a === '4'
+                        pressure = applicable ? '270–330 psi\n(300 ± 10%)' : '-'
+                      } else if (t.no === 7) {
+                        pressure = `${rwpVal} psi (per RWP)`
+                      } else if (t.no === 8) {
+                        pressure = 'N/A (mechanical)'
+                        holding = 'N/A'
+                      }
+
+                      if (!applicable) return null
+
+                      return (
+                        <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-2 py-1.5 font-semibold">{t.name}</td>
+                          <td className="px-2 py-1.5 text-right font-mono whitespace-pre-line">{pressure}</td>
+                          <td className="px-2 py-1.5 whitespace-pre-line">{holding}</td>
+                          <td className="px-2 py-1.5 whitespace-pre-line">{t.applicability}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
