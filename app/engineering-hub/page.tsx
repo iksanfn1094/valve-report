@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { ORING_SIZES } from '@/lib/oring-data'
 
-type TabKey = 'oring' | 'api6d' | 'api598' | 'calc'
+type TabKey = 'oring' | 'api6d' | 'api598' | 'api6a' | 'calc'
 
 const API6D_TESTS = [
   { no: 1, name: 'Hydrostatic Shell Test', medium: 'Water', pressureFormula: '≥ 1.5 × PR', holdingFn: (sz: number) => sz <= 4 ? '2 min' : sz <= 10 ? '5 min' : sz <= 18 ? '15 min' : '30 min', criteria: 'No visible leakage dari pressure-containing parts' },
@@ -19,6 +19,17 @@ const API598_TESTS = [
   { no: 3, name: 'High-Pressure Closure Test', medium: 'Liquid / Gas', pressureFormula: '1.1 × CWP', holdingFn: (sz: number) => sz <= 2 ? '15 sec' : sz <= 4 ? '1 min' : sz <= 8 ? '2 min' : sz <= 14 ? '5 min' : '10 min', criteria: 'Leakage ≤ allowable rate' },
   { no: 4, name: 'Low-Pressure Closure Test', medium: 'Air / Gas', pressureFormula: '80 ± 5 psi\n(5.5 ± 0.5 bar)', holdingFn: (sz: number) => sz <= 2 ? '15 sec' : sz <= 4 ? '1 min' : sz <= 8 ? '2 min' : sz <= 14 ? '5 min' : '10 min', criteria: 'Leakage ≤ allowable rate' },
   { no: 5, name: 'High-Pressure Closure Test – Gas', medium: 'Air / inert gas', pressureFormula: '1.1 × CWP', holdingFn: (sz: number) => sz <= 2 ? '15 sec' : sz <= 4 ? '1 min' : sz <= 8 ? '2 min' : sz <= 14 ? '5 min' : '10 min', criteria: 'Leakage ≤ allowable rate' },
+]
+
+const API6A_TESTS = [
+  { no: 1, name: 'Hydrostatic Shell Test', medium: 'Water / suitable liquid', pressureFormula: 'Per rated working pressure\n& equipment type', holdingTime: 'PSL 1/2: primary 3 min\n+ secondary 3 min\nPSL 3/3G/4: primary 3 min\n+ secondary 15 min', criteria: 'No visible leakage', applicability: 'PSL 1, 2, 3, 4' },
+  { no: 2, name: 'Hydrostatic Seat Test', medium: 'Water / suitable liquid', pressureFormula: '≥ Rated Working Pressure', holdingTime: 'Primary 3 min;\nsecondary/tertiary\nmengikuti PSL', criteria: 'No visible leakage;\nmetal-seated check valve\nmengikuti ISO 5208 Rate E', applicability: 'Valve PSL 1–4' },
+  { no: 3, name: 'Function Test', medium: '—', pressureFormula: 'Operating pressure / input\nsesuai design', holdingTime: 'Sesuai functional\nrequirement', criteria: 'Valve harus operate\nproperly', applicability: 'Valve PSL 1–4' },
+  { no: 4, name: 'Gas Body Test', medium: 'Gas', pressureFormula: '≥ Rated Working Pressure', holdingTime: '≥ 15 min', criteria: 'No leakage sesuai\ngas-test acceptance', applicability: 'PSL 3G & 4' },
+  { no: 5, name: 'High Pressure Gas Seat Test', medium: 'Gas', pressureFormula: '≥ Rated Working Pressure', holdingTime: '≥ 15 min', criteria: 'No leakage', applicability: 'PSL 3G & 4' },
+  { no: 6, name: 'Low Pressure Gas Seat Test', medium: 'Gas', pressureFormula: 'PSL 3G: 300 psi ±10%', holdingTime: '≥ 15 min', criteria: 'No leakage', applicability: 'PSL 3G & 4' },
+  { no: 7, name: 'Backseat Test', medium: 'Hydrostatic / gas\nsesuai requirement', pressureFormula: 'Sesuai rated pressure /\nspecified low-pressure test', holdingTime: 'Umumnya ≥ 15 min\nuntuk gas backseat\nprimary', criteria: 'No leakage', applicability: 'Tergantung PSL /\nequipment' },
+  { no: 8, name: 'Drift Test', medium: 'Mechanical drift mandrel', pressureFormula: 'Sesuai drift requirement', holdingTime: '—', criteria: 'Mandrel harus melewati\nbore', applicability: 'Valve / tree assembly' },
 ]
 
 export default function EngineeringHubPage() {
@@ -55,7 +66,7 @@ export default function EngineeringHubPage() {
       <h1 className="text-xl font-bold text-teal-700">Engineering Hub</h1>
 
       <div className="flex gap-2 border-b border-gray-200 pb-0">
-        {([['oring', 'Standard O-Ring'], ['api6d', 'API 6D'], ['api598', 'API 598'], ['calc', 'Seat Leak Test Class IV']] as [TabKey, string][]).map(([k, label]) => (
+        {([['oring', 'Standard O-Ring'], ['api6d', 'API 6D'], ['api598', 'API 598'], ['api6a', 'API 6A'], ['calc', 'Seat Leak Test Class IV']] as [TabKey, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)} className={`px-4 py-2 text-sm font-medium rounded-t-lg transition ${tab === k ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
             {label}
           </button>
@@ -361,6 +372,42 @@ export default function EngineeringHubPage() {
                 </table>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {tab === 'api6a' && (
+        <div className="space-y-4">
+          <p className="text-xs text-gray-500">API 6A — Wellhead and Christmas Tree Equipment — Pressure Test Requirements</p>
+
+          {/* Reference Table */}
+          <div className="overflow-auto border rounded-lg">
+            <table className="text-sm w-full">
+              <thead className="bg-teal-600 text-white sticky top-0">
+                <tr>
+                  <th className="px-3 py-2 text-center text-xs w-8">No</th>
+                  <th className="px-3 py-2 text-left text-xs">Test</th>
+                  <th className="px-3 py-2 text-left text-xs">Test Medium</th>
+                  <th className="px-3 py-2 text-left text-xs">Test Pressure</th>
+                  <th className="px-3 py-2 text-left text-xs">Holding Time</th>
+                  <th className="px-3 py-2 text-left text-xs">Leakage / Acceptance Criteria</th>
+                  <th className="px-3 py-2 text-left text-xs">Applicability</th>
+                </tr>
+              </thead>
+              <tbody>
+                {API6A_TESTS.map((t, i) => (
+                  <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    <td className="px-3 py-2 text-center text-xs font-semibold">{t.no}</td>
+                    <td className="px-3 py-2 text-xs font-semibold text-gray-800">{t.name}</td>
+                    <td className="px-3 py-2 text-xs text-gray-600 whitespace-pre-line">{t.medium}</td>
+                    <td className="px-3 py-2 text-xs text-gray-700 font-mono whitespace-pre-line">{t.pressureFormula}</td>
+                    <td className="px-3 py-2 text-xs text-gray-600 whitespace-pre-line">{t.holdingTime}</td>
+                    <td className="px-3 py-2 text-xs text-gray-600 whitespace-pre-line">{t.criteria}</td>
+                    <td className="px-3 py-2 text-xs text-gray-600 whitespace-pre-line">{t.applicability}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
