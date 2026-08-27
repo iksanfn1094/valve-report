@@ -1353,8 +1353,20 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
             <tbody>
               {getTestRows().map((key, i) => {
                 const opt = TEST_OPTIONS.find(t => t.key === key)
-                const isSeat = key === 'seat'
-                const criteria = isSeat ? (valveTest.spec_cv ? `ALLOWABLE LEAK ${(Number(valveTest.spec_cv) * 0.186).toFixed(2)} SCFH` : 'ALLOWABLE LEAK 0.00 SCFH') : (opt?.criteria ?? '')
+                const sz = parseFloat(report?.size ?? '0') || 0
+                const apiClosureCriteria = (() => {
+                  if (sz <= 2) return 'LKG ≤ 1 bubble/min (2 bubbles/2min)'
+                  if (sz <= 4) return 'LKG ≤ 2 bubbles/min (4 bubbles/2min)'
+                  if (sz <= 6) return 'LKG ≤ 4 bubbles/min (8 bubbles/2min)'
+                  if (sz <= 8) return 'LKG ≤ 6 bubbles/min (12 bubbles/2min)'
+                  if (sz <= 10) return 'LKG ≤ 8 bubbles/min (16 bubbles/2min)'
+                  return 'LKG ≤ 12 bubbles/min (24 bubbles/2min)'
+                })()
+                const criteria = key === 'seat'
+                  ? (valveTest.spec_cv ? `ALLOWABLE LEAK ${(Number(valveTest.spec_cv) * 0.186).toFixed(3)} SCFH (Cv × 0.186)` : 'ALLOWABLE LEAK 0.000 SCFH (Cv × 0.186)')
+                  : key === 'hp_closure_a' || key === 'lp_closure_b'
+                    ? apiClosureCriteria
+                    : (opt?.criteria ?? '')
                 return (
                   <tr key={i} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
                     <td className="border px-1 py-1 w-52">

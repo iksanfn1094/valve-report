@@ -545,10 +545,18 @@ async function drawTestSection(doc: jsPDF, report: ReportData, valveTest: ValveT
   const testBody = testRows.map(key => {
     const p = (field: string) => ((valveTest as unknown as Record<string, string>)[`${key}_${field}`]) || '-'
     const cv = parseFloat(String(valveTest.spec_cv)) || 0
-    const isSeat = key === 'seat'
-    const acceptance = isSeat
-      ? (cv ? `ALLOWABLE LEAK ${(cv * 0.186).toFixed(2)} SCFH` : 'ALLOWABLE LEAK 0.00 SCFH')
-      : (TEST_CRITERIA[key] || '')
+    const sz = parseFloat(String(report?.size ?? '0')) || 0
+    const apiClosureCriteria = sz <= 2 ? 'LKG ≤ 1 bubble/min' :
+      sz <= 4 ? 'LKG ≤ 2 bubbles/min' :
+      sz <= 6 ? 'LKG ≤ 4 bubbles/min' :
+      sz <= 8 ? 'LKG ≤ 6 bubbles/min' :
+      sz <= 10 ? 'LKG ≤ 8 bubbles/min' : 'LKG ≤ 12 bubbles/min'
+    let acceptance = TEST_CRITERIA[key] || ''
+    if (key === 'seat') {
+      acceptance = cv ? `ALLOWABLE LEAK ${(cv * 0.186).toFixed(3)} SCFH (Cv×0.186)` : 'ALLOWABLE LEAK 0.000 SCFH (Cv×0.186)'
+    } else if (key === 'hp_closure_a' || key === 'lp_closure_b') {
+      acceptance = apiClosureCriteria
+    }
     return [
       TEST_LABELS[key] || key,
       p('pressure_psi'), p('duration_min'), acceptance,
