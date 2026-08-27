@@ -5,11 +5,11 @@ import { ORING_SIZES } from '@/lib/oring-data'
 
 type TabKey = 'oring' | 'api6d' | 'api598' | 'api6a' | 'valvetest' | 'valvetest598' | 'valvetest6a' | 'calc'
 
-const VALVE_TYPES_598 = ['Gate Valve', 'Globe Valve', 'Check Valve', 'Ball Valve', 'Plug Valve', 'Butterfly Valve', 'Control Valve', 'Actuator']
+const VALVE_TYPES_598 = ['Actuator', 'Ball Valve', 'Butterfly Valve', 'Check Valve', 'Control Valve', 'Gate Valve', 'Globe Valve', 'Plug Valve']
 
-const VALVE_TYPES = ['Ball Valve', 'Gate Valve', 'Globe Valve', 'Check Valve', 'Plug Valve', 'Butterfly Valve', 'Control Valve', 'Actuator']
+const VALVE_TYPES = ['Actuator', 'Ball Valve', 'Butterfly Valve', 'Check Valve', 'Control Valve', 'Gate Valve', 'Globe Valve', 'Plug Valve']
 
-const API6A_VALVE_TYPES = ['Gate Valve', 'Globe Valve', 'Check Valve', 'Ball Valve', 'Plug Valve', 'Actuator']
+const API6A_VALVE_TYPES = ['Actuator', 'Ball Valve', 'Check Valve', 'Gate Valve', 'Globe Valve', 'Plug Valve']
 
 const CLASS_RWP: Record<string, number> = {
   '150': 285, '300': 740, '400': 1000, '600': 1500, '900': 2250, '1500': 3750, '2500': 6250,
@@ -37,13 +37,13 @@ const HOLDING_TIME = (sz: number, testType: string) => {
 const ALLOWABLE_LEAKAGE = (sz: number, testType: string) => {
   if (testType === 'shell') return 'No visible leakage'
   if (testType === 'seat') {
-    if (sz <= 1) return '0 bubbles/min'
-    if (sz <= 2) return '1 bubble/min'
-    if (sz <= 4) return '2 bubbles/min'
-    if (sz <= 6) return '4 bubbles/min'
-    if (sz <= 8) return '6 bubbles/min'
-    if (sz <= 10) return '8 bubbles/min'
-    return '12 bubbles/min'
+    if (sz <= 1) return '0 bubbles/min (0 SCFH)'
+    if (sz <= 2) return '1 bubble/min (0.00002 SCFH)'
+    if (sz <= 4) return '2 bubbles/min (0.00004 SCFH)'
+    if (sz <= 6) return '4 bubbles/min (0.00008 SCFH)'
+    if (sz <= 8) return '6 bubbles/min (0.00013 SCFH)'
+    if (sz <= 10) return '8 bubbles/min (0.00017 SCFH)'
+    return '12 bubbles/min (0.00025 SCFH)'
   }
   if (testType === 'gas_seat') {
     if (sz <= 2) return '3.3 ml/min (0.007 SCFH)'
@@ -106,13 +106,13 @@ const API6A_HOLDING = (sz: number, testType: string) => {
 const API6A_LEAKAGE = (sz: number, testType: string) => {
   if (testType === 'shell') return 'No visible leakage'
   if (testType === 'seat') {
-    if (sz <= 1) return '0 bubbles/min'
-    if (sz <= 2) return '1 bubble/min'
-    if (sz <= 4) return '2 bubbles/min'
-    if (sz <= 6) return '4 bubbles/min'
-    if (sz <= 8) return '6 bubbles/min'
-    if (sz <= 10) return '8 bubbles/min'
-    return '12 bubbles/min'
+    if (sz <= 1) return '0 bubbles/min (0 SCFH)'
+    if (sz <= 2) return '1 bubble/min (0.00002 SCFH)'
+    if (sz <= 4) return '2 bubbles/min (0.00004 SCFH)'
+    if (sz <= 6) return '4 bubbles/min (0.00008 SCFH)'
+    if (sz <= 8) return '6 bubbles/min (0.00013 SCFH)'
+    if (sz <= 10) return '8 bubbles/min (0.00017 SCFH)'
+    return '12 bubbles/min (0.00025 SCFH)'
   }
   if (testType === 'function') return 'Per functional specification'
   if (testType === 'backseat') return 'No visible leakage'
@@ -188,18 +188,18 @@ const API598_LEAKAGE = (sz: number, testType: string) => {
   if (testType === 'shell') return 'No visible leakage through pressure boundary'
   if (testType === 'backseat') return 'No visible leakage'
   if (testType === 'hp_closure') {
-    if (sz <= 2) return '0 bubbles/min (soft seat)\n1 bubble/min (metal seat)'
-    if (sz <= 4) return '1 bubble/min (soft seat)\n2 bubbles/min (metal seat)'
-    if (sz <= 6) return '2 bubbles/min (soft seat)\n4 bubbles/min (metal seat)'
-    if (sz <= 8) return '4 bubbles/min (soft seat)\n6 bubbles/min (metal seat)'
-    return '6 bubbles/min (soft seat)\n8 bubbles/min (metal seat)'
+    if (sz <= 2) return '0 bubbles/min (0 SCFH) soft seat\n1 bubble/min (0.00002 SCFH) metal seat'
+    if (sz <= 4) return '1 bubble/min (0.00002 SCFH) soft seat\n2 bubbles/min (0.00004 SCFH) metal seat'
+    if (sz <= 6) return '2 bubbles/min (0.00004 SCFH) soft seat\n4 bubbles/min (0.00008 SCFH) metal seat'
+    if (sz <= 8) return '4 bubbles/min (0.00008 SCFH) soft seat\n6 bubbles/min (0.00013 SCFH) metal seat'
+    return '6 bubbles/min (0.00013 SCFH) soft seat\n8 bubbles/min (0.00017 SCFH) metal seat'
   }
   if (testType === 'lp_closure') {
     if (sz <= 2) return 'No detectable leakage'
-    if (sz <= 4) return '1 bubble/min'
-    if (sz <= 6) return '2 bubbles/min'
-    if (sz <= 8) return '4 bubbles/min'
-    return '6 bubbles/min'
+    if (sz <= 4) return '1 bubble/min (0.00002 SCFH)'
+    if (sz <= 6) return '2 bubbles/min (0.00004 SCFH)'
+    if (sz <= 8) return '4 bubbles/min (0.00008 SCFH)'
+    return '6 bubbles/min (0.00013 SCFH)'
   }
   if (testType === 'hp_gas_closure') {
     if (sz <= 2) return '3.3 ml/min (0.007 SCFH)'
