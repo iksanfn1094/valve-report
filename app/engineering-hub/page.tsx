@@ -3,7 +3,59 @@
 import { useState } from 'react'
 import { ORING_SIZES } from '@/lib/oring-data'
 
-type TabKey = 'oring' | 'api6d' | 'api598' | 'api6a' | 'calc'
+type TabKey = 'oring' | 'api6d' | 'api598' | 'api6a' | 'valvetest' | 'calc'
+
+const VALVE_TYPES = ['Ball Valve', 'Gate Valve', 'Globe Valve', 'Check Valve', 'Plug Valve', 'Butterfly Valve']
+
+const CLASS_RWP: Record<string, number> = {
+  '150': 285, '300': 740, '400': 1000, '600': 1500, '900': 2250, '1500': 3750, '2500': 6250,
+}
+
+const HOLDING_TIME = (sz: number, testType: string) => {
+  if (testType === 'shell') return sz <= 2 ? '2 min' : sz <= 4 ? '2 min' : sz <= 10 ? '5 min' : sz <= 18 ? '15 min' : '30 min'
+  if (testType === 'seat') return sz <= 2 ? '2 min' : sz <= 4 ? '2 min' : sz <= 18 ? '5 min' : '10 min'
+  if (testType === 'gas_seat') return sz <= 18 ? '15 min' : '30 min'
+  if (testType === 'backseat') return sz <= 4 ? '2 min' : '5 min'
+  return '-'
+}
+
+const ALLOWABLE_LEAKAGE = (sz: number, testType: string) => {
+  if (testType === 'shell') return 'No visible leakage'
+  if (testType === 'seat') {
+    if (sz <= 1) return '0 bubbles/min'
+    if (sz <= 2) return '1 bubble/min'
+    if (sz <= 4) return '2 bubbles/min'
+    if (sz <= 6) return '4 bubbles/min'
+    if (sz <= 8) return '6 bubbles/min'
+    if (sz <= 10) return '8 bubbles/min'
+    return '12 bubbles/min'
+  }
+  if (testType === 'gas_seat') {
+    if (sz <= 2) return '3.3 ml/min'
+    if (sz <= 4) return '6.6 ml/min'
+    if (sz <= 6) return '13.2 ml/min'
+    if (sz <= 8) return '19.8 ml/min'
+    return '33 ml/min'
+  }
+  if (testType === 'backseat') return 'No visible leakage'
+  return '-'
+}
+
+function getTestsForValve(valveType: string) {
+  const tests: { no: number; name: string; medium: string; type: string }[] = [
+    { no: 1, name: 'Hydrostatic Shell Test', medium: 'Water / suitable liquid', type: 'shell' },
+    { no: 2, name: 'Hydrostatic Seat Test (Closure)', medium: 'Water / suitable liquid', type: 'seat' },
+  ]
+  if (valveType !== 'Check Valve' && valveType !== 'Butterfly Valve') {
+    tests.push({ no: 3, name: 'Backseat Test', medium: 'Water / suitable liquid', type: 'backseat' })
+  }
+  tests.push({ no: tests.length + 1, name: 'High-Pressure Gas Seat Test', medium: 'Inert gas (N₂)', type: 'gas_seat' })
+  tests.push({ no: tests.length + 1, name: 'Low-Pressure Gas Seat Test', medium: 'Air / inert gas', type: 'gas_seat' })
+  if (valveType === 'Ball Valve' || valveType === 'Plug Valve') {
+    tests.push({ no: tests.length + 1, name: 'Pneumatic Seat Test', medium: 'Air / inert gas', type: 'gas_seat' })
+  }
+  return tests
+}
 
 const API6D_TESTS = [
   { no: 1, name: 'Hydrostatic Shell Test', medium: 'Water', pressureFormula: '≥ 1.5 × PR', holdingFn: (sz: number) => sz <= 4 ? '2 min' : sz <= 10 ? '5 min' : sz <= 18 ? '15 min' : '30 min', criteria: 'No visible leakage dari pressure-containing parts' },
@@ -44,6 +96,9 @@ export default function EngineeringHubPage() {
   const [valveSize598, setValveSize598] = useState('')
   const [rwp6a, setRwp6a] = useState('')
   const [psl6a, setPsl6a] = useState('')
+  const [vtValveType, setVtValveType] = useState('')
+  const [vtClass, setVtClass] = useState('')
+  const [vtSize, setVtSize] = useState('')
 
   const csGroups = [
     { label: 'All', value: 'all' },
@@ -68,7 +123,7 @@ export default function EngineeringHubPage() {
       <h1 className="text-xl font-bold text-teal-700">Engineering Hub</h1>
 
       <div className="flex gap-2 border-b border-gray-200 pb-0">
-        {([['oring', 'Standard O-Ring'], ['api6d', 'API 6D'], ['api598', 'API 598'], ['api6a', 'API 6A'], ['calc', 'Seat Leak Test Class IV']] as [TabKey, string][]).map(([k, label]) => (
+        {([['oring', 'Standard O-Ring'], ['api6d', 'API 6D'], ['api598', 'API 598'], ['api6a', 'API 6A'], ['valvetest', '6D Valve Testing'], ['calc', 'Seat Leak Test Class IV']] as [TabKey, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)} className={`px-4 py-2 text-sm font-medium rounded-t-lg transition ${tab === k ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
             {label}
           </button>
@@ -503,6 +558,102 @@ export default function EngineeringHubPage() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {tab === 'valvetest' && (
+        <div className="space-y-4">
+          <p className="text-xs text-gray-500">API 6D — Valve Pressure Testing Calculator — Select valve type, class & size to generate test requirements</p>
+
+          {/* Input Form */}
+          <div className="bg-gray-50 border rounded-lg p-4 space-y-3 max-w-3xl">
+            <p className="text-sm font-semibold text-gray-700">Valve Configuration</p>
+            <div className="flex gap-3 flex-wrap">
+              <div className="flex-1 min-w-[160px]">
+                <label className="text-xs text-gray-500">Valve Type</label>
+                <select value={vtValveType} onChange={e => setVtValveType(e.target.value)} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1">
+                  <option value="">— Select Valve —</option>
+                  {VALVE_TYPES.map(v => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+              <div className="flex-1 min-w-[120px]">
+                <label className="text-xs text-gray-500">Class</label>
+                <select value={vtClass} onChange={e => setVtClass(e.target.value)} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1">
+                  <option value="">— Select Class —</option>
+                  {Object.keys(CLASS_RWP).map(c => <option key={c} value={c}>Class {c} ({CLASS_RWP[c]} psi)</option>)}
+                </select>
+              </div>
+              <div className="flex-1 min-w-[120px]">
+                <label className="text-xs text-gray-500">Size (inch)</label>
+                <input type="number" step="0.5" min="0.5" value={vtSize} onChange={e => setVtSize(e.target.value)} placeholder="e.g. 6" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1" />
+              </div>
+            </div>
+          </div>
+
+          {/* Results */}
+          {vtValveType && vtClass && vtSize && (
+            <div className="space-y-3">
+              {/* Summary */}
+              <div className="bg-teal-50 border border-teal-200 rounded-lg p-3 flex gap-6 text-sm">
+                <span className="text-gray-600"><b>Valve:</b> {vtValveType}</span>
+                <span className="text-gray-600"><b>Class:</b> {vtClass}</span>
+                <span className="text-gray-600"><b>Size:</b> {vtSize}&quot;</span>
+                <span className="text-gray-600"><b>RWP:</b> {CLASS_RWP[vtClass]} psi</span>
+              </div>
+
+              {/* Test Table */}
+              <div className="overflow-auto border rounded-lg">
+                <table className="text-sm w-full">
+                  <thead className="bg-teal-600 text-white sticky top-0">
+                    <tr>
+                      <th className="px-3 py-2 text-center text-xs w-8">No</th>
+                      <th className="px-3 py-2 text-left text-xs">Test</th>
+                      <th className="px-3 py-2 text-left text-xs">Medium</th>
+                      <th className="px-3 py-2 text-right text-xs">Test Pressure (psi)</th>
+                      <th className="px-3 py-2 text-left text-xs">Holding Time</th>
+                      <th className="px-3 py-2 text-left text-xs">Allowable Leakage</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {getTestsForValve(vtValveType).map((t, i) => {
+                      const rwp = CLASS_RWP[vtClass]
+                      const sz = parseFloat(vtSize)
+                      let pressure = 0
+                      if (t.type === 'shell') pressure = rwp * 1.5
+                      else if (t.type === 'seat') pressure = rwp * 1.1
+                      else if (t.type === 'backseat') pressure = rwp * 1.1
+                      else if (t.name.includes('High-Pressure')) pressure = rwp * 1.1
+                      else if (t.name.includes('Low-Pressure')) pressure = 300
+                      else if (t.type === 'gas_seat') pressure = rwp * 1.1
+                      return (
+                        <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-3 py-2 text-center text-xs font-semibold">{t.no}</td>
+                          <td className="px-3 py-2 text-xs font-semibold text-gray-800">{t.name}</td>
+                          <td className="px-3 py-2 text-xs text-gray-600">{t.medium}</td>
+                          <td className="px-3 py-2 text-xs text-gray-700 font-mono text-right">{pressure > 0 ? `${pressure.toLocaleString()} psi` : '-'}</td>
+                          <td className="px-3 py-2 text-xs text-gray-600">{HOLDING_TIME(sz, t.name.includes('High-Pressure') || t.name.includes('Low-Pressure') ? 'gas_seat' : t.type)}</td>
+                          <td className="px-3 py-2 text-xs text-gray-600">{ALLOWABLE_LEAKAGE(sz, t.type)}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Notes */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs text-yellow-800 space-y-1">
+                <p><b>Notes:</b></p>
+                <ul className="list-disc ml-4 space-y-0.5">
+                  <li>Shell Test pressure = 1.5 × RWP (rated working pressure)</li>
+                  <li>Seat Test pressure = 1.1 × RWP</li>
+                  <li>Backseat Test = 1.1 × RWP (not applicable for Check Valve & Butterfly Valve)</li>
+                  <li>Low-Pressure Gas Seat Test = 300 psi (for all PSL levels)</li>
+                  <li>Holding time per API 6D Table 2 based on valve size</li>
+                  <li>Allowable leakage per API 6D Table 3 (liquid seat test) and Table 4 (gas seat test)</li>
+                </ul>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
