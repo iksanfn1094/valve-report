@@ -77,7 +77,11 @@ const TEST_CRITERIA: Record<string, string> = {
   actuator: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
   shell: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
   hp_seat: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
-  seat_leak: '', hp_closure: '', lp_closure: '', hp_closure_b: '', lp_closure_a: '',
+  seat_leak: '',
+  hp_closure: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
+  lp_closure: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
+  hp_closure_b: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
+  lp_closure_a: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
   hp_closure_a: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
   lp_closure_b: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
   seat: '',
@@ -548,17 +552,9 @@ async function drawTestSection(doc: jsPDF, report: ReportData, valveTest: ValveT
   const testBody = testRows.map(key => {
     const p = (field: string) => ((valveTest as unknown as Record<string, string>)[`${key}_${field}`]) || '-'
     const cv = parseFloat(String(valveTest.spec_cv)) || 0
-    const sz = parseFloat(String(report?.size ?? '0')) || 0
-    const apiClosureCriteria = sz <= 2 ? 'LKG ≤ 1 bubble/min' :
-      sz <= 4 ? 'LKG ≤ 2 bubbles/min' :
-      sz <= 6 ? 'LKG ≤ 4 bubbles/min' :
-      sz <= 8 ? 'LKG ≤ 6 bubbles/min' :
-      sz <= 10 ? 'LKG ≤ 8 bubbles/min' : 'LKG ≤ 12 bubbles/min'
     let acceptance = TEST_CRITERIA[key] || ''
-    if (key === 'seat') {
+    if (key === 'seat' || key === 'seat_leak') {
       acceptance = cv ? `ALLOWABLE LEAK ${(cv * 0.186).toFixed(3)} SCFH` : 'ALLOWABLE LEAK 0.000 SCFH'
-    } else if (key === 'seat_leak' || key === 'hp_closure' || key === 'lp_closure' || key === 'hp_closure_b' || key === 'lp_closure_a') {
-      acceptance = apiClosureCriteria
     }
     return [
       TEST_LABELS[key] || key,
