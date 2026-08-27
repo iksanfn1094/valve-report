@@ -3,52 +3,7 @@
 import { useState } from 'react'
 import { ORING_SIZES } from '@/lib/oring-data'
 
-type TabKey = 'oring' | 'api6d' | 'api598' | 'api6a' | 'valvetest' | 'valvetest598' | 'valvetest6a' | 'fcicalc' | 'calc'
-
-const FCI_CLASSES = ['I', 'II', 'III', 'IV', 'V', 'VI']
-
-const FCI_VI_DATA: { size: number; mlPerMin: number; bubbles: number }[] = [
-  { size: 1, mlPerMin: 0.15, bubbles: 1 },
-  { size: 1.5, mlPerMin: 0.30, bubbles: 2 },
-  { size: 2, mlPerMin: 0.45, bubbles: 3 },
-  { size: 3, mlPerMin: 0.90, bubbles: 6 },
-  { size: 4, mlPerMin: 1.70, bubbles: 11 },
-  { size: 6, mlPerMin: 4.00, bubbles: 27 },
-  { size: 8, mlPerMin: 6.75, bubbles: 45 },
-  { size: 10, mlPerMin: 9.00, bubbles: 63 },
-  { size: 12, mlPerMin: 11.50, bubbles: 81 },
-]
-
-const FCI_VI_SIZES = FCI_VI_DATA.map(d => d.size)
-
-const FCI_LEAKAGE = (cls: string, cv: number, sz: number, orificeDia: number, deltaP: number) => {
-  if (cls === 'I') return 'No test required'
-  if (cls === 'II') {
-    const gpm = cv * 0.005
-    const mlPerMin = gpm * 3785.41
-    return `${(cv * 0.5).toFixed(2)}% × Cv = ${gpm.toFixed(4)} GPM\n= ${mlPerMin.toFixed(2)} ml/min\n= ${(mlPerMin * 0.00211976).toFixed(4)} SCFH`
-  }
-  if (cls === 'III') {
-    const gpm = cv * 0.001
-    const mlPerMin = gpm * 3785.41
-    return `${(cv * 0.1).toFixed(2)}% × Cv = ${gpm.toFixed(4)} GPM\n= ${mlPerMin.toFixed(2)} ml/min\n= ${(mlPerMin * 0.00211976).toFixed(4)} SCFH`
-  }
-  if (cls === 'IV') {
-    const gpm = cv * 0.0001
-    const mlPerMin = gpm * 3785.41
-    return `${(cv * 0.01).toFixed(3)}% × Cv = ${gpm.toFixed(5)} GPM\n= ${mlPerMin.toFixed(4)} ml/min\n= ${(mlPerMin * 0.00211976).toExponential(2)} SCFH`
-  }
-  if (cls === 'V') {
-    const mlPerMin = 0.0005 * orificeDia * deltaP
-    return `0.0005 × ${orificeDia}" × ${deltaP} psi\n= ${mlPerMin.toFixed(4)} ml/min\n= ${(mlPerMin * 0.00211976).toExponential(2)} SCFH`
-  }
-  if (cls === 'VI') {
-    const row = FCI_VI_DATA.find(d => d.size === sz)
-    if (!row) return 'Size not in FCI 70-2 table'
-    return `${row.bubbles} bubbles/min\n= ${row.mlPerMin.toFixed(2)} ml/min\n= ${(row.mlPerMin * 0.00211976).toFixed(4)} SCFH`
-  }
-  return '-'
-}
+type TabKey = 'oring' | 'api6d' | 'api598' | 'api6a' | 'valvetest' | 'valvetest598' | 'valvetest6a' | 'calc'
 
 const VALVE_TYPES_598 = ['Actuator', 'Ball Valve', 'Butterfly Valve', 'Check Valve', 'Control Valve', 'Gate Valve', 'Globe Valve', 'Plug Valve']
 
@@ -334,11 +289,6 @@ export default function EngineeringHubPage() {
   const [vt598ValveType, setVt598ValveType] = useState('')
   const [vt598Class, setVt598Class] = useState('')
   const [vt598Size, setVt598Size] = useState('')
-  const [fciClass, setFciClass] = useState('IV')
-  const [fciCv, setFciCv] = useState('')
-  const [fciSize, setFciSize] = useState('')
-  const [fciOrifice, setFciOrifice] = useState('')
-  const [fciDeltaP, setFciDeltaP] = useState('')
 
   const csGroups = [
     { label: 'All', value: 'all' },
@@ -363,7 +313,7 @@ export default function EngineeringHubPage() {
       <h1 className="text-xl font-bold text-teal-700">Engineering Hub</h1>
 
       <div className="flex gap-2 border-b border-gray-200 pb-0">
-        {([['oring', 'Standard O-Ring'], ['api6d', 'API 6D'], ['api598', 'API 598'], ['api6a', 'API 6A'], ['valvetest', '6D Valve Testing'], ['valvetest598', '598 Valve Testing'], ['valvetest6a', '6A Valve Testing'], ['fcicalc', 'Control Valve FCI 70-2'], ['calc', 'Seat Leak Test Class IV']] as [TabKey, string][]).map(([k, label]) => (
+        {([['oring', 'Standard O-Ring'], ['api6d', 'API 6D'], ['api598', 'API 598'], ['api6a', 'API 6A'], ['valvetest', '6D Valve Testing'], ['valvetest598', '598 Valve Testing'], ['valvetest6a', '6A Valve Testing'], ['calc', 'Seat Leak Test Class IV']] as [TabKey, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)} className={`px-4 py-2 text-sm font-medium rounded-t-lg transition ${tab === k ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
             {label}
           </button>
@@ -1203,156 +1153,6 @@ export default function EngineeringHubPage() {
                     </ul>
                   </>
                 )}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {tab === 'fcicalc' && (
-        <div className="space-y-4">
-          <p className="text-xs text-gray-500">FCI 70-2 — Control Valve Seat Leakage Classification — Test Requirements & Calculator</p>
-
-          {/* Input Form */}
-          <div className="bg-gray-50 border rounded-lg p-4 space-y-3 max-w-3xl">
-            <p className="text-sm font-semibold text-gray-700">Valve Configuration</p>
-            <div className="flex gap-3 flex-wrap">
-              <div className="flex-1 min-w-[120px]">
-                <label className="text-xs text-gray-500">Leakage Class</label>
-                <select value={fciClass} onChange={e => setFciClass(e.target.value)} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1">
-                  {FCI_CLASSES.map(c => <option key={c} value={c}>Class {c}</option>)}
-                </select>
-              </div>
-              <div className="flex-1 min-w-[120px]">
-                <label className="text-xs text-gray-500">Rated Cv (Flow Coefficient)</label>
-                <input type="number" step="0.1" min="0" value={fciCv} onChange={e => setFciCv(e.target.value)} placeholder="e.g. 150" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1" />
-              </div>
-              <div className="flex-1 min-w-[120px]">
-                <label className="text-xs text-gray-500">Port/Orifice Diameter (inch)</label>
-                <input type="number" step="0.5" min="0.5" value={fciSize} onChange={e => setFciSize(e.target.value)} placeholder="e.g. 4" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1" />
-              </div>
-              {fciClass === 'V' && (
-                <div className="flex-1 min-w-[120px]">
-                  <label className="text-xs text-gray-500">Differential Pressure ΔP (psi)</label>
-                  <input type="number" step="1" min="0" value={fciDeltaP} onChange={e => setFciDeltaP(e.target.value)} placeholder="e.g. 500" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1" />
-                </div>
-              )}
-              {fciClass === 'VI' && (
-                <div className="flex-1 min-w-[120px]">
-                  <label className="text-xs text-gray-500">Port Diameter (inch) — Class VI Table</label>
-                  <select value={fciSize} onChange={e => setFciSize(e.target.value)} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1">
-                    <option value="">— Select Size —</option>
-                    {FCI_VI_SIZES.map(s => <option key={s} value={s}>{s}&quot;</option>)}
-                  </select>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Results */}
-          {fciCv && fciSize && (
-            <div className="space-y-3">
-              {/* Summary */}
-              <div className="bg-teal-50 border border-teal-200 rounded-lg p-3 flex gap-6 text-sm flex-wrap">
-                <span className="text-gray-600"><b>Class:</b> {fciClass}</span>
-                <span className="text-gray-600"><b>Cv:</b> {fciCv}</span>
-                <span className="text-gray-600"><b>Port Ø:</b> {fciSize}&quot;</span>
-                {fciClass === 'V' && <span className="text-gray-600"><b>ΔP:</b> {fciDeltaP || '-'} psi</span>}
-              </div>
-
-              {/* Reference Table — All Classes */}
-              <div className="overflow-auto border rounded-lg">
-                <table className="text-sm w-full">
-                  <thead className="bg-teal-600 text-white sticky top-0">
-                    <tr>
-                      <th className="px-3 py-2 text-center text-xs w-12">Class</th>
-                      <th className="px-3 py-2 text-left text-xs">Test Medium</th>
-                      <th className="px-3 py-2 text-left text-xs">Test Pressure</th>
-                      <th className="px-3 py-2 text-left text-xs">Allowable Leakage</th>
-                      <th className="px-3 py-2 text-left text-xs">Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {FCI_CLASSES.map((cls, i) => {
-                      const cv = parseFloat(fciCv) || 0
-                      const sz = parseFloat(fciSize) || 0
-                      const orifice = parseFloat(fciOrifice) || sz
-                      const dp = parseFloat(fciDeltaP) || 0
-                      const isSelected = cls === fciClass
-                      const medians = cls === 'I' ? 'N/A' : cls === 'V' ? 'Water' : cls === 'VI' ? 'Air / N₂' : 'Air or Water'
-                      const pressures = cls === 'I' ? 'N/A' : cls === 'V' ? 'Max ΔP (rated)' : cls === 'VI' ? '50 psig or max ΔP' : '45-60 psig or max ΔP'
-                      const descriptions = [
-                        'No seat leakage test required',
-                        '0.5% of rated Cv — minimal seat leakage (double-port / balanced)',
-                        '0.1% of rated Cv — improved tight shutoff',
-                        '0.01% of rated Cv — standard metal seat (most common)',
-                        'Water — 0.0005 ml/min per inch per psi ΔP (critical metal seat)',
-                        'Air/N₂ — bubble count per port size (soft seat PTFE)',
-                      ]
-                      return (
-                        <tr key={i} className={`${isSelected ? 'bg-teal-50 font-semibold' : i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                          <td className="px-3 py-2 text-center text-xs">
-                            {isSelected && <span className="text-teal-600 mr-1">&#9654;</span>}
-                            <b>Class {cls}</b>
-                          </td>
-                          <td className="px-3 py-2 text-xs text-gray-600">{medians}</td>
-                          <td className="px-3 py-2 text-xs text-gray-700 font-mono">{pressures}</td>
-                          <td className="px-3 py-2 text-xs text-gray-700 font-mono whitespace-pre-line">
-                            {cls === 'I' ? '-' : FCI_LEAKAGE(cls, cv, sz, orifice, dp)}
-                          </td>
-                          <td className="px-3 py-2 text-xs text-gray-500">{descriptions[i]}</td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Selected Class Detail */}
-              {fciCv && fciSize && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-xs text-blue-800 space-y-2">
-                  <p className="font-semibold text-sm text-blue-900">Class {fciClass} — Detailed Result</p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p><b>Test Medium:</b> {fciClass === 'I' ? 'N/A' : fciClass === 'V' ? 'Water at 50-125°F' : fciClass === 'VI' ? 'Air / N₂ at 50-125°F' : 'Air or Water at 50-125°F'}</p>
-                      <p><b>Test Pressure:</b> {fciClass === 'I' ? 'N/A' : fciClass === 'V' ? 'Max service ΔP (not exceeding ANSI body rating)' : fciClass === 'VI' ? '50 psig or max rated ΔP, whichever is lower' : '45-60 psig or max operating ΔP, whichever is lower'}</p>
-                      <p><b>Valve Position:</b> Fully open, then close for test. Full normal closing thrust applied.</p>
-                      <p><b>Temperature:</b> 50-125°F (10-52°C)</p>
-                    </div>
-                    <div>
-                      <p><b>Allowable Leakage:</b></p>
-                      <p className="font-mono mt-1 whitespace-pre-line">{FCI_LEAKAGE(fciClass, parseFloat(fciCv) || 0, parseFloat(fciSize) || 0, parseFloat(fciOrifice) || parseFloat(fciSize) || 0, parseFloat(fciDeltaP) || 0)}</p>
-                      <p className="mt-1"><b>Formula:</b></p>
-                      <p className="font-mono text-[10px]">
-                        {fciClass === 'I' && 'No test required'}
-                        {fciClass === 'II' && `Allowable = 0.5% × Cv = 0.005 × ${fciCv} GPM = ${(parseFloat(fciCv) * 0.005).toFixed(4)} GPM = ${((parseFloat(fciCv) * 0.005) * 3785.41).toFixed(2)} ml/min`}
-                        {fciClass === 'III' && `Allowable = 0.1% × Cv = 0.001 × ${fciCv} GPM = ${(parseFloat(fciCv) * 0.001).toFixed(4)} GPM = ${((parseFloat(fciCv) * 0.001) * 3785.41).toFixed(2)} ml/min`}
-                        {fciClass === 'IV' && `Allowable = 0.01% × Cv = 0.0001 × ${fciCv} GPM = ${(parseFloat(fciCv) * 0.0001).toFixed(5)} GPM = ${((parseFloat(fciCv) * 0.0001) * 3785.41).toFixed(4)} ml/min`}
-                        {fciClass === 'V' && `Q = 0.0005 × D × ΔP = 0.0005 × ${fciOrifice || fciSize}" × ${fciDeltaP || '?'} psi = ${((parseFloat(fciOrifice) || parseFloat(fciSize) || 0) * 0.0005 * (parseFloat(fciDeltaP) || 0)).toFixed(4)} ml/min`}
-                        {fciClass === 'VI' && `Per FCI 70-2 Table — port Ø ${fciSize}" = ${FCI_VI_DATA.find(d => d.size === parseFloat(fciSize))?.bubbles || '?'} bubbles/min = ${FCI_VI_DATA.find(d => d.size === parseFloat(fciSize))?.mlPerMin || '?'} ml/min`}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Notes */}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs text-yellow-800 space-y-1">
-                <p><b>Notes — FCI 70-2 (ANSI/FCI 70-2 / IEC 60534-4):</b></p>
-                <ul className="list-disc ml-4 space-y-0.5">
-                  <li><b>Class I:</b> No test required (by agreement between buyer &amp; supplier)</li>
-                  <li><b>Class II:</b> 0.5% of rated Cv — double-port, balanced single-port with piston ring</li>
-                  <li><b>Class III:</b> 0.1% of rated Cv — improved seat lapping over Class II</li>
-                  <li><b>Class IV:</b> 0.01% of rated Cv — standard metal-to-metal seat (most common)</li>
-                  <li><b>Class V:</b> 0.0005 ml/min per inch of port diameter per psi ΔP — critical metal seat, lapped</li>
-                  <li><b>Class VI:</b> Bubble count per port size — soft seat (PTFE, Viton, PEEK)</li>
-                  <li>Classes II-IV: Air or Water at 45-60 psig (or max ΔP, whichever is lower)</li>
-                  <li>Class V: Water at max service ΔP (not exceeding ANSI body rating)</li>
-                  <li>Class VI: Air or N₂ at 50 psig (or max rated ΔP, whichever is lower)</li>
-                  <li>1 GPM = 3,785.41 ml/min; 1 ml/min = 0.00211976 SCFH</li>
-                </ul>
-              </div>
-                </ul>
               </div>
             </div>
           )}
