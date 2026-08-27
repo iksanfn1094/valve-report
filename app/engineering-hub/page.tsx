@@ -3,12 +3,22 @@
 import { useState } from 'react'
 import { ORING_SIZES } from '@/lib/oring-data'
 
-type TabKey = 'oring' | 'api6d' | 'api598' | 'api6a' | 'valvetest' | 'calc'
+type TabKey = 'oring' | 'api6d' | 'api598' | 'api6a' | 'valvetest' | 'valvetest6a' | 'calc'
 
 const VALVE_TYPES = ['Ball Valve', 'Gate Valve', 'Globe Valve', 'Check Valve', 'Plug Valve', 'Butterfly Valve', 'Control Valve', 'Actuator']
 
+const API6A_VALVE_TYPES = ['Gate Valve', 'Globe Valve', 'Check Valve', 'Ball Valve', 'Plug Valve', 'Actuator']
+
 const CLASS_RWP: Record<string, number> = {
   '150': 285, '300': 740, '400': 1000, '600': 1500, '900': 2250, '1500': 3750, '2500': 6250,
+}
+
+const API6A_PSL: Record<string, string[]> = {
+  '1': ['Shell Test', 'Seat Test (Closure)', 'Function Test'],
+  '2': ['Shell Test', 'Seat Test (Closure)', 'Function Test'],
+  '3': ['Shell Test', 'Seat Test (Closure)', 'Function Test', 'Backseat Test', 'Gas Body Test', 'High-Pressure Gas Seat Test', 'Low-Pressure Gas Seat Test'],
+  '3G': ['Shell Test', 'Seat Test (Closure)', 'Function Test', 'Backseat Test', 'Gas Body Test', 'High-Pressure Gas Seat Test', 'Low-Pressure Gas Seat Test'],
+  '4': ['Shell Test', 'Seat Test (Closure)', 'Function Test', 'Backseat Test', 'Gas Body Test', 'High-Pressure Gas Seat Test', 'Low-Pressure Gas Seat Test', 'Drift Test'],
 }
 
 const HOLDING_TIME = (sz: number, testType: string) => {
@@ -76,6 +86,89 @@ function getTestsForValve(valveType: string) {
   return tests
 }
 
+const API6A_HOLDING = (sz: number, testType: string) => {
+  if (testType === 'shell') return sz <= 2 ? '2 min' : sz <= 4 ? '2 min' : sz <= 10 ? '5 min' : sz <= 18 ? '15 min' : '30 min'
+  if (testType === 'seat') return sz <= 2 ? '2 min' : sz <= 4 ? '2 min' : sz <= 18 ? '5 min' : '10 min'
+  if (testType === 'function') return 'Per design specification'
+  if (testType === 'backseat') return sz <= 4 ? '2 min' : '5 min'
+  if (testType === 'gas_body') return sz <= 18 ? '15 min' : '30 min'
+  if (testType === 'hp_gas_seat') return sz <= 18 ? '15 min' : '30 min'
+  if (testType === 'lp_gas_seat') return sz <= 18 ? '15 min' : '30 min'
+  if (testType === 'drift') return 'N/A (mechanical check)'
+  if (testType === 'actuator_stroke') return '3 cycles (open-close-open)'
+  if (testType === 'actuator_leak') return sz <= 18 ? '15 min' : '30 min'
+  if (testType === 'actuator_hydro') return sz <= 4 ? '2 min' : sz <= 18 ? '10 min' : '15 min'
+  return '-'
+}
+
+const API6A_LEAKAGE = (sz: number, testType: string) => {
+  if (testType === 'shell') return 'No visible leakage'
+  if (testType === 'seat') {
+    if (sz <= 1) return '0 bubbles/min'
+    if (sz <= 2) return '1 bubble/min'
+    if (sz <= 4) return '2 bubbles/min'
+    if (sz <= 6) return '4 bubbles/min'
+    if (sz <= 8) return '6 bubbles/min'
+    if (sz <= 10) return '8 bubbles/min'
+    return '12 bubbles/min'
+  }
+  if (testType === 'function') return 'Per functional specification'
+  if (testType === 'backseat') return 'No visible leakage'
+  if (testType === 'gas_body') {
+    if (sz <= 2) return '3.3 ml/min (0.007 SCFH)'
+    if (sz <= 4) return '6.6 ml/min (0.014 SCFH)'
+    if (sz <= 6) return '13.2 ml/min (0.028 SCFH)'
+    if (sz <= 8) return '19.8 ml/min (0.042 SCFH)'
+    return '33 ml/min (0.070 SCFH)'
+  }
+  if (testType === 'hp_gas_seat') {
+    if (sz <= 2) return '3.3 ml/min (0.007 SCFH)'
+    if (sz <= 4) return '6.6 ml/min (0.014 SCFH)'
+    if (sz <= 6) return '13.2 ml/min (0.028 SCFH)'
+    if (sz <= 8) return '19.8 ml/min (0.042 SCFH)'
+    return '33 ml/min (0.070 SCFH)'
+  }
+  if (testType === 'lp_gas_seat') return 'No visible leakage (bubble method)'
+  if (testType === 'drift') return 'Pass / Fail — drift indicator through bore'
+  if (testType === 'actuator_stroke') return 'Complete full stroke ± travel limit'
+  if (testType === 'actuator_leak') return 'No external leakage from actuator seals'
+  if (testType === 'actuator_hydro') return 'No visible leakage from body joints'
+  return '-'
+}
+
+function getTestsFor6A(valveType: string, psl: string) {
+  if (valveType === 'Actuator') {
+    return [
+      { no: 1, name: 'Actuator Housing Hydrostatic Test', medium: 'Water / suitable liquid', type: 'actuator_hydro' },
+      { no: 2, name: 'Actuator Stroke Test (Full Open/Close)', medium: 'Hydraulic / Pneumatic supply', type: 'actuator_stroke' },
+      { no: 3, name: 'Actuator Seal & Leak Test', medium: 'Air / inert gas', type: 'actuator_leak' },
+      { no: 4, name: 'Minimum Operating Pressure Test', medium: 'Hydraulic / Pneumatic supply', type: 'actuator_stroke' },
+      { no: 5, name: 'Actuator Torque / Thrust Verification', medium: 'N/A', type: 'actuator_stroke' },
+    ]
+  }
+  const pslTests = API6A_PSL[psl] || API6A_PSL['1']
+  const typeMap: Record<string, string> = {
+    'Shell Test': 'shell', 'Seat Test (Closure)': 'seat', 'Function Test': 'function',
+    'Backseat Test': 'backseat', 'Gas Body Test': 'gas_body',
+    'High-Pressure Gas Seat Test': 'hp_gas_seat', 'Low-Pressure Gas Seat Test': 'lp_gas_seat',
+    'Drift Test': 'drift',
+  }
+  const mediumMap: Record<string, string> = {
+    'Shell Test': 'Water / suitable liquid', 'Seat Test (Closure)': 'Water / suitable liquid',
+    'Function Test': 'Per design specification', 'Backseat Test': 'Water / suitable liquid',
+    'Gas Body Test': 'Inert gas (N₂)', 'High-Pressure Gas Seat Test': 'Inert gas (N₂)',
+    'Low-Pressure Gas Seat Test': 'Air / inert gas', 'Drift Test': 'N/A (mechanical)',
+  }
+  const tests = pslTests.map((name, i) => ({
+    no: i + 1, name, medium: mediumMap[name] || '-', type: typeMap[name] || '-',
+  }))
+  if (valveType === 'Control Valve') {
+    tests.push({ no: tests.length + 1, name: 'Actuator Stroke Test (Full Open/Close)', medium: 'Hydraulic / Pneumatic supply', type: 'actuator_stroke' })
+    tests.push({ no: tests.length + 1, name: 'Actuator Seal & Leak Test', medium: 'Air / inert gas', type: 'actuator_leak' })
+  }
+  return tests
+}
+
 const API6D_TESTS = [
   { no: 1, name: 'Hydrostatic Shell Test', medium: 'Water', pressureFormula: '≥ 1.5 × PR', holdingFn: (sz: number) => sz <= 4 ? '2 min' : sz <= 10 ? '5 min' : sz <= 18 ? '15 min' : '30 min', criteria: 'No visible leakage dari pressure-containing parts' },
   { no: 2, name: 'Hydrostatic Seat Test', medium: 'Water', pressureFormula: '≥ 1.1 × PR', holdingFn: (sz: number) => sz <= 4 ? '2 min' : sz <= 18 ? '5 min' : '10 min', criteria: 'Soft seat: ISO 5208 Rate A\nMetal seat: ISO 5208 Rate CD' },
@@ -118,6 +211,10 @@ export default function EngineeringHubPage() {
   const [vtValveType, setVtValveType] = useState('')
   const [vtClass, setVtClass] = useState('')
   const [vtSize, setVtSize] = useState('')
+  const [vt6aValveType, setVt6aValveType] = useState('')
+  const [vt6aClass, setVt6aClass] = useState('')
+  const [vt6aSize, setVt6aSize] = useState('')
+  const [vt6aPSL, setVt6aPSL] = useState('')
 
   const csGroups = [
     { label: 'All', value: 'all' },
@@ -142,7 +239,7 @@ export default function EngineeringHubPage() {
       <h1 className="text-xl font-bold text-teal-700">Engineering Hub</h1>
 
       <div className="flex gap-2 border-b border-gray-200 pb-0">
-        {([['oring', 'Standard O-Ring'], ['api6d', 'API 6D'], ['api598', 'API 598'], ['api6a', 'API 6A'], ['valvetest', '6D Valve Testing'], ['calc', 'Seat Leak Test Class IV']] as [TabKey, string][]).map(([k, label]) => (
+        {([['oring', 'Standard O-Ring'], ['api6d', 'API 6D'], ['api598', 'API 598'], ['api6a', 'API 6A'], ['valvetest', '6D Valve Testing'], ['valvetest6a', '6A Valve Testing'], ['calc', 'Seat Leak Test Class IV']] as [TabKey, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)} className={`px-4 py-2 text-sm font-medium rounded-t-lg transition ${tab === k ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
             {label}
           </button>
@@ -704,6 +801,162 @@ export default function EngineeringHubPage() {
                       <li>Seal &amp; Leak Test = pressurize actuator cavity, check external seals</li>
                       <li>Minimum Operating Pressure Test = 60% RWP (supply pressure to confirm actuation)</li>
                       <li>Torque / Thrust Verification = compare against required seat load per API 6D</li>
+                    </ul>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === 'valvetest6a' && (
+        <div className="space-y-4">
+          <p className="text-xs text-gray-500">API 6A — Wellhead & Christmas Tree Equipment — Valve Pressure Testing Calculator</p>
+
+          {/* Input Form */}
+          <div className="bg-gray-50 border rounded-lg p-4 space-y-3 max-w-3xl">
+            <p className="text-sm font-semibold text-gray-700">Valve Configuration</p>
+            <div className="flex gap-3 flex-wrap">
+              <div className="flex-1 min-w-[160px]">
+                <label className="text-xs text-gray-500">Valve Type</label>
+                <select value={vt6aValveType} onChange={e => setVt6aValveType(e.target.value)} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1">
+                  <option value="">— Select Valve —</option>
+                  {API6A_VALVE_TYPES.map(v => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+              <div className="flex-1 min-w-[120px]">
+                <label className="text-xs text-gray-500">Pressure Class</label>
+                <select value={vt6aClass} onChange={e => setVt6aClass(e.target.value)} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1">
+                  <option value="">— Select Class —</option>
+                  {Object.keys(CLASS_RWP).map(c => <option key={c} value={c}>Class {c} ({CLASS_RWP[c]} psi)</option>)}
+                </select>
+              </div>
+              <div className="flex-1 min-w-[120px]">
+                <label className="text-xs text-gray-500">Size (inch)</label>
+                <input type="number" step="0.5" min="0.5" value={vt6aSize} onChange={e => setVt6aSize(e.target.value)} placeholder="e.g. 7-1/16" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1" />
+              </div>
+              <div className="flex-1 min-w-[120px]">
+                <label className="text-xs text-gray-500">PSL Level</label>
+                <select value={vt6aPSL} onChange={e => setVt6aPSL(e.target.value)} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1">
+                  <option value="">— Select PSL —</option>
+                  <option value="1">PSL 1</option>
+                  <option value="2">PSL 2</option>
+                  <option value="3">PSL 3</option>
+                  <option value="3G">PSL 3G</option>
+                  <option value="4">PSL 4</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Results */}
+          {vt6aValveType && vt6aClass && vt6aSize && vt6aPSL && (
+            <div className="space-y-3">
+              {/* Summary */}
+              <div className="bg-teal-50 border border-teal-200 rounded-lg p-3 flex gap-6 text-sm flex-wrap">
+                <span className="text-gray-600"><b>Valve:</b> {vt6aValveType}</span>
+                <span className="text-gray-600"><b>Class:</b> {vt6aClass}</span>
+                <span className="text-gray-600"><b>Size:</b> {vt6aSize}&quot;</span>
+                <span className="text-gray-600"><b>PSL:</b> {vt6aPSL}</span>
+                <span className="text-gray-600"><b>RWP:</b> {CLASS_RWP[vt6aClass]} psi</span>
+              </div>
+
+              {/* PSL info */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
+                <b>PSL {vt6aPSL}</b> — Tests required:{' '}
+                {(API6A_PSL[vt6aPSL] || []).join(', ')}
+                {vt6aValveType === 'Control Valve' ? ', Actuator Stroke Test, Actuator Seal & Leak Test' : ''}
+              </div>
+
+              {/* Test Table */}
+              <div className="overflow-auto border rounded-lg">
+                <table className="text-sm w-full">
+                  <thead className="bg-teal-600 text-white sticky top-0">
+                    <tr>
+                      <th className="px-3 py-2 text-center text-xs w-8">No</th>
+                      <th className="px-3 py-2 text-left text-xs">Test</th>
+                      <th className="px-3 py-2 text-left text-xs">Medium</th>
+                      <th className="px-3 py-2 text-right text-xs">Test Pressure (psi)</th>
+                      <th className="px-3 py-2 text-left text-xs">Holding Time</th>
+                      <th className="px-3 py-2 text-left text-xs">Allowable Leakage</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {getTestsFor6A(vt6aValveType, vt6aPSL).map((t, i) => {
+                      const rwp = CLASS_RWP[vt6aClass]
+                      const sz = parseFloat(vt6aSize)
+                      let pressure = 0
+                      if (t.type === 'shell') pressure = rwp * 1.5
+                      else if (t.type === 'seat') pressure = rwp * 1.1
+                      else if (t.type === 'backseat') pressure = rwp * 1.1
+                      else if (t.type === 'gas_body') pressure = rwp * 1.1
+                      else if (t.type === 'hp_gas_seat') pressure = rwp * 1.1
+                      else if (t.type === 'lp_gas_seat') pressure = 300
+                      else if (t.type === 'actuator_hydro') pressure = rwp * 1.5
+                      return (
+                        <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-3 py-2 text-center text-xs font-semibold">{t.no}</td>
+                          <td className="px-3 py-2 text-xs font-semibold text-gray-800">{t.name}</td>
+                          <td className="px-3 py-2 text-xs text-gray-600">{t.medium}</td>
+                          <td className="px-3 py-2 text-xs text-gray-700 font-mono text-right whitespace-nowrap">
+                            {t.type === 'function' ? 'Per design spec' :
+                             t.type === 'drift' ? 'N/A (mechanical)' :
+                             t.type === 'actuator_stroke' ? 'Per stroke requirement' :
+                             t.type === 'actuator_leak' ? 'Per seal pressure rating' :
+                             pressure > 0 ? `${pressure.toLocaleString()} psi` : '-'}
+                          </td>
+                          <td className="px-3 py-2 text-xs text-gray-600">
+                            {API6A_HOLDING(sz,
+                              t.type === 'function' ? 'function' :
+                              t.type === 'drift' ? 'drift' :
+                              t.type === 'actuator_stroke' ? 'actuator_stroke' :
+                              t.type === 'actuator_leak' ? 'actuator_leak' :
+                              t.type === 'actuator_hydro' ? 'actuator_hydro' :
+                              t.type
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-xs text-gray-600">
+                            {API6A_LEAKAGE(sz,
+                              t.type === 'function' ? 'function' :
+                              t.type === 'drift' ? 'drift' :
+                              t.type === 'actuator_stroke' ? 'actuator_stroke' :
+                              t.type === 'actuator_leak' ? 'actuator_leak' :
+                              t.type === 'actuator_hydro' ? 'actuator_hydro' :
+                              t.type
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Notes */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs text-yellow-800 space-y-1">
+                <p><b>Notes — API 6A Valve:</b></p>
+                <ul className="list-disc ml-4 space-y-0.5">
+                  <li>Shell Test = 1.5 × RWP (pressure-containing body integrity)</li>
+                  <li>Seat Test (Closure) = 1.1 × RWP</li>
+                  <li>Backseat Test = 1.1 × RWP (gate valve, plug valve only — not check valve)</li>
+                  <li>Gas Body Test = 1.1 × RWP — <b>PSL 3, 3G, 4 only</b></li>
+                  <li>High-Pressure Gas Seat Test = 1.1 × RWP — <b>PSL 3, 3G, 4 only</b></li>
+                  <li>Low-Pressure Gas Seat Test = 300 ± 10% psi — <b>PSL 3, 3G, 4 only</b></li>
+                  <li>Drift Test = mechanical bore check — <b>PSL 4 only</b></li>
+                  <li>Holding time per API 6A Table F.1 / Section 7</li>
+                  <li>Allowable leakage per API 6D Table 3 (liquid) and Table 4 (gas)</li>
+                  <li>Control Valve includes actuator stroke &amp; seal test</li>
+                </ul>
+                {(vt6aValveType === 'Actuator' || vt6aValveType === 'Control Valve') && (
+                  <>
+                    <p className="mt-2"><b>Notes — Actuator:</b></p>
+                    <ul className="list-disc ml-4 space-y-0.5">
+                      <li>Actuator Housing Hydrostatic = 1.5 × RWP (body integrity)</li>
+                      <li>Stroke Test = 3 full open-close cycles, verify full travel &amp; response time</li>
+                      <li>Seal &amp; Leak Test = pressurize actuator cavity, check external seals</li>
+                      <li>Minimum Operating Pressure Test = 60% RWP (supply pressure to confirm actuation)</li>
+                      <li>Torque / Thrust Verification = compare against required seat load per API 6A</li>
                     </ul>
                   </>
                 )}
