@@ -833,6 +833,16 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       lp_closure_b_duration_min: seatD,
       seat_pressure_psi: '80',
       seat_duration_min: seatD,
+      seat_leak_pressure_psi: seatP,
+      seat_leak_duration_min: seatD,
+      hp_closure_pressure_psi: hpClosureP,
+      hp_closure_duration_min: seatD,
+      lp_closure_pressure_psi: lpClosureP,
+      lp_closure_duration_min: seatD,
+      hp_closure_b_pressure_psi: hpClosureP,
+      hp_closure_b_duration_min: seatD,
+      lp_closure_a_pressure_psi: lpClosureP,
+      lp_closure_a_duration_min: seatD,
     }))
   }
 
