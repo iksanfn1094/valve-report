@@ -232,13 +232,22 @@ function formatDateEN(val: string | null): string {
 }
 
 const COMPONENTS = [
-  'Actuator', 'Ball', 'Backseat', 'Bolt', 'Bonnet', 'Body',
-  'Diaphragm', 'Disc', 'Flange And RF', 'Frame', 'Graphite Packing Body Bonnet',
-  'Guide', 'Handwheel',   'Holder Valve', 'Lever Arm',
-  'Nut', 'O-Ring Body Bonnet', 'O-Ring Stem', 'Other',
-  'Packing', 'Plug', 'Retainer', 'Seat', 'Seat Pocket',
-  'Spring', 'Stopper', 'Stem', 'Stud Bolt Body Bonnet', 'Stud Bolt Mounting Adaptor',
-  'Thrust Bearing', 'Valve Unit', 'Washer Stem', 'Yoke',
+  'Actuator', 'Adaptor cylinder', 'Backseat', 'Ball', 'Bearing', 'Body', 'Body gasket',
+  'Bolt', 'Bolt and nut', 'Bonnet', 'Brace rod', 'Cage', 'Center bar', 'Clapper disc arm',
+  'Coupling box', 'Cover housing', 'Cylinder', 'Diaphragm', 'Diaphragm actuator',
+  'Diaphragm case', 'Diaphragm plate', 'Disc', 'Drain fitting', 'Drain plug', 'End cap',
+  'Flange', 'Flange And RF', 'Frame', 'Gasket', 'Gear operator', 'Gland packing',
+  'Graphite Packing Body Bonnet', 'Grease fitting', 'Guide', 'Guide block', 'Handle',
+  'Handwheel', 'Hinge', 'Holder Valve', 'Housing', 'Indicator ring', 'Instrumen',
+  'Internal cylinder', 'Key', 'Lever Arm', 'Lever/handwheel', 'Lock nut',
+  'Mounting actuator', 'Mounting bracket', 'Nut', 'O-ring', 'O-Ring Body Bonnet',
+  'O-Ring Stem', 'Other', 'Packing', 'Piston', 'Piston rod', 'Plug', 'Plug fitting',
+  'Retainer', 'Sealant fitting', 'Seat', 'Seat insert', 'Seat Pocket', 'Seat ring',
+  'Shaft', 'Spring', 'Spring actuator', 'Spring washer', 'Stem', 'Stem actuator',
+  'Stem holder', 'Stopper', 'Stud and nut', 'Stud Bolt Body Bonnet',
+  'Stud Bolt Mounting Adaptor', 'Stuffing box', 'Thrust Bearing', 'Top plate',
+  'Torque shaft', 'Travel indicator', 'Trunnion', 'Trunnion plate', 'Valve Unit',
+  'Washer', 'Washer Stem', 'Wave spring', 'Worm gear', 'Worm shaft', 'Yoke',
 ]
 
 export default function ReportDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -1538,7 +1547,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                   <td className="border px-1 py-1">
                     <select value={row.component_name} onChange={e => updateDocItem(i, 'component_name', e.target.value)} className="w-full border-0 bg-transparent text-xs focus:outline-none">
                       <option value="">-- Pilih Komponen --</option>
-                      {['Body', 'Bonnet', 'Stem', 'Seat', 'Disc', 'Ball', 'Plug', 'Packing', 'Gasket', 'Bolt', 'Nut', 'Spring', 'Diaphragm', 'Actuator', 'Handwheel', 'Yoke', 'Backseat', 'Guide', 'Thrust Bearing', 'Retainer', 'O-Ring', 'Other'].map(c => <option key={c} value={c}>{c}</option>)}
+                      {COMPONENTS.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </td>
                   <td className="border px-1 py-1">
