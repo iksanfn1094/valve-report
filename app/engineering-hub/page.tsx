@@ -34,11 +34,11 @@ const ALLOWABLE_LEAKAGE = (sz: number, testType: string) => {
     return '12 bubbles/min'
   }
   if (testType === 'gas_seat') {
-    if (sz <= 2) return '3.3 ml/min'
-    if (sz <= 4) return '6.6 ml/min'
-    if (sz <= 6) return '13.2 ml/min'
-    if (sz <= 8) return '19.8 ml/min'
-    return '33 ml/min'
+    if (sz <= 2) return '3.3 ml/min (0.007 SCFH)'
+    if (sz <= 4) return '6.6 ml/min (0.014 SCFH)'
+    if (sz <= 6) return '13.2 ml/min (0.028 SCFH)'
+    if (sz <= 8) return '19.8 ml/min (0.042 SCFH)'
+    return '33 ml/min (0.070 SCFH)'
   }
   if (testType === 'backseat') return 'No visible leakage'
   if (testType === 'actuator_stroke') return 'Complete full stroke ± travel limit'
