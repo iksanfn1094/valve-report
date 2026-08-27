@@ -5,7 +5,7 @@ import { ORING_SIZES } from '@/lib/oring-data'
 
 type TabKey = 'oring' | 'api6d' | 'api598' | 'api6a' | 'valvetest' | 'calc'
 
-const VALVE_TYPES = ['Ball Valve', 'Gate Valve', 'Globe Valve', 'Check Valve', 'Plug Valve', 'Butterfly Valve']
+const VALVE_TYPES = ['Ball Valve', 'Gate Valve', 'Globe Valve', 'Check Valve', 'Plug Valve', 'Butterfly Valve', 'Control Valve', 'Actuator']
 
 const CLASS_RWP: Record<string, number> = {
   '150': 285, '300': 740, '400': 1000, '600': 1500, '900': 2250, '1500': 3750, '2500': 6250,
@@ -16,6 +16,9 @@ const HOLDING_TIME = (sz: number, testType: string) => {
   if (testType === 'seat') return sz <= 2 ? '2 min' : sz <= 4 ? '2 min' : sz <= 18 ? '5 min' : '10 min'
   if (testType === 'gas_seat') return sz <= 18 ? '15 min' : '30 min'
   if (testType === 'backseat') return sz <= 4 ? '2 min' : '5 min'
+  if (testType === 'actuator_stroke') return '3 cycles (open-close-open)'
+  if (testType === 'actuator_leak') return sz <= 18 ? '15 min' : '30 min'
+  if (testType === 'actuator_hydro') return sz <= 4 ? '2 min' : sz <= 18 ? '10 min' : '15 min'
   return '-'
 }
 
@@ -38,10 +41,22 @@ const ALLOWABLE_LEAKAGE = (sz: number, testType: string) => {
     return '33 ml/min'
   }
   if (testType === 'backseat') return 'No visible leakage'
+  if (testType === 'actuator_stroke') return 'Complete full stroke ± travel limit'
+  if (testType === 'actuator_leak') return 'No external leakage from actuator seals'
+  if (testType === 'actuator_hydro') return 'No visible leakage from body joints'
   return '-'
 }
 
 function getTestsForValve(valveType: string) {
+  if (valveType === 'Actuator') {
+    return [
+      { no: 1, name: 'Actuator Housing Hydrostatic Test', medium: 'Water / suitable liquid', type: 'actuator_hydro' },
+      { no: 2, name: 'Actuator Stroke Test (Full Open/Close)', medium: 'Hydraulic / Pneumatic supply', type: 'actuator_stroke' },
+      { no: 3, name: 'Actuator Seal & Leak Test', medium: 'Air / inert gas', type: 'actuator_leak' },
+      { no: 4, name: 'Minimum Operating Pressure Test', medium: 'Hydraulic / Pneumatic supply', type: 'actuator_stroke' },
+      { no: 5, name: 'Actuator Torque / Thrust Verification', medium: 'N/A', type: 'actuator_stroke' },
+    ]
+  }
   const tests: { no: number; name: string; medium: string; type: string }[] = [
     { no: 1, name: 'Hydrostatic Shell Test', medium: 'Water / suitable liquid', type: 'shell' },
     { no: 2, name: 'Hydrostatic Seat Test (Closure)', medium: 'Water / suitable liquid', type: 'seat' },
@@ -53,6 +68,10 @@ function getTestsForValve(valveType: string) {
   tests.push({ no: tests.length + 1, name: 'Low-Pressure Gas Seat Test', medium: 'Air / inert gas', type: 'gas_seat' })
   if (valveType === 'Ball Valve' || valveType === 'Plug Valve') {
     tests.push({ no: tests.length + 1, name: 'Pneumatic Seat Test', medium: 'Air / inert gas', type: 'gas_seat' })
+  }
+  if (valveType === 'Control Valve') {
+    tests.push({ no: tests.length + 1, name: 'Actuator Stroke Test (Full Open/Close)', medium: 'Hydraulic / Pneumatic supply', type: 'actuator_stroke' })
+    tests.push({ no: tests.length + 1, name: 'Actuator Seal & Leak Test', medium: 'Air / inert gas', type: 'actuator_leak' })
   }
   return tests
 }
@@ -625,14 +644,38 @@ export default function EngineeringHubPage() {
                       else if (t.name.includes('High-Pressure')) pressure = rwp * 1.1
                       else if (t.name.includes('Low-Pressure')) pressure = 300
                       else if (t.type === 'gas_seat') pressure = rwp * 1.1
+                      else if (t.type === 'actuator_hydro') pressure = rwp * 1.5
+                      else if (t.name.includes('Minimum Operating')) pressure = rwp * 0.6
+                      else if (t.type === 'actuator_stroke') pressure = 0
+                      else if (t.type === 'actuator_leak') pressure = 0
                       return (
                         <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                           <td className="px-3 py-2 text-center text-xs font-semibold">{t.no}</td>
                           <td className="px-3 py-2 text-xs font-semibold text-gray-800">{t.name}</td>
                           <td className="px-3 py-2 text-xs text-gray-600">{t.medium}</td>
-                          <td className="px-3 py-2 text-xs text-gray-700 font-mono text-right">{pressure > 0 ? `${pressure.toLocaleString()} psi` : '-'}</td>
-                          <td className="px-3 py-2 text-xs text-gray-600">{HOLDING_TIME(sz, t.name.includes('High-Pressure') || t.name.includes('Low-Pressure') ? 'gas_seat' : t.type)}</td>
-                          <td className="px-3 py-2 text-xs text-gray-600">{ALLOWABLE_LEAKAGE(sz, t.type)}</td>
+                          <td className="px-3 py-2 text-xs text-gray-700 font-mono text-right whitespace-nowrap">
+                            {t.type === 'actuator_stroke' ? 'Per stroke requirement' :
+                             t.type === 'actuator_leak' ? 'Per seal pressure rating' :
+                             pressure > 0 ? `${pressure.toLocaleString()} psi` : '-'}
+                          </td>
+                          <td className="px-3 py-2 text-xs text-gray-600">
+                            {HOLDING_TIME(sz,
+                              t.name.includes('High-Pressure') || t.name.includes('Low-Pressure') ? 'gas_seat' :
+                              t.name.includes('Stroke') || t.name.includes('Operating') || t.name.includes('Torque') ? 'actuator_stroke' :
+                              t.name.includes('Seal') && t.type === 'actuator_leak' ? 'actuator_leak' :
+                              t.type === 'actuator_hydro' ? 'actuator_hydro' :
+                              t.type
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-xs text-gray-600">
+                            {ALLOWABLE_LEAKAGE(sz,
+                              t.name.includes('High-Pressure') || t.name.includes('Low-Pressure') ? 'gas_seat' :
+                              t.name.includes('Stroke') || t.name.includes('Operating') || t.name.includes('Torque') ? 'actuator_stroke' :
+                              t.type === 'actuator_leak' ? 'actuator_leak' :
+                              t.type === 'actuator_hydro' ? 'actuator_hydro' :
+                              t.type
+                            )}
+                          </td>
                         </tr>
                       )
                     })}
@@ -642,7 +685,7 @@ export default function EngineeringHubPage() {
 
               {/* Notes */}
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs text-yellow-800 space-y-1">
-                <p><b>Notes:</b></p>
+                <p><b>Notes — Valve:</b></p>
                 <ul className="list-disc ml-4 space-y-0.5">
                   <li>Shell Test pressure = 1.5 × RWP (rated working pressure)</li>
                   <li>Seat Test pressure = 1.1 × RWP</li>
@@ -650,7 +693,20 @@ export default function EngineeringHubPage() {
                   <li>Low-Pressure Gas Seat Test = 300 psi (for all PSL levels)</li>
                   <li>Holding time per API 6D Table 2 based on valve size</li>
                   <li>Allowable leakage per API 6D Table 3 (liquid seat test) and Table 4 (gas seat test)</li>
+                  <li>Control Valve includes actuator stroke &amp; seal test in addition to standard valve tests</li>
                 </ul>
+                {(vtValveType === 'Actuator' || vtValveType === 'Control Valve') && (
+                  <>
+                    <p className="mt-2"><b>Notes — Actuator:</b></p>
+                    <ul className="list-disc ml-4 space-y-0.5">
+                      <li>Actuator Housing Hydrostatic = 1.5 × RWP (body integrity)</li>
+                      <li>Stroke Test = 3 full open-close cycles, verify full travel &amp; response time</li>
+                      <li>Seal &amp; Leak Test = pressurize actuator cavity, check external seals</li>
+                      <li>Minimum Operating Pressure Test = 60% RWP (supply pressure to confirm actuation)</li>
+                      <li>Torque / Thrust Verification = compare against required seat load per API 6D</li>
+                    </ul>
+                  </>
+                )}
               </div>
             </div>
           )}
