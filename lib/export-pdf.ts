@@ -66,6 +66,8 @@ export type ValveTestData = {
 
 const TEST_LABELS: Record<string, string> = {
   actuator: 'ACTUATOR LEAK TEST', shell: 'HYDROSTATIC SHELL TEST', hp_seat: 'HIGH-PRESSURE SEAT TEST',
+  seat_leak: 'SEAT LEAK TEST', hp_closure: 'HIGH PRESSURE CLOSURE TEST', lp_closure: 'LOW PRESSURE CLOSURE TEST',
+  hp_closure_b: 'HIGH PRESSURE CLOSURE TEST B', lp_closure_a: 'LOW PRESSURE CLOSURE TEST A',
   hp_closure_a: 'HIGH PRESSURE CLOSURE TEST A', lp_closure_b: 'LOW PRESSURE CLOSURE TEST B',
   seat: 'LOW-PRESSURE SEAT LEAK TEST', func0: 'FUNCTION TEST 0%', func25: 'FUNCTION TEST 25%',
   func50: 'FUNCTION TEST 50%', func75: 'FUNCTION TEST 75%', func100: 'FUNCTION TEST 100%',
@@ -75,6 +77,7 @@ const TEST_CRITERIA: Record<string, string> = {
   actuator: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
   shell: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
   hp_seat: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
+  seat_leak: '', hp_closure: '', lp_closure: '', hp_closure_b: '', lp_closure_a: '',
   hp_closure_a: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
   lp_closure_b: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
   seat: '',
@@ -553,8 +556,8 @@ async function drawTestSection(doc: jsPDF, report: ReportData, valveTest: ValveT
       sz <= 10 ? 'LKG ≤ 8 bubbles/min' : 'LKG ≤ 12 bubbles/min'
     let acceptance = TEST_CRITERIA[key] || ''
     if (key === 'seat') {
-      acceptance = cv ? `ALLOWABLE LEAK ${(cv * 0.186).toFixed(3)} SCFH (Cv×0.186)` : 'ALLOWABLE LEAK 0.000 SCFH (Cv×0.186)'
-    } else if (key === 'hp_closure_a' || key === 'lp_closure_b') {
+      acceptance = cv ? `ALLOWABLE LEAK ${(cv * 0.186).toFixed(3)} SCFH` : 'ALLOWABLE LEAK 0.000 SCFH'
+    } else if (key === 'seat_leak' || key === 'hp_closure' || key === 'lp_closure' || key === 'hp_closure_b' || key === 'lp_closure_a') {
       acceptance = apiClosureCriteria
     }
     return [
