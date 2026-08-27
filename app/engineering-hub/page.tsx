@@ -3,7 +3,33 @@
 import { useState } from 'react'
 import { ORING_SIZES } from '@/lib/oring-data'
 
-type TabKey = 'oring' | 'api6d' | 'api598' | 'api6a' | 'valvetest' | 'valvetest598' | 'valvetest6a' | 'calc'
+type TabKey = 'oring' | 'api6d' | 'api598' | 'api6a' | 'valvetest' | 'valvetest598' | 'valvetest6a' | 'fcicalc' | 'calc'
+
+const FCI_CLASSES = ['I', 'II', 'III', 'IV', 'V', 'VI']
+
+const FCI_VI_BUBBLES: Record<number, number> = {
+  1: 0, 1.5: 1, 2: 2, 3: 4, 4: 6, 6: 12, 8: 18,
+}
+
+const FCI_VI_SIZES = [1, 1.5, 2, 3, 4, 6, 8]
+
+const FCI_LEAKAGE = (cls: string, cv: number, sz: number, orificeDia: number) => {
+  if (cls === 'I') return 'No test required'
+  if (cls === 'II') return `${(cv * 0.005).toFixed(4)} Cv = ${(cv * 0.005 * 0.0006309).toExponential(2)} m³/h`
+  if (cls === 'III') return `${(cv * 0.001).toFixed(4)} Cv = ${(cv * 0.001 * 0.0006309).toExponential(2)} m³/h`
+  if (cls === 'IV') return `${(cv * 0.0001).toFixed(5)} Cv = ${(cv * 0.0001 * 0.0006309).toExponential(2)} m³/h`
+  if (cls === 'V') {
+    const mlPerMin = 0.000005 * orificeDia
+    return `${mlPerMin.toExponential(2)} ml/min\n(${(mlPerMin * 0.00000211976).toExponential(2)} SCFH)`
+  }
+  if (cls === 'VI') {
+    const matched = Object.entries(FCI_VI_BUBBLES).find(([k]) => parseFloat(k) === sz)
+    const bubbles = matched ? matched[1] : 0
+    const mlPerMin = bubbles * 0.01
+    return `${bubbles} bubbles/min\n(${mlPerMin.toFixed(3)} ml/min)\n(${(mlPerMin * 0.00211976).toExponential(2)} SCFH)`
+  }
+  return '-'
+}
 
 const VALVE_TYPES_598 = ['Actuator', 'Ball Valve', 'Butterfly Valve', 'Check Valve', 'Control Valve', 'Gate Valve', 'Globe Valve', 'Plug Valve']
 
@@ -289,6 +315,10 @@ export default function EngineeringHubPage() {
   const [vt598ValveType, setVt598ValveType] = useState('')
   const [vt598Class, setVt598Class] = useState('')
   const [vt598Size, setVt598Size] = useState('')
+  const [fciClass, setFciClass] = useState('IV')
+  const [fciCv, setFciCv] = useState('')
+  const [fciSize, setFciSize] = useState('')
+  const [fciOrifice, setFciOrifice] = useState('')
 
   const csGroups = [
     { label: 'All', value: 'all' },
@@ -313,7 +343,7 @@ export default function EngineeringHubPage() {
       <h1 className="text-xl font-bold text-teal-700">Engineering Hub</h1>
 
       <div className="flex gap-2 border-b border-gray-200 pb-0">
-        {([['oring', 'Standard O-Ring'], ['api6d', 'API 6D'], ['api598', 'API 598'], ['api6a', 'API 6A'], ['valvetest', '6D Valve Testing'], ['valvetest598', '598 Valve Testing'], ['valvetest6a', '6A Valve Testing'], ['calc', 'Seat Leak Test Class IV']] as [TabKey, string][]).map(([k, label]) => (
+        {([['oring', 'Standard O-Ring'], ['api6d', 'API 6D'], ['api598', 'API 598'], ['api6a', 'API 6A'], ['valvetest', '6D Valve Testing'], ['valvetest598', '598 Valve Testing'], ['valvetest6a', '6A Valve Testing'], ['fcicalc', 'Control Valve FCI 70-2'], ['calc', 'Seat Leak Test Class IV']] as [TabKey, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)} className={`px-4 py-2 text-sm font-medium rounded-t-lg transition ${tab === k ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
             {label}
           </button>
@@ -1153,6 +1183,149 @@ export default function EngineeringHubPage() {
                     </ul>
                   </>
                 )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === 'fcicalc' && (
+        <div className="space-y-4">
+          <p className="text-xs text-gray-500">FCI 70-2 — Control Valve Seat Leakage Classification — Test Requirements & Calculator</p>
+
+          {/* Input Form */}
+          <div className="bg-gray-50 border rounded-lg p-4 space-y-3 max-w-3xl">
+            <p className="text-sm font-semibold text-gray-700">Valve Configuration</p>
+            <div className="flex gap-3 flex-wrap">
+              <div className="flex-1 min-w-[120px]">
+                <label className="text-xs text-gray-500">Leakage Class</label>
+                <select value={fciClass} onChange={e => setFciClass(e.target.value)} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1">
+                  {FCI_CLASSES.map(c => <option key={c} value={c}>Class {c}</option>)}
+                </select>
+              </div>
+              <div className="flex-1 min-w-[120px]">
+                <label className="text-xs text-gray-500">Rated Cv (Flow Coefficient)</label>
+                <input type="number" step="0.1" min="0" value={fciCv} onChange={e => setFciCv(e.target.value)} placeholder="e.g. 150" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1" />
+              </div>
+              <div className="flex-1 min-w-[120px]">
+                <label className="text-xs text-gray-500">Valve Size (inch)</label>
+                <input type="number" step="0.5" min="0.5" value={fciSize} onChange={e => setFciSize(e.target.value)} placeholder="e.g. 4" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1" />
+              </div>
+              {(fciClass === 'V' || fciClass === 'VI') && (
+                <div className="flex-1 min-w-[120px]">
+                  <label className="text-xs text-gray-500">{fciClass === 'V' ? 'Orifice Diameter (inch)' : 'Valve Size (inch) (for bubbles)'}</label>
+                  {fciClass === 'V' ? (
+                    <input type="number" step="0.1" min="0" value={fciOrifice} onChange={e => setFciOrifice(e.target.value)} placeholder="e.g. 2.0" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1" />
+                  ) : (
+                    <select value={fciSize} onChange={e => setFciSize(e.target.value)} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mt-1">
+                      <option value="">— Select Size —</option>
+                      {FCI_VI_SIZES.map(s => <option key={s} value={s}>{s}&quot;</option>)}
+                    </select>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Results */}
+          {fciCv && fciSize && (
+            <div className="space-y-3">
+              {/* Summary */}
+              <div className="bg-teal-50 border border-teal-200 rounded-lg p-3 flex gap-6 text-sm flex-wrap">
+                <span className="text-gray-600"><b>Class:</b> {fciClass}</span>
+                <span className="text-gray-600"><b>Cv:</b> {fciCv}</span>
+                <span className="text-gray-600"><b>Size:</b> {fciSize}&quot;</span>
+                {fciClass === 'V' && <span className="text-gray-600"><b>Orifice:</b> {fciOrifice || '-'}&quot;</span>}
+              </div>
+
+              {/* Reference Table — All Classes */}
+              <div className="overflow-auto border rounded-lg">
+                <table className="text-sm w-full">
+                  <thead className="bg-teal-600 text-white sticky top-0">
+                    <tr>
+                      <th className="px-3 py-2 text-center text-xs w-12">Class</th>
+                      <th className="px-3 py-2 text-left text-xs">Test Medium</th>
+                      <th className="px-3 py-2 text-left text-xs">Test Pressure</th>
+                      <th className="px-3 py-2 text-left text-xs">Allowable Leakage</th>
+                      <th className="px-3 py-2 text-left text-xs">Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {FCI_CLASSES.map((cls, i) => {
+                      const cv = parseFloat(fciCv) || 0
+                      const sz = parseFloat(fciSize) || 0
+                      const orifice = parseFloat(fciOrifice) || 0
+                      const isSelected = cls === fciClass
+                      const medians = cls === 'I' ? 'N/A' : cls === 'V' ? 'Water' : cls === 'VI' ? 'Air / N₂' : 'Water'
+                      const pressures = cls === 'I' ? 'N/A' : cls === 'V' ? 'Max ΔP (rated)' : cls === 'VI' ? '50 psi (0.34 MPa)' : 'Max ΔP (rated)'
+                      const descriptions = [
+                        'No seat leakage test required',
+                        '0.5% of rated Cv — minimal seat leakage',
+                        '0.1% of rated Cv — tight shutoff',
+                        '0.01% of rated Cv — very tight shutoff',
+                        'Water test — 5 × 10⁻⁴ ml/min per inch orifice dia',
+                        'Air test — bubble count method per valve size',
+                      ]
+                      return (
+                        <tr key={i} className={`${isSelected ? 'bg-teal-50 font-semibold' : i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                          <td className="px-3 py-2 text-center text-xs">
+                            {isSelected && <span className="text-teal-600 mr-1">&#9654;</span>}
+                            <b>Class {cls}</b>
+                          </td>
+                          <td className="px-3 py-2 text-xs text-gray-600">{medians}</td>
+                          <td className="px-3 py-2 text-xs text-gray-700 font-mono">{pressures}</td>
+                          <td className="px-3 py-2 text-xs text-gray-700 font-mono whitespace-pre-line">
+                            {cls === 'I' ? '-' : FCI_LEAKAGE(cls, cv, sz, orifice)}
+                          </td>
+                          <td className="px-3 py-2 text-xs text-gray-500">{descriptions[i]}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Selected Class Detail */}
+              {fciCv && fciSize && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-xs text-blue-800 space-y-2">
+                  <p className="font-semibold text-sm text-blue-900">Class {fciClass} — Detailed Result</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p><b>Test Medium:</b> {fciClass === 'I' ? 'N/A' : fciClass === 'V' ? 'Water' : fciClass === 'VI' ? 'Air / N₂ (inert gas)' : 'Water'}</p>
+                      <p><b>Test Pressure:</b> {fciClass === 'I' ? 'N/A' : fciClass === 'V' ? 'Maximum rated differential pressure (closed valve)' : fciClass === 'VI' ? '50 ± 5 psi (0.34 ± 0.03 MPa)' : 'Maximum rated differential pressure (closed valve)'}</p>
+                      <p><b>Valve Position:</b> Fully open, then close for test</p>
+                    </div>
+                    <div>
+                      <p><b>Allowable Leakage:</b></p>
+                      <p className="font-mono mt-1">{FCI_LEAKAGE(fciClass, parseFloat(fciCv) || 0, parseFloat(fciSize) || 0, parseFloat(fciOrifice) || 0)}</p>
+                      <p className="mt-1"><b>Formula:</b></p>
+                      <p className="font-mono text-[10px]">
+                        {fciClass === 'I' && 'No test required'}
+                        {fciClass === 'II' && `Allowable = 0.5% × Cv = 0.005 × ${fciCv} = ${(parseFloat(fciCv) * 0.005).toFixed(4)}`}
+                        {fciClass === 'III' && `Allowable = 0.1% × Cv = 0.001 × ${fciCv} = ${(parseFloat(fciCv) * 0.001).toFixed(4)}`}
+                        {fciClass === 'IV' && `Allowable = 0.01% × Cv = 0.0001 × ${fciCv} = ${(parseFloat(fciCv) * 0.0001).toFixed(5)}`}
+                        {fciClass === 'V' && `Allowable = 0.000005 × orifice dia = 0.000005 × ${fciOrifice || '?'} = ${((parseFloat(fciOrifice) || 0) * 0.000005).toExponential(2)} ml/min`}
+                        {fciClass === 'VI' && `Bubbles/min per API 6D Table — size ${fciSize}"`}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Notes */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs text-yellow-800 space-y-1">
+                <p><b>Notes — FCI 70-2 Control Valve Seat Leakage:</b></p>
+                <ul className="list-disc ml-4 space-y-0.5">
+                  <li>Class I: No test required (optional visual inspection)</li>
+                  <li>Class II: 0.5% of rated Cv — minimal seat leakage</li>
+                  <li>Class III: 0.1% of rated Cv — tight shutoff</li>
+                  <li>Class IV: 0.01% of rated Cv — very tight shutoff (most common spec)</li>
+                  <li>Class V: Water test — 5 × 10⁻⁴ ml/min per inch of orifice diameter at max ΔP</li>
+                  <li>Class VI: Air/N₂ test — bubble count method per valve size at 50 psi</li>
+                  <li>All classes except V &amp; VI use water at maximum rated differential pressure</li>
+                  <li>Cv = rated flow coefficient of the valve (full open)</li>
+                  <li>SCFH conversion: 1 ml/min = 0.00211976 SCFH</li>
+                </ul>
               </div>
             </div>
           )}
