@@ -65,7 +65,7 @@ export type ValveTestData = {
 }
 
 const TEST_LABELS: Record<string, string> = {
-  actuator: 'ACTUATOR LEAK TEST', shell: 'HYDROSTATIC SHELL TEST', hp_seat: 'HIGH-PRESSURE SEAT TEST',
+  actuator: 'ACTUATOR LEAK TEST', backseat: 'BACKSEAT TEST', shell: 'HYDROSTATIC SHELL TEST', hp_seat: 'HIGH-PRESSURE SEAT TEST',
   seat_leak: 'SEAT LEAK TEST', hp_closure: 'HIGH PRESSURE CLOSURE TEST', lp_closure: 'LOW PRESSURE CLOSURE TEST',
   hp_closure_b: 'HIGH PRESSURE CLOSURE TEST B', lp_closure_a: 'LOW PRESSURE CLOSURE TEST A',
   hp_closure_a: 'HIGH PRESSURE CLOSURE TEST A', lp_closure_b: 'LOW PRESSURE CLOSURE TEST B',
@@ -75,6 +75,7 @@ const TEST_LABELS: Record<string, string> = {
 
 const TEST_CRITERIA: Record<string, string> = {
   actuator: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
+  backseat: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
   shell: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
   hp_seat: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
   seat_leak: '',
