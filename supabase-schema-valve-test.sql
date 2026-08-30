@@ -149,6 +149,7 @@ ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS lp_closure_b_result text;
 ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS lp_closure_b_remark text;
 
 ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS spec_isa_75_19_01 boolean default false;
+ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS spec_api6a boolean default false;
 
 ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS seat_leak_pressure_psi numeric;
 ALTER TABLE report_valve_test ADD COLUMN IF NOT EXISTS seat_leak_duration_min numeric;

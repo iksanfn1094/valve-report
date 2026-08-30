@@ -528,6 +528,7 @@ async function drawTestSection(doc: jsPDF, report: ReportData, valveTest: ValveT
   const specs: string[] = []
   if (valveTest.spec_api6d) specs.push('API 6D')
   if (valveTest.spec_api598) specs.push('API 598')
+  if (valveTest.spec_api6a) specs.push('API 6A')
   if (valveTest.spec_fci70_2) specs.push('FCI-70-2')
   if (valveTest.spec_isa_75_19_01) specs.push('ISA-75.19.01')
   if (valveTest.spec_3_15_psi) specs.push('3-15 PSI')

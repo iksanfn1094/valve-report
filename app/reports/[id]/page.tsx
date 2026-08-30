@@ -66,6 +66,7 @@ type ValveTest = {
   id?: string
   spec_api6d: boolean
   spec_api598: boolean
+  spec_api6a: boolean
   spec_fci70_2: boolean
   spec_isa_75_19_01: boolean
   spec_3_15_psi: boolean
@@ -274,7 +275,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('inspection')
   const [valveTest, setValveTest] = useState<ValveTest>({
-    spec_api6d: false, spec_api598: false, spec_fci70_2: false, spec_isa_75_19_01: false, spec_3_15_psi: false, spec_sop_no: '', spec_others: '', spec_cv: '',
+    spec_api6d: false, spec_api598: false, spec_api6a: false, spec_fci70_2: false, spec_isa_75_19_01: false, spec_3_15_psi: false, spec_sop_no: '', spec_others: '', spec_cv: '',
     shell_pressure_psi: '', shell_duration_min: '', shell_acceptance: 'NO VISIBLE LEAKAGE & PRESSURE DROP', shell_start_test: '', shell_finish_test: '', shell_result: '', shell_remark: '',
     hp_seat_pressure_psi: '', hp_seat_duration_min: '', hp_seat_acceptance: '', hp_seat_start_test: '', hp_seat_finish_test: '', hp_seat_result: '', hp_seat_remark: '',
     hp_closure_a_pressure_psi: '', hp_closure_a_duration_min: '', hp_closure_a_acceptance: '', hp_closure_a_start_test: '', hp_closure_a_finish_test: '', hp_closure_a_result: '', hp_closure_a_remark: '',
@@ -452,7 +453,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       if (testRes.data) {
         const t = testRes.data
         setValveTest({
-          spec_api6d: t.spec_api6d ?? false, spec_api598: t.spec_api598 ?? false, spec_fci70_2: t.spec_fci70_2 ?? false, spec_isa_75_19_01: t.spec_isa_75_19_01 ?? false, spec_3_15_psi: t.spec_3_15_psi ?? false, spec_sop_no: t.spec_sop_no ?? '', spec_others: t.spec_others ?? '', spec_cv: t.spec_cv?.toString() ?? '',
+          spec_api6d: t.spec_api6d ?? false, spec_api598: t.spec_api598 ?? false, spec_api6a: t.spec_api6a ?? false, spec_fci70_2: t.spec_fci70_2 ?? false, spec_isa_75_19_01: t.spec_isa_75_19_01 ?? false, spec_3_15_psi: t.spec_3_15_psi ?? false, spec_sop_no: t.spec_sop_no ?? '', spec_others: t.spec_others ?? '', spec_cv: t.spec_cv?.toString() ?? '',
           shell_pressure_psi: t.shell_pressure_psi?.toString() ?? '', shell_duration_min: t.shell_duration_min?.toString() ?? '', shell_acceptance: t.shell_acceptance ?? 'NO VISIBLE LEAKAGE & PRESSURE DROP', shell_start_test: t.shell_start_test ?? '', shell_finish_test: t.shell_finish_test ?? '', shell_result: t.shell_result ?? '', shell_remark: t.shell_remark ?? '',
           hp_seat_pressure_psi: t.hp_seat_pressure_psi?.toString() ?? '', hp_seat_duration_min: t.hp_seat_duration_min?.toString() ?? '', hp_seat_acceptance: t.hp_seat_acceptance ?? '', hp_seat_start_test: t.hp_seat_start_test ?? '', hp_seat_finish_test: t.hp_seat_finish_test ?? '', hp_seat_result: t.hp_seat_result ?? '', hp_seat_remark: t.hp_seat_remark ?? '',
           hp_closure_a_pressure_psi: t.hp_closure_a_pressure_psi?.toString() ?? '', hp_closure_a_duration_min: t.hp_closure_a_duration_min?.toString() ?? '', hp_closure_a_acceptance: t.hp_closure_a_acceptance ?? '', hp_closure_a_start_test: t.hp_closure_a_start_test ?? '', hp_closure_a_finish_test: t.hp_closure_a_finish_test ?? '', hp_closure_a_result: t.hp_closure_a_result ?? '', hp_closure_a_remark: t.hp_closure_a_remark ?? '',
@@ -780,7 +781,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     const toNum = (v: string) => v ? Number(v) : null
     const payload = {
       report_id: id,
-      spec_api6d: valveTest.spec_api6d, spec_api598: valveTest.spec_api598, spec_fci70_2: valveTest.spec_fci70_2, spec_isa_75_19_01: valveTest.spec_isa_75_19_01, spec_3_15_psi: valveTest.spec_3_15_psi, spec_sop_no: valveTest.spec_sop_no, spec_others: valveTest.spec_others, spec_cv: toNum(valveTest.spec_cv),
+      spec_api6d: valveTest.spec_api6d, spec_api598: valveTest.spec_api598, spec_api6a: valveTest.spec_api6a, spec_fci70_2: valveTest.spec_fci70_2, spec_isa_75_19_01: valveTest.spec_isa_75_19_01, spec_3_15_psi: valveTest.spec_3_15_psi, spec_sop_no: valveTest.spec_sop_no, spec_others: valveTest.spec_others, spec_cv: toNum(valveTest.spec_cv),
       shell_pressure_psi: toNum(valveTest.shell_pressure_psi), shell_duration_min: toNum(valveTest.shell_duration_min), shell_acceptance: valveTest.shell_acceptance, shell_start_test: valveTest.shell_start_test, shell_finish_test: valveTest.shell_finish_test, shell_result: valveTest.shell_result, shell_remark: valveTest.shell_remark,
       hp_seat_pressure_psi: toNum(valveTest.hp_seat_pressure_psi), hp_seat_duration_min: toNum(valveTest.hp_seat_duration_min), hp_seat_acceptance: valveTest.hp_seat_acceptance, hp_seat_start_test: valveTest.hp_seat_start_test, hp_seat_finish_test: valveTest.hp_seat_finish_test, hp_seat_result: valveTest.hp_seat_result, hp_seat_remark: valveTest.hp_seat_remark,
       hp_closure_a_pressure_psi: toNum(valveTest.hp_closure_a_pressure_psi), hp_closure_a_duration_min: toNum(valveTest.hp_closure_a_duration_min), hp_closure_a_acceptance: valveTest.hp_closure_a_acceptance, hp_closure_a_start_test: valveTest.hp_closure_a_start_test, hp_closure_a_finish_test: valveTest.hp_closure_a_finish_test, hp_closure_a_result: valveTest.hp_closure_a_result, hp_closure_a_remark: valveTest.hp_closure_a_remark,
@@ -814,7 +815,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     alert('Valve Test tersimpan!')
   }
 
-  function autoFillStandart(api: 'api6d' | 'api598') {
+  function autoFillStandart(api: 'api6d' | 'api598' | 'api6a') {
     if (!report) return
     const classMap: Record<string, number> = { '150': 285, '300': 740, '400': 1000, '600': 1500, '900': 2250, '1500': 3750, '2500': 6250 }
     const classVal = (report.class ?? '').replace(/[^0-9]/g, '')
@@ -833,6 +834,13 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       seatD = sz <= 4 ? '2' : sz <= 18 ? '5' : '10'
       hpClosureP = seatP
       lpClosureP = '95'
+    } else if (api === 'api6a') {
+      shellP = String(Math.round(pr * 1.5))
+      shellD = sz <= 4 ? '2' : sz <= 10 ? '15' : sz <= 18 ? '30' : '45'
+      seatP = String(Math.round(pr * 1.1))
+      seatD = sz <= 4 ? '2' : sz <= 10 ? '15' : sz <= 18 ? '30' : '45'
+      hpClosureP = seatP
+      lpClosureP = '80'
     } else {
       shellP = String(Math.round(pr * 1.5))
       shellD = sz <= 2 ? '0.25' : sz <= 4 ? '1' : sz <= 8 ? '2' : sz <= 14 ? '5' : '10'
@@ -1411,6 +1419,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         <div className="flex flex-wrap gap-4 text-sm">
           <label className="flex items-center gap-2"><input type="checkbox" checked={valveTest.spec_api6d} onChange={e => { updateTestField('spec_api6d', e.target.checked); if (e.target.checked) autoFillStandart('api6d') }} className="accent-blue-600" /><span className="font-medium">API 6D</span></label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={valveTest.spec_api598} onChange={e => { updateTestField('spec_api598', e.target.checked); if (e.target.checked) autoFillStandart('api598') }} className="accent-blue-600" /><span className="font-medium">API 598</span></label>
+          <label className="flex items-center gap-2"><input type="checkbox" checked={valveTest.spec_api6a} onChange={e => { updateTestField('spec_api6a', e.target.checked); if (e.target.checked) autoFillStandart('api6a') }} className="accent-blue-600" /><span className="font-medium">API 6A</span></label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={valveTest.spec_fci70_2} onChange={e => updateTestField('spec_fci70_2', e.target.checked)} className="accent-blue-600" /><span className="font-medium">FCI-70-2</span></label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={valveTest.spec_isa_75_19_01} onChange={e => updateTestField('spec_isa_75_19_01', e.target.checked)} className="accent-blue-600" /><span className="font-medium">ISA-75.19.01</span></label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={valveTest.spec_3_15_psi} onChange={e => { updateTestField('spec_3_15_psi', e.target.checked); if (e.target.checked) { setValveTest(prev => ({ ...prev, spec_3_15_psi: true, func0_pressure_psi: '3', func25_pressure_psi: '6', func50_pressure_psi: '9', func75_pressure_psi: '12', func100_pressure_psi: '15' })) } else { setValveTest(prev => ({ ...prev, spec_3_15_psi: false, func0_pressure_psi: '', func25_pressure_psi: '', func50_pressure_psi: '', func75_pressure_psi: '', func100_pressure_psi: '' })) } }} className="accent-blue-600" /><span className="font-medium">3-15 PSI</span></label>
