@@ -69,7 +69,8 @@ const TEST_LABELS: Record<string, string> = {
   seat_leak: 'SEAT LEAK TEST', hp_closure: 'HIGH PRESSURE CLOSURE TEST', lp_closure: 'LOW PRESSURE CLOSURE TEST',
   hp_closure_b: 'HIGH PRESSURE CLOSURE TEST B', lp_closure_a: 'LOW PRESSURE CLOSURE TEST A',
   hp_closure_a: 'HIGH PRESSURE CLOSURE TEST A', lp_closure_b: 'LOW PRESSURE CLOSURE TEST B',
-  seat: 'LOW-PRESSURE SEAT LEAK TEST', func0: 'FUNCTION TEST 0%', func25: 'FUNCTION TEST 25%',
+  seat: 'LOW-PRESSURE SEAT LEAK TEST', lp_seat: 'LOW PRESSURE SEAT TEST',
+  func0: 'FUNCTION TEST 0%', func25: 'FUNCTION TEST 25%',
   func50: 'FUNCTION TEST 50%', func75: 'FUNCTION TEST 75%', func100: 'FUNCTION TEST 100%',
 }
 
@@ -85,6 +86,7 @@ const TEST_CRITERIA: Record<string, string> = {
   lp_closure_a: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
   hp_closure_a: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
   lp_closure_b: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
+  lp_seat: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
   seat: '',
   func0: 'SMOOTH and LINEAR', func25: 'SMOOTH and LINEAR',
   func50: 'SMOOTH and LINEAR', func75: 'SMOOTH and LINEAR', func100: 'SMOOTH and LINEAR',

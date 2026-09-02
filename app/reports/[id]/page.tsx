@@ -225,6 +225,7 @@ const TEST_OPTIONS = [
   { key: 'lp_closure', label: 'LOW PRESSURE CLOSURE TEST', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
   { key: 'lp_closure_a', label: 'LOW PRESSURE CLOSURE TEST A', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
   { key: 'lp_closure_b', label: 'LOW PRESSURE CLOSURE TEST B', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
+  { key: 'lp_seat', label: 'LOW PRESSURE SEAT TEST', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
   { key: 'seat', label: 'LOW-PRESSURE SEAT LEAK TEST', criteria: '' },
   { key: 'seat_leak', label: 'SEAT LEAK TEST', criteria: '' },
 ]
@@ -864,6 +865,8 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       seat_duration_min: seatD,
       seat_leak_pressure_psi: '80',
       seat_leak_duration_min: seatD,
+      lp_seat_pressure_psi: lpClosureP,
+      lp_seat_duration_min: seatD,
       hp_closure_pressure_psi: hpClosureP,
       hp_closure_duration_min: seatD,
       backseat_pressure_psi: hpClosureP,
