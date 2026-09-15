@@ -289,7 +289,7 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
     ['Junk', report.category === 'junk'],
   ]
   cats.forEach(([label, checked], ci) => {
-    const cy = startY2 + 8.5 + ci * 5
+    const cy = startY2 + 7.5 + ci * 5
     doc.setDrawColor(0)
     doc.setLineWidth(0.3)
     doc.rect(rightX + 3, cy, 3, 3, 'S')
