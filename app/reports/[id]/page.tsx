@@ -978,6 +978,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                     <option value="inspection">Inspection</option>
                     <option value="minor">Minor</option>
                     <option value="major">Major</option>
+                    <option value="junk">Junk</option>
                   </select>
                 ) : key === 'report_date' ? (
                   <input

@@ -20,7 +20,7 @@ create table report_inspection (
   end_connection text,
   operated text,
   location text,
-  category text check (category in ('inspection','minor','major')),
+  category text check (category in ('inspection','minor','major','junk')),
   inspector_name text,
   engineering_name text,
   review_name text,

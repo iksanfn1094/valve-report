@@ -1,0 +1,2 @@
+ALTER TABLE report_inspection DROP CONSTRAINT IF EXISTS report_inspection_category_check;
+ALTER TABLE report_inspection ADD CONSTRAINT report_inspection_category_check CHECK (category IN ('inspection','minor','major','junk'));

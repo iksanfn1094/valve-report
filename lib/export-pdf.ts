@@ -285,6 +285,7 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
     ['Inspection', report.category === 'inspection'],
     ['Minor', report.category === 'minor'],
     ['Major', report.category === 'major'],
+    ['Junk', report.category === 'junk'],
   ]
   cats.forEach(([label, checked], ci) => {
     const cy = startY2 + 10 + ci * 5

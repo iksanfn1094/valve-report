@@ -27,6 +27,7 @@ const CATEGORIES = [
   { value: 'inspection', label: 'Inspection' },
   { value: 'minor', label: 'Minor Repair' },
   { value: 'major', label: 'Major Repair' },
+  { value: 'junk', label: 'Junk' },
 ]
 
 type ValveLookup = Record<string, { valve_type: string; size: string; class: string; end_connection: string; manufacture: string; serial_no: string; location: string; ex_station: string; project: string; ro_no: string }>
