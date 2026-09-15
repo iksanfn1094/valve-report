@@ -23,10 +23,15 @@ type Report = {
   ex_station: string | null
   ro_no: string | null
   inspector_name: string | null
+  inspector_role: string | null
   engineering_name: string | null
+  engineering_role: string | null
   review_name: string | null
+  review_role: string | null
   acknowledge_name: string | null
+  acknowledge_role: string | null
   witness_name: string | null
+  witness_role: string | null
   category: string | null
   status: string
   findings: string | null
@@ -1648,11 +1653,21 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 <th className="border px-2 py-2 text-xs">WITNESS AND APPROVED BY</th>
               </tr>
               <tr className="bg-gray-100">
-                <th className="border px-2 py-1 text-xs font-normal">QC INSPECTED</th>
-                <th className="border px-2 py-1 text-xs font-normal">ENGINEERING</th>
-                <th className="border px-2 py-1 text-xs font-normal">WORKSHOP CO.</th>
-                <th className="border px-2 py-1 text-xs font-normal">PROJECT MANAGER</th>
-                <th className="border px-2 py-1 text-xs font-normal">QC REP. PHE-ONWJ</th>
+                <th className="border px-2 py-1 text-xs font-normal">
+                  <input className="w-full border-0 bg-transparent text-xs text-center focus:outline-none focus:border-b focus:border-blue-500" value={report.inspector_role || 'QC'} onChange={(e) => updateReportField('inspector_role', e.target.value)} onBlur={(e) => updateReportField('inspector_role', e.target.value)} />
+                </th>
+                <th className="border px-2 py-1 text-xs font-normal">
+                  <input className="w-full border-0 bg-transparent text-xs text-center focus:outline-none focus:border-b focus:border-blue-500" value={report.engineering_role || 'ENGINEERING'} onChange={(e) => updateReportField('engineering_role', e.target.value)} onBlur={(e) => updateReportField('engineering_role', e.target.value)} />
+                </th>
+                <th className="border px-2 py-1 text-xs font-normal">
+                  <input className="w-full border-0 bg-transparent text-xs text-center focus:outline-none focus:border-b focus:border-blue-500" value={report.review_role || 'WORKSHOP CO.'} onChange={(e) => updateReportField('review_role', e.target.value)} onBlur={(e) => updateReportField('review_role', e.target.value)} />
+                </th>
+                <th className="border px-2 py-1 text-xs font-normal">
+                  <input className="w-full border-0 bg-transparent text-xs text-center focus:outline-none focus:border-b focus:border-blue-500" value={report.acknowledge_role || 'PROJECT MANAGER'} onChange={(e) => updateReportField('acknowledge_role', e.target.value)} onBlur={(e) => updateReportField('acknowledge_role', e.target.value)} />
+                </th>
+                <th className="border px-2 py-1 text-xs font-normal">
+                  <input className="w-full border-0 bg-transparent text-xs text-center focus:outline-none focus:border-b focus:border-blue-500" value={report.witness_role || 'QC REP. PHE-ONWJ'} onChange={(e) => updateReportField('witness_role', e.target.value)} onBlur={(e) => updateReportField('witness_role', e.target.value)} />
+                </th>
               </tr>
             </thead>
             <tbody>

@@ -183,12 +183,13 @@ function drawSignature(doc: jsPDF, report: ReportData, M: number, CW: number, st
   y += 6
   const sigBoxW = (CW - 12) / 5
   const sigBoxH = 32
+  const rep = report as unknown as { engineering_name?: string; witness_name?: string; review_name?: string; acknowledge_name?: string; inspector_role?: string; engineering_role?: string; review_role?: string; acknowledge_role?: string; witness_role?: string }
   const sigBoxes = [
-    { title: 'INSPECTED BY', role: 'QC INSPECTED', name: report.inspector_name || '-' },
-    { title: 'CHECKED BY', role: 'ENGINEERING', name: (report as unknown as { engineering_name?: string }).engineering_name || '-' },
-    { title: 'REVIEW BY', role: 'WORKSHOP COORDINATOR', name: (report as unknown as { review_name?: string }).review_name || 'WISTANTO' },
-    { title: 'ACKNOWLEDGE BY', role: 'PROJECT MANAGER', name: (report as unknown as { acknowledge_name?: string }).acknowledge_name || 'FN IKSAN' },
-    { title: 'WITNESS AND APPROVED BY', role: 'QC REP. PHE-ONWJ', name: (report as unknown as { witness_name?: string }).witness_name || 'HERI DIAN' },
+    { title: 'INSPECTED BY', role: rep.inspector_role || 'QC', name: report.inspector_name || '-' },
+    { title: 'CHECKED BY', role: rep.engineering_role || 'ENGINEERING', name: rep.engineering_name || '-' },
+    { title: 'REVIEW BY', role: rep.review_role || 'WORKSHOP CO.', name: rep.review_name || 'WISTANTO' },
+    { title: 'ACKNOWLEDGE BY', role: rep.acknowledge_role || 'PROJECT MANAGER', name: rep.acknowledge_name || 'FN IKSAN' },
+    { title: 'WITNESS AND APPROVED BY', role: rep.witness_role || 'QC REP. PHE-ONWJ', name: rep.witness_name || 'HERI DIAN' },
   ]
   sigBoxes.forEach((sb, i) => {
     const sx = M + i * (sigBoxW + 3)
