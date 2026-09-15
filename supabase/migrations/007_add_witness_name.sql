@@ -1,0 +1,1 @@
+ALTER TABLE report_inspection ADD COLUMN IF NOT EXISTS witness_name text;

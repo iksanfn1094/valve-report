@@ -24,6 +24,7 @@ type Report = {
   ro_no: string | null
   inspector_name: string | null
   engineering_name: string | null
+  witness_name: string | null
   category: string | null
   status: string
   findings: string | null
@@ -1673,7 +1674,15 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 </td>
                 <td className="border px-2 py-1 text-center font-medium">WISTANTO</td>
                 <td className="border px-2 py-1 text-center font-medium">FN IKSAN</td>
-                <td className="border px-2 py-1 text-center font-medium">HERI DIAN</td>
+                <td className="border px-2 py-1">
+                  <input
+                    className="w-full border-0 bg-transparent text-sm text-center font-medium focus:outline-none focus:border-b focus:border-blue-500"
+                    value={report.witness_name || 'HERI DIAN'}
+                    placeholder="Nama..."
+                    onChange={(e) => updateReportField('witness_name', e.target.value)}
+                    onBlur={(e) => updateReportField('witness_name', e.target.value)}
+                  />
+                </td>
               </tr>
             </tbody>
           </table>
