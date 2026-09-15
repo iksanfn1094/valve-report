@@ -44,12 +44,6 @@ export default function ReportsList() {
 
         if (!error && data && data.length > 0) {
           try {
-            const needsCustomerFix = data.filter((r) => r.customer !== 'PHE ONWJ')
-            if (needsCustomerFix.length > 0) {
-              await supabase.from('report_inspection').update({ customer: 'PHE ONWJ' }).in('id', needsCustomerFix.map((r) => r.id))
-              setReports((prev) => prev.map((r) => r.customer !== 'PHE ONWJ' ? { ...r, customer: 'PHE ONWJ' } : r))
-            }
-
             const res = await fetch('/api/valve-lookup')
             const valveData: Record<string, { valve_type: string; size: string; class: string; end_connection: string; manufacture: string; serial_no: string; location: string; ex_station: string; project: string; ro_no: string }> = await res.json()
             let hasUpdate = false
