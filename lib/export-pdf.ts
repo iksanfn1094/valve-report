@@ -273,7 +273,7 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
     drawField(doc, label, val || '', M, y, leftW, 5.5, 35)
     y += 5.5
   })
-  const boxH = 56
+  const boxH = 44
   const startY2 = startY + 3
   doc.setDrawColor(...GRID)
   doc.setLineWidth(0.3)
@@ -289,7 +289,7 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
     ['Junk', report.category === 'junk'],
   ]
   cats.forEach(([label, checked], ci) => {
-    const cy = startY2 + 10 + ci * 5.5
+    const cy = startY2 + 10 + ci * 5
     doc.setDrawColor(0)
     doc.setLineWidth(0.3)
     doc.rect(rightX + 3, cy, 3, 3, 'S')
@@ -302,15 +302,15 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
     doc.setFontSize(6.5)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(0, 0, 0)
-    doc.text(label, rightX + 9, cy + 2.8)
+    doc.text(label, rightX + 9, cy + 2.5)
   })
   if (showRecommendation) {
     doc.setFontSize(8)
     doc.setFont('helvetica', 'bold')
-    doc.text('Recommendation', rightX + 2, startY2 + 34)
+    doc.text('Recommendation', rightX + 2, startY2 + 29)
     const recs: [string, string][] = [['C', 'Cleaning'], ['RP', 'Repair'], ['RE', 'Replace']]
     recs.forEach(([code, label], ci) => {
-      const cy = startY2 + 37.5 + ci * 5
+      const cy = startY2 + 33 + ci * 3.5
       doc.setFontSize(6)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(0, 0, 0)
