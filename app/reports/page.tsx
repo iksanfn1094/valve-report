@@ -97,6 +97,12 @@ export default function ReportsList() {
     setReports(reports.filter((r) => r.id !== reportId))
   }
 
+  async function updateJobNumber(reportId: string, value: string) {
+    const { error } = await supabase.from('report_inspection').update({ job_number: value }).eq('id', reportId)
+    if (error) return alert('Update failed: ' + error.message)
+    setReports((prev) => prev.map((r) => (r.id === reportId ? { ...r, job_number: value } : r)))
+  }
+
   async function generatePdf(reportId: string) {
     setGeneratingPdf(reportId)
     try {
@@ -253,7 +259,18 @@ export default function ReportsList() {
             <tbody>
               {filtered.map((r) => (
                 <tr key={r.id} className="hover:bg-gray-50">
-                  <td className="border px-3 py-2 font-medium">{r.job_number}</td>
+                  <td className="border px-3 py-2 font-medium">
+                    <input
+                      className="w-full border-0 bg-transparent text-sm font-medium focus:outline-none focus:border-b focus:border-blue-500"
+                      defaultValue={r.job_number}
+                      onBlur={(e) => {
+                        if (e.target.value !== r.job_number) updateJobNumber(r.id, e.target.value)
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                      }}
+                    />
+                  </td>
                   <td className="border px-3 py-2">{r.report_no || '-'}</td>
                   <td className="border px-3 py-2">{r.report_date || '-'}</td>
                   <td className="border px-3 py-2">{r.project || '-'}</td>
