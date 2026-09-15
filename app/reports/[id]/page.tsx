@@ -24,6 +24,8 @@ type Report = {
   ro_no: string | null
   inspector_name: string | null
   engineering_name: string | null
+  review_name: string | null
+  acknowledge_name: string | null
   witness_name: string | null
   category: string | null
   status: string
@@ -1672,8 +1674,24 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                     onBlur={(e) => updateReportField('engineering_name', e.target.value)}
                   />
                 </td>
-                <td className="border px-2 py-1 text-center font-medium">WISTANTO</td>
-                <td className="border px-2 py-1 text-center font-medium">FN IKSAN</td>
+                <td className="border px-2 py-1">
+                  <input
+                    className="w-full border-0 bg-transparent text-sm text-center font-medium focus:outline-none focus:border-b focus:border-blue-500"
+                    value={report.review_name || 'WISTANTO'}
+                    placeholder="Nama..."
+                    onChange={(e) => updateReportField('review_name', e.target.value)}
+                    onBlur={(e) => updateReportField('review_name', e.target.value)}
+                  />
+                </td>
+                <td className="border px-2 py-1">
+                  <input
+                    className="w-full border-0 bg-transparent text-sm text-center font-medium focus:outline-none focus:border-b focus:border-blue-500"
+                    value={report.acknowledge_name || 'FN IKSAN'}
+                    placeholder="Nama..."
+                    onChange={(e) => updateReportField('acknowledge_name', e.target.value)}
+                    onBlur={(e) => updateReportField('acknowledge_name', e.target.value)}
+                  />
+                </td>
                 <td className="border px-2 py-1">
                   <input
                     className="w-full border-0 bg-transparent text-sm text-center font-medium focus:outline-none focus:border-b focus:border-blue-500"

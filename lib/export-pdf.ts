@@ -186,8 +186,8 @@ function drawSignature(doc: jsPDF, report: ReportData, M: number, CW: number, st
   const sigBoxes = [
     { title: 'INSPECTED BY', role: 'QC INSPECTED', name: report.inspector_name || '-' },
     { title: 'CHECKED BY', role: 'ENGINEERING', name: (report as unknown as { engineering_name?: string }).engineering_name || '-' },
-    { title: 'REVIEW BY', role: 'WORKSHOP COORDINATOR', name: 'WISTANTO' },
-    { title: 'ACKNOWLEDGE BY', role: 'PROJECT MANAGER', name: 'FN IKSAN' },
+    { title: 'REVIEW BY', role: 'WORKSHOP COORDINATOR', name: (report as unknown as { review_name?: string }).review_name || 'WISTANTO' },
+    { title: 'ACKNOWLEDGE BY', role: 'PROJECT MANAGER', name: (report as unknown as { acknowledge_name?: string }).acknowledge_name || 'FN IKSAN' },
     { title: 'WITNESS AND APPROVED BY', role: 'QC REP. PHE-ONWJ', name: (report as unknown as { witness_name?: string }).witness_name || 'HERI DIAN' },
   ]
   sigBoxes.forEach((sb, i) => {
