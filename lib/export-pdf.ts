@@ -281,7 +281,7 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
   doc.setFontSize(8)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(0, 0, 0)
-  doc.text('Repair Category', rightX + 2, startY2 + 6)
+  doc.text('Repair Category', rightX + 2, startY2 + 5)
   const cats: [string, boolean][] = [
     ['Inspection', report.category === 'inspection'],
     ['Minor', report.category === 'minor'],
