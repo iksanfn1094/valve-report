@@ -303,8 +303,8 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   const [valveTest, setValveTest] = useState<ValveTest>({
     spec_api6d: false, spec_api598: false, spec_api6a: false, spec_fci70_2: false, spec_isa_75_19_01: false, spec_3_15_psi: false, spec_sop_no: '', spec_others: '', spec_cv: '',
     shell_pressure_psi: '', shell_duration_min: '', shell_acceptance: 'NO VISIBLE LEAKAGE & PRESSURE DROP', shell_start_test: '', shell_finish_test: '', shell_result: '', shell_remark: '',
-    shell_test_i_pressure_psi: '', shell_test_i_duration_min: '', shell_test_i_acceptance: '', shell_test_i_start_test: '', shell_test_i_finish_test: '', shell_test_i_result: '', shell_test_i_remark: '',
-    shell_test_ii_pressure_psi: '', shell_test_ii_duration_min: '', shell_test_ii_acceptance: '', shell_test_ii_start_test: '', shell_test_ii_finish_test: '', shell_test_ii_result: '', shell_test_ii_remark: '',
+    shell_test_i_pressure_psi: '', shell_test_i_duration_min: '', shell_test_i_acceptance: '', shell_test_i_start_test: '', shell_test_i_finish_test: '', shell_test_i_result: '', shell_test_i_remark: 'NO VISIBLE LEAKAGE',
+    shell_test_ii_pressure_psi: '', shell_test_ii_duration_min: '', shell_test_ii_acceptance: '', shell_test_ii_start_test: '', shell_test_ii_finish_test: '', shell_test_ii_result: '', shell_test_ii_remark: 'NO VISIBLE LEAKAGE',
     hp_seat_pressure_psi: '', hp_seat_duration_min: '', hp_seat_acceptance: '', hp_seat_start_test: '', hp_seat_finish_test: '', hp_seat_result: '', hp_seat_remark: '',
     hp_closure_a_pressure_psi: '', hp_closure_a_duration_min: '', hp_closure_a_acceptance: '', hp_closure_a_start_test: '', hp_closure_a_finish_test: '', hp_closure_a_result: '', hp_closure_a_remark: '',
     lp_closure_b_pressure_psi: '', lp_closure_b_duration_min: '', lp_closure_b_acceptance: '', lp_closure_b_start_test: '', lp_closure_b_finish_test: '', lp_closure_b_result: '', lp_closure_b_remark: '',
@@ -340,7 +340,13 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   function updateTestRowKey(idx: number, key: string) {
     const rows = getTestRows()
     rows[idx] = key
-    setValveTest(prev => ({ ...prev, test_rows: JSON.stringify(rows) }))
+    setValveTest(prev => {
+      const patch: Partial<ValveTest> = { test_rows: JSON.stringify(rows) }
+      if ((key === 'shell_test_i' || key === 'shell_test_ii') && !prev[`${key}_remark`]) {
+        patch[`${key}_remark` as keyof ValveTest] = 'NO VISIBLE LEAKAGE'
+      }
+      return { ...prev, ...patch }
+    })
   }
 
   function removeTestRow(idx: number) {
@@ -483,8 +489,8 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         setValveTest({
           spec_api6d: t.spec_api6d ?? false, spec_api598: t.spec_api598 ?? false, spec_api6a: t.spec_api6a ?? false, spec_fci70_2: t.spec_fci70_2 ?? false, spec_isa_75_19_01: t.spec_isa_75_19_01 ?? false, spec_3_15_psi: t.spec_3_15_psi ?? false, spec_sop_no: t.spec_sop_no ?? '', spec_others: t.spec_others ?? '', spec_cv: t.spec_cv?.toString() ?? '',
           shell_pressure_psi: t.shell_pressure_psi?.toString() ?? '', shell_duration_min: t.shell_duration_min?.toString() ?? '', shell_acceptance: t.shell_acceptance ?? 'NO VISIBLE LEAKAGE & PRESSURE DROP', shell_start_test: t.shell_start_test ?? '', shell_finish_test: t.shell_finish_test ?? '', shell_result: t.shell_result ?? '', shell_remark: t.shell_remark ?? '',
-          shell_test_i_pressure_psi: t.shell_test_i_pressure_psi?.toString() ?? '', shell_test_i_duration_min: t.shell_test_i_duration_min?.toString() ?? '', shell_test_i_acceptance: t.shell_test_i_acceptance ?? '', shell_test_i_start_test: t.shell_test_i_start_test ?? '', shell_test_i_finish_test: t.shell_test_i_finish_test ?? '', shell_test_i_result: t.shell_test_i_result ?? '', shell_test_i_remark: t.shell_test_i_remark ?? '',
-          shell_test_ii_pressure_psi: t.shell_test_ii_pressure_psi?.toString() ?? '', shell_test_ii_duration_min: t.shell_test_ii_duration_min?.toString() ?? '', shell_test_ii_acceptance: t.shell_test_ii_acceptance ?? '', shell_test_ii_start_test: t.shell_test_ii_start_test ?? '', shell_test_ii_finish_test: t.shell_test_ii_finish_test ?? '', shell_test_ii_result: t.shell_test_ii_result ?? '', shell_test_ii_remark: t.shell_test_ii_remark ?? '',
+          shell_test_i_pressure_psi: t.shell_test_i_pressure_psi?.toString() ?? '', shell_test_i_duration_min: t.shell_test_i_duration_min?.toString() ?? '', shell_test_i_acceptance: t.shell_test_i_acceptance ?? '', shell_test_i_start_test: t.shell_test_i_start_test ?? '', shell_test_i_finish_test: t.shell_test_i_finish_test ?? '', shell_test_i_result: t.shell_test_i_result ?? '', shell_test_i_remark: t.shell_test_i_remark ?? 'NO VISIBLE LEAKAGE',
+          shell_test_ii_pressure_psi: t.shell_test_ii_pressure_psi?.toString() ?? '', shell_test_ii_duration_min: t.shell_test_ii_duration_min?.toString() ?? '', shell_test_ii_acceptance: t.shell_test_ii_acceptance ?? '', shell_test_ii_start_test: t.shell_test_ii_start_test ?? '', shell_test_ii_finish_test: t.shell_test_ii_finish_test ?? '', shell_test_ii_result: t.shell_test_ii_result ?? '', shell_test_ii_remark: t.shell_test_ii_remark ?? 'NO VISIBLE LEAKAGE',
           hp_seat_pressure_psi: t.hp_seat_pressure_psi?.toString() ?? '', hp_seat_duration_min: t.hp_seat_duration_min?.toString() ?? '', hp_seat_acceptance: t.hp_seat_acceptance ?? '', hp_seat_start_test: t.hp_seat_start_test ?? '', hp_seat_finish_test: t.hp_seat_finish_test ?? '', hp_seat_result: t.hp_seat_result ?? '', hp_seat_remark: t.hp_seat_remark ?? '',
           hp_closure_a_pressure_psi: t.hp_closure_a_pressure_psi?.toString() ?? '', hp_closure_a_duration_min: t.hp_closure_a_duration_min?.toString() ?? '', hp_closure_a_acceptance: t.hp_closure_a_acceptance ?? '', hp_closure_a_start_test: t.hp_closure_a_start_test ?? '', hp_closure_a_finish_test: t.hp_closure_a_finish_test ?? '', hp_closure_a_result: t.hp_closure_a_result ?? '', hp_closure_a_remark: t.hp_closure_a_remark ?? '',
           lp_closure_b_pressure_psi: t.lp_closure_b_pressure_psi?.toString() ?? '', lp_closure_b_duration_min: t.lp_closure_b_duration_min?.toString() ?? '', lp_closure_b_acceptance: t.lp_closure_b_acceptance ?? '', lp_closure_b_start_test: t.lp_closure_b_start_test ?? '', lp_closure_b_finish_test: t.lp_closure_b_finish_test ?? '', lp_closure_b_result: t.lp_closure_b_result ?? '', lp_closure_b_remark: t.lp_closure_b_remark ?? '',
