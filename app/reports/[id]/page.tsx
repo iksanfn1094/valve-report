@@ -263,7 +263,7 @@ const COMPONENTS = [
   'Mounting actuator', 'Mounting bracket', 'Nut', 'O-ring', 'O-Ring Body Bonnet',
   'O-Ring Stem', 'Other', 'Packing', 'Piston', 'Piston rod', 'Plug', 'Plug fitting',
   'Retainer', 'Sealant fitting', 'Seat', 'Seat insert', 'Seat Pocket', 'Seat ring',
-  'Shaft', 'Spring', 'Spring actuator', 'Spring washer', 'Stem', 'Stem actuator',
+  'Segment', 'Shaft', 'Spring', 'Spring actuator', 'Spring washer', 'Stem', 'Stem actuator',
   'Stem holder', 'Stopper', 'Stud and nut', 'Stud Bolt Body Bonnet',
   'Stud Bolt Mounting Adaptor', 'Stuffing box', 'Thrust Bearing', 'Top plate',
   'Torque shaft', 'Travel indicator', 'Trunnion', 'Trunnion plate', 'Valve Unit',
