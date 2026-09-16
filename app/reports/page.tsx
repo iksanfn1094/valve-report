@@ -91,16 +91,27 @@ export default function ReportsList() {
     setReports(reports.filter((r) => r.id !== reportId))
   }
 
-  async function updateJobNumber(reportId: string, value: string) {
-    const { error } = await supabase.from('report_inspection').update({ job_number: value }).eq('id', reportId)
+  async function updateField(reportId: string, field: keyof Report, value: string) {
+    const { error } = await supabase.from('report_inspection').update({ [field]: value }).eq('id', reportId)
     if (error) return alert('Update failed: ' + error.message)
-    setReports((prev) => prev.map((r) => (r.id === reportId ? { ...r, job_number: value } : r)))
+    setReports((prev) => prev.map((r) => (r.id === reportId ? { ...r, [field]: value } : r)))
   }
 
-  async function updateCustomer(reportId: string, value: string) {
-    const { error } = await supabase.from('report_inspection').update({ customer: value }).eq('id', reportId)
-    if (error) return alert('Update failed: ' + error.message)
-    setReports((prev) => prev.map((r) => (r.id === reportId ? { ...r, customer: value } : r)))
+  function EditableCell({ report, field }: { report: Report; field: keyof Report }) {
+    const current = (report[field] as string | null) || ''
+    return (
+      <input
+        className="w-full border-0 bg-transparent text-sm focus:outline-none focus:border-b focus:border-blue-500"
+        defaultValue={current}
+        placeholder="-"
+        onBlur={(e) => {
+          if (e.target.value !== current) updateField(report.id, field, e.target.value)
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+        }}
+      />
+    )
   }
 
   async function generatePdf(reportId: string) {
@@ -264,32 +275,22 @@ export default function ReportsList() {
                       className="w-full border-0 bg-transparent text-sm font-medium focus:outline-none focus:border-b focus:border-blue-500"
                       defaultValue={r.job_number}
                       onBlur={(e) => {
-                        if (e.target.value !== r.job_number) updateJobNumber(r.id, e.target.value)
+                        if (e.target.value !== r.job_number) updateField(r.id, 'job_number', e.target.value)
                       }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
                       }}
                     />
                   </td>
-                  <td className="border px-3 py-2">{r.report_no || '-'}</td>
-                  <td className="border px-3 py-2">{r.report_date || '-'}</td>
-                  <td className="border px-3 py-2">{r.project || '-'}</td>
+                  <td className="border px-3 py-2"><EditableCell report={r} field="report_no" /></td>
+                  <td className="border px-3 py-2"><EditableCell report={r} field="report_date" /></td>
+                  <td className="border px-3 py-2"><EditableCell report={r} field="project" /></td>
                   <td className="border px-3 py-2">
-                    <input
-                      className="w-full border-0 bg-transparent text-sm focus:outline-none focus:border-b focus:border-blue-500"
-                      defaultValue={r.customer || ''}
-                      placeholder="-"
-                      onBlur={(e) => {
-                        if (e.target.value !== (r.customer || '')) updateCustomer(r.id, e.target.value)
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
-                      }}
-                    />
+                    <EditableCell report={r} field="customer" />
                   </td>
-                  <td className="border px-3 py-2">{r.valve_type || '-'}</td>
-                  <td className="border px-3 py-2">{r.size || '-'}</td>
-                  <td className="border px-3 py-2">{r.class || '-'}</td>
+                  <td className="border px-3 py-2"><EditableCell report={r} field="valve_type" /></td>
+                  <td className="border px-3 py-2"><EditableCell report={r} field="size" /></td>
+                  <td className="border px-3 py-2"><EditableCell report={r} field="class" /></td>
                   <td className="border px-3 py-2">
                     <span className={`text-xs px-2 py-1 rounded-full ${catColor(r.category)}`}>
                       {r.category || '-'}
