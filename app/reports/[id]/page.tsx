@@ -255,7 +255,7 @@ const COMPONENTS = [
   'Bolt', 'Bolt and nut', 'Bonnet', 'Brace rod', 'Cage', 'Center bar', 'Centralizing',
   'Clapper disc arm', 'Coupling box', 'Cover housing', 'Cylinder', 'Diaphragm',
   'Diaphragm actuator', 'Diaphragm case', 'Diaphragm plate', 'Disc', 'Drain fitting',
-  'Drain plug', 'End cap', 'Flange', 'Flange And RF', 'Frame', 'Gasket',
+  'Drain plug', 'End cap', 'Flange', 'Flange And RF', 'Frame', 'Gasket', 'Gate',
   'Gate Spring', 'Gear operator', 'Gland packing', 'Graphite Packing Body Bonnet',
   'Grease fitting', 'Guide', 'Guide block', 'Handle', 'Handwheel', 'Hinge',
   'Holder Valve', 'Housing', 'Indicator ring', 'Instrumen', 'Internal cylinder',
