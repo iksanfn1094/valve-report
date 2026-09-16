@@ -252,13 +252,14 @@ function formatDateEN(val: string | null): string {
 
 const COMPONENTS = [
   'Actuator', 'Adaptor cylinder', 'Backseat', 'Ball', 'Bearing', 'Body', 'Body gasket',
-  'Bolt', 'Bolt and nut', 'Bonnet', 'Brace rod', 'Cage', 'Center bar', 'Clapper disc arm',
-  'Coupling box', 'Cover housing', 'Cylinder', 'Diaphragm', 'Diaphragm actuator',
-  'Diaphragm case', 'Diaphragm plate', 'Disc', 'Drain fitting', 'Drain plug', 'End cap',
-  'Flange', 'Flange And RF', 'Frame', 'Gasket', 'Gear operator', 'Gland packing',
-  'Graphite Packing Body Bonnet', 'Grease fitting', 'Guide', 'Guide block', 'Handle',
-  'Handwheel', 'Hinge', 'Holder Valve', 'Housing', 'Indicator ring', 'Instrumen',
-  'Internal cylinder', 'Key', 'Lever Arm', 'Lever/handwheel', 'Lock nut',
+  'Bolt', 'Bolt and nut', 'Bonnet', 'Brace rod', 'Cage', 'Center bar', 'Centralizing',
+  'Clapper disc arm', 'Coupling box', 'Cover housing', 'Cylinder', 'Diaphragm',
+  'Diaphragm actuator', 'Diaphragm case', 'Diaphragm plate', 'Disc', 'Drain fitting',
+  'Drain plug', 'End cap', 'Flange', 'Flange And RF', 'Frame', 'Gasket',
+  'Gate Spring', 'Gear operator', 'Gland packing', 'Graphite Packing Body Bonnet',
+  'Grease fitting', 'Guide', 'Guide block', 'Handle', 'Handwheel', 'Hinge',
+  'Holder Valve', 'Housing', 'Indicator ring', 'Instrumen', 'Internal cylinder',
+  'Key', 'Lever Arm', 'Lever lock arm', 'Lever/handwheel', 'Lock disc', 'Lock nut',
   'Mounting actuator', 'Mounting bracket', 'Nut', 'O-ring', 'O-Ring Body Bonnet',
   'O-Ring Stem', 'Other', 'Packing', 'Piston', 'Piston rod', 'Plug', 'Plug fitting',
   'Retainer', 'Sealant fitting', 'Seat', 'Seat insert', 'Seat Pocket', 'Seat ring',
@@ -266,7 +267,7 @@ const COMPONENTS = [
   'Stem holder', 'Stopper', 'Stud and nut', 'Stud Bolt Body Bonnet',
   'Stud Bolt Mounting Adaptor', 'Stuffing box', 'Thrust Bearing', 'Top plate',
   'Torque shaft', 'Travel indicator', 'Trunnion', 'Trunnion plate', 'Valve Unit',
-  'Washer', 'Washer Stem', 'Wave spring', 'Worm gear', 'Worm shaft', 'Yoke',
+  'Washer', 'Washer Stem', 'Wave spring', 'Wedge', 'Worm gear', 'Worm shaft', 'Yoke',
 ]
 
 export default function ReportDetail({ params }: { params: Promise<{ id: string }> }) {
