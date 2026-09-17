@@ -146,6 +146,20 @@ type ValveTest = {
   hp_closure_finish_test: string
   hp_closure_result: string
   hp_closure_remark: string
+  hp_closure_seat_test_i_pressure_psi: string
+  hp_closure_seat_test_i_duration_min: string
+  hp_closure_seat_test_i_acceptance: string
+  hp_closure_seat_test_i_start_test: string
+  hp_closure_seat_test_i_finish_test: string
+  hp_closure_seat_test_i_result: string
+  hp_closure_seat_test_i_remark: string
+  hp_closure_seat_test_ii_pressure_psi: string
+  hp_closure_seat_test_ii_duration_min: string
+  hp_closure_seat_test_ii_acceptance: string
+  hp_closure_seat_test_ii_start_test: string
+  hp_closure_seat_test_ii_finish_test: string
+  hp_closure_seat_test_ii_result: string
+  hp_closure_seat_test_ii_remark: string
   backseat_pressure_psi: string
   backseat_duration_min: string
   backseat_acceptance: string
@@ -244,6 +258,8 @@ const TEST_OPTIONS = [
   { key: 'hp_closure', label: 'HIGH PRESSURE CLOSURE TEST', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
   { key: 'hp_closure_a', label: 'HIGH PRESSURE CLOSURE TEST A', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
   { key: 'hp_closure_b', label: 'HIGH PRESSURE CLOSURE TEST B', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
+  { key: 'hp_closure_seat_test_i', label: 'HIGH PRESSURE CLOSURE SEAT TEST I', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
+  { key: 'hp_closure_seat_test_ii', label: 'HIGH PRESSURE CLOSURE SEAT TEST II', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
   { key: 'hp_seat', label: 'HIGH-PRESSURE SEAT TEST', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
   { key: 'shell', label: 'HYDROSTATIC SHELL TEST', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
   { key: 'shell_test_i', label: 'SHELL TEST I', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
@@ -313,6 +329,8 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     lp_seat_pressure_psi: '', lp_seat_duration_min: '', lp_seat_acceptance: '', lp_seat_start_test: '', lp_seat_finish_test: '', lp_seat_result: '', lp_seat_remark: '',
     seat_leak_pressure_psi: '', seat_leak_duration_min: '', seat_leak_acceptance: '', seat_leak_start_test: '', seat_leak_finish_test: '', seat_leak_result: '', seat_leak_remark: '',
     hp_closure_pressure_psi: '', hp_closure_duration_min: '', hp_closure_acceptance: '', hp_closure_start_test: '', hp_closure_finish_test: '', hp_closure_result: '', hp_closure_remark: '',
+    hp_closure_seat_test_i_pressure_psi: '', hp_closure_seat_test_i_duration_min: '', hp_closure_seat_test_i_acceptance: '', hp_closure_seat_test_i_start_test: '', hp_closure_seat_test_i_finish_test: '', hp_closure_seat_test_i_result: '', hp_closure_seat_test_i_remark: '',
+    hp_closure_seat_test_ii_pressure_psi: '', hp_closure_seat_test_ii_duration_min: '', hp_closure_seat_test_ii_acceptance: '', hp_closure_seat_test_ii_start_test: '', hp_closure_seat_test_ii_finish_test: '', hp_closure_seat_test_ii_result: '', hp_closure_seat_test_ii_remark: '',
     backseat_pressure_psi: '', backseat_duration_min: '', backseat_acceptance: '', backseat_start_test: '', backseat_finish_test: '', backseat_result: '', backseat_remark: '',
     lp_closure_pressure_psi: '', lp_closure_duration_min: '', lp_closure_acceptance: '', lp_closure_start_test: '', lp_closure_finish_test: '', lp_closure_result: '', lp_closure_remark: '',
     hp_closure_b_pressure_psi: '', hp_closure_b_duration_min: '', hp_closure_b_acceptance: '', hp_closure_b_start_test: '', hp_closure_b_finish_test: '', hp_closure_b_result: '', hp_closure_b_remark: '',
@@ -499,6 +517,8 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           lp_seat_pressure_psi: t.lp_seat_pressure_psi?.toString() ?? '', lp_seat_duration_min: t.lp_seat_duration_min?.toString() ?? '', lp_seat_acceptance: t.lp_seat_acceptance ?? '', lp_seat_start_test: t.lp_seat_start_test ?? '', lp_seat_finish_test: t.lp_seat_finish_test ?? '', lp_seat_result: t.lp_seat_result ?? '', lp_seat_remark: t.lp_seat_remark ?? '',
           seat_leak_pressure_psi: t.seat_leak_pressure_psi?.toString() ?? '', seat_leak_duration_min: t.seat_leak_duration_min?.toString() ?? '', seat_leak_acceptance: t.seat_leak_acceptance ?? '', seat_leak_start_test: t.seat_leak_start_test ?? '', seat_leak_finish_test: t.seat_leak_finish_test ?? '', seat_leak_result: t.seat_leak_result ?? '', seat_leak_remark: t.seat_leak_remark ?? '',
           hp_closure_pressure_psi: t.hp_closure_pressure_psi?.toString() ?? '', hp_closure_duration_min: t.hp_closure_duration_min?.toString() ?? '', hp_closure_acceptance: t.hp_closure_acceptance ?? '', hp_closure_start_test: t.hp_closure_start_test ?? '', hp_closure_finish_test: t.hp_closure_finish_test ?? '', hp_closure_result: t.hp_closure_result ?? '', hp_closure_remark: t.hp_closure_remark ?? '',
+          hp_closure_seat_test_i_pressure_psi: t.hp_closure_seat_test_i_pressure_psi?.toString() ?? '', hp_closure_seat_test_i_duration_min: t.hp_closure_seat_test_i_duration_min?.toString() ?? '', hp_closure_seat_test_i_acceptance: t.hp_closure_seat_test_i_acceptance ?? '', hp_closure_seat_test_i_start_test: t.hp_closure_seat_test_i_start_test ?? '', hp_closure_seat_test_i_finish_test: t.hp_closure_seat_test_i_finish_test ?? '', hp_closure_seat_test_i_result: t.hp_closure_seat_test_i_result ?? '', hp_closure_seat_test_i_remark: t.hp_closure_seat_test_i_remark ?? '',
+          hp_closure_seat_test_ii_pressure_psi: t.hp_closure_seat_test_ii_pressure_psi?.toString() ?? '', hp_closure_seat_test_ii_duration_min: t.hp_closure_seat_test_ii_duration_min?.toString() ?? '', hp_closure_seat_test_ii_acceptance: t.hp_closure_seat_test_ii_acceptance ?? '', hp_closure_seat_test_ii_start_test: t.hp_closure_seat_test_ii_start_test ?? '', hp_closure_seat_test_ii_finish_test: t.hp_closure_seat_test_ii_finish_test ?? '', hp_closure_seat_test_ii_result: t.hp_closure_seat_test_ii_result ?? '', hp_closure_seat_test_ii_remark: t.hp_closure_seat_test_ii_remark ?? '',
           backseat_pressure_psi: t.backseat_pressure_psi?.toString() ?? '', backseat_duration_min: t.backseat_duration_min?.toString() ?? '', backseat_acceptance: t.backseat_acceptance ?? '', backseat_start_test: t.backseat_start_test ?? '', backseat_finish_test: t.backseat_finish_test ?? '', backseat_result: t.backseat_result ?? '', backseat_remark: t.backseat_remark ?? '',
           lp_closure_pressure_psi: t.lp_closure_pressure_psi?.toString() ?? '', lp_closure_duration_min: t.lp_closure_duration_min?.toString() ?? '', lp_closure_acceptance: t.lp_closure_acceptance ?? '', lp_closure_start_test: t.lp_closure_start_test ?? '', lp_closure_finish_test: t.lp_closure_finish_test ?? '', lp_closure_result: t.lp_closure_result ?? '', lp_closure_remark: t.lp_closure_remark ?? '',
           hp_closure_b_pressure_psi: t.hp_closure_b_pressure_psi?.toString() ?? '', hp_closure_b_duration_min: t.hp_closure_b_duration_min?.toString() ?? '', hp_closure_b_acceptance: t.hp_closure_b_acceptance ?? '', hp_closure_b_start_test: t.hp_closure_b_start_test ?? '', hp_closure_b_finish_test: t.hp_closure_b_finish_test ?? '', hp_closure_b_result: t.hp_closure_b_result ?? '', hp_closure_b_remark: t.hp_closure_b_remark ?? '',
@@ -884,6 +904,8 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       lp_seat_pressure_psi: toNum(valveTest.lp_seat_pressure_psi), lp_seat_duration_min: toNum(valveTest.lp_seat_duration_min), lp_seat_acceptance: valveTest.lp_seat_acceptance, lp_seat_start_test: valveTest.lp_seat_start_test, lp_seat_finish_test: valveTest.lp_seat_finish_test, lp_seat_result: valveTest.lp_seat_result, lp_seat_remark: valveTest.lp_seat_remark,
       seat_leak_pressure_psi: toNum(valveTest.seat_leak_pressure_psi), seat_leak_duration_min: toNum(valveTest.seat_leak_duration_min), seat_leak_acceptance: valveTest.seat_leak_acceptance, seat_leak_start_test: valveTest.seat_leak_start_test, seat_leak_finish_test: valveTest.seat_leak_finish_test, seat_leak_result: valveTest.seat_leak_result, seat_leak_remark: valveTest.seat_leak_remark,
       hp_closure_pressure_psi: toNum(valveTest.hp_closure_pressure_psi), hp_closure_duration_min: toNum(valveTest.hp_closure_duration_min), hp_closure_acceptance: valveTest.hp_closure_acceptance, hp_closure_start_test: valveTest.hp_closure_start_test, hp_closure_finish_test: valveTest.hp_closure_finish_test, hp_closure_result: valveTest.hp_closure_result, hp_closure_remark: valveTest.hp_closure_remark,
+      hp_closure_seat_test_i_pressure_psi: toNum(valveTest.hp_closure_seat_test_i_pressure_psi), hp_closure_seat_test_i_duration_min: toNum(valveTest.hp_closure_seat_test_i_duration_min), hp_closure_seat_test_i_acceptance: valveTest.hp_closure_seat_test_i_acceptance, hp_closure_seat_test_i_start_test: valveTest.hp_closure_seat_test_i_start_test, hp_closure_seat_test_i_finish_test: valveTest.hp_closure_seat_test_i_finish_test, hp_closure_seat_test_i_result: valveTest.hp_closure_seat_test_i_result, hp_closure_seat_test_i_remark: valveTest.hp_closure_seat_test_i_remark,
+      hp_closure_seat_test_ii_pressure_psi: toNum(valveTest.hp_closure_seat_test_ii_pressure_psi), hp_closure_seat_test_ii_duration_min: toNum(valveTest.hp_closure_seat_test_ii_duration_min), hp_closure_seat_test_ii_acceptance: valveTest.hp_closure_seat_test_ii_acceptance, hp_closure_seat_test_ii_start_test: valveTest.hp_closure_seat_test_ii_start_test, hp_closure_seat_test_ii_finish_test: valveTest.hp_closure_seat_test_ii_finish_test, hp_closure_seat_test_ii_result: valveTest.hp_closure_seat_test_ii_result, hp_closure_seat_test_ii_remark: valveTest.hp_closure_seat_test_ii_remark,
       backseat_pressure_psi: toNum(valveTest.backseat_pressure_psi), backseat_duration_min: toNum(valveTest.backseat_duration_min), backseat_acceptance: valveTest.backseat_acceptance, backseat_start_test: valveTest.backseat_start_test, backseat_finish_test: valveTest.backseat_finish_test, backseat_result: valveTest.backseat_result, backseat_remark: valveTest.backseat_remark,
       lp_closure_pressure_psi: toNum(valveTest.lp_closure_pressure_psi), lp_closure_duration_min: toNum(valveTest.lp_closure_duration_min), lp_closure_acceptance: valveTest.lp_closure_acceptance, lp_closure_start_test: valveTest.lp_closure_start_test, lp_closure_finish_test: valveTest.lp_closure_finish_test, lp_closure_result: valveTest.lp_closure_result, lp_closure_remark: valveTest.lp_closure_remark,
       hp_closure_b_pressure_psi: toNum(valveTest.hp_closure_b_pressure_psi), hp_closure_b_duration_min: toNum(valveTest.hp_closure_b_duration_min), hp_closure_b_acceptance: valveTest.hp_closure_b_acceptance, hp_closure_b_start_test: valveTest.hp_closure_b_start_test, hp_closure_b_finish_test: valveTest.hp_closure_b_finish_test, hp_closure_b_result: valveTest.hp_closure_b_result, hp_closure_b_remark: valveTest.hp_closure_b_remark,
@@ -967,6 +989,10 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       lp_seat_duration_min: seatD,
       hp_closure_pressure_psi: hpClosureP,
       hp_closure_duration_min: seatD,
+      hp_closure_seat_test_i_pressure_psi: hpClosureP,
+      hp_closure_seat_test_i_duration_min: seatD,
+      hp_closure_seat_test_ii_pressure_psi: hpClosureP,
+      hp_closure_seat_test_ii_duration_min: seatD,
       backseat_pressure_psi: hpClosureP,
       backseat_duration_min: seatD,
       lp_closure_pressure_psi: lpClosureP,
