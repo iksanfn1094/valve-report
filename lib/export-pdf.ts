@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { SubDatasheet, DATASHEET_LABELS, DATASHEET_GROUPS, datasheetGroupTitle } from './datasheet'
 
 type ReportData = {
   job_number: string
@@ -21,6 +22,7 @@ type ReportData = {
   findings: string | null
   recommendations: string | null
   conclusion: string | null
+  sub_datasheet: SubDatasheet | null
 }
 
 type ItemData = {
@@ -347,6 +349,53 @@ function drawResumeSection(doc: jsPDF, report: ReportData, M: number, CW: number
       styles: { fontSize: 8, cellPadding: 4, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak', minCellHeight: 30 },
     })
     y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 5
+  }
+
+  if (report.sub_datasheet && report.sub_datasheet.type === 'choke') {
+    const ds = report.sub_datasheet
+    const label = (report.valve_type ?? '').toUpperCase().includes('CHOKE') ? 'CHOKE VALVE' : 'SUB DATASHEET'
+    doc.setTextColor(...BLUE)
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'bold')
+    doc.text('SUB DATASHEET - ' + label, M, y)
+    y += 6
+
+    for (const group of DATASHEET_GROUPS) {
+      const entries = DATASHEET_LABELS[group] || {}
+      const keys = Object.keys(entries)
+      const labelsArr = keys.map(k => entries[k])
+      const values = keys.map(k => (ds[group][k] || '-'))
+
+      doc.setTextColor(...BLUE)
+      doc.setFontSize(7)
+      doc.setFont('helvetica', 'bold')
+      doc.text(datasheetGroupTitle(group), M, y)
+      y += 1.5
+
+      const widthC = 55
+      const twoCol = group === 'job_info' ? false : keys.length % 2 === 0
+      const colW = twoCol ? (CW - widthC) / 2 : CW
+      const rows: [string, string][] = []
+      if (twoCol) {
+        for (let i = 0; i < keys.length; i += 2) {
+          rows.push([`${labelsArr[i]} : ${values[i]}`, i + 1 < keys.length ? `${labelsArr[i + 1]} : ${values[i + 1]}` : ''])
+        }
+      } else {
+        for (let i = 0; i < keys.length; i++) rows.push([`${labelsArr[i]} : ${values[i]}`, ''])
+      }
+
+      autoTable(doc, {
+        startY: y,
+        margin: { left: M, right: M },
+        body: rows,
+        styles: { fontSize: 6, cellPadding: 1.5, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak' },
+        columnStyles: {
+          0: { cellWidth: twoCol ? colW : CW, halign: 'left' },
+          1: { cellWidth: twoCol ? colW : undefined, halign: 'left' },
+        },
+      })
+      y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
+    }
   }
 
   return y

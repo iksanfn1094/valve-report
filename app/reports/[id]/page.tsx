@@ -4,6 +4,7 @@ import { useEffect, useState, use, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { exportReportPDF } from '@/lib/export-pdf'
 import { exportReportExcel } from '@/lib/export-excel'
+import { SubDatasheet, DatasheetGroupKey, defaultChokeDatasheet, DATASHEET_LABELS, DATASHEET_GROUPS, datasheetGroupTitle } from '@/lib/datasheet'
 
 type Report = {
   id: string
@@ -37,6 +38,7 @@ type Report = {
   findings: string | null
   recommendations: string | null
   conclusion: string | null
+  sub_datasheet: SubDatasheet | null
 }
 
 type Item = {
@@ -341,9 +343,9 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     const rows = getTestRows()
     rows[idx] = key
     setValveTest(prev => {
-      const patch: Partial<ValveTest> = { test_rows: JSON.stringify(rows) }
+      const patch: Record<string, unknown> = { test_rows: JSON.stringify(rows) }
       if ((key === 'shell_test_i' || key === 'shell_test_ii') && !prev[`${key}_remark`]) {
-        patch[`${key}_remark` as keyof ValveTest] = 'NO VISIBLE LEAKAGE'
+        patch[`${key}_remark`] = 'NO VISIBLE LEAKAGE'
       }
       return { ...prev, ...patch }
     })
@@ -751,6 +753,47 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     setReport((prev) => prev ? { ...prev, ...updates } : prev)
   }
 
+  function ensureSubDatasheet(): SubDatasheet {
+    if (report?.sub_datasheet?.type === 'choke') return report.sub_datasheet
+    const ds = defaultChokeDatasheet()
+    return ds
+  }
+
+  async function saveSubDatasheet() {
+    if (!report) return
+    const { error } = await supabase
+      .from('report_inspection')
+      .update({ sub_datasheet: report.sub_datasheet })
+      .eq('id', id)
+    if (error) return alert(error.message)
+  }
+
+  function updateSubDatasheetGroup(group: DatasheetGroupKey, field: string, value: string) {
+    if (!report) return
+    const ds = report.sub_datasheet?.type === 'choke' ? report.sub_datasheet : ensureSubDatasheet()
+    const current = ds[group] ?? {}
+    const next = { ...ds, [group]: { ...current, [field]: value } } as SubDatasheet
+    setReport((prev) => prev ? { ...prev, sub_datasheet: next } : prev)
+  }
+
+  function initSubDatasheet() {
+    if (!report) return
+    const ds = ensureSubDatasheet()
+    const hydrated: SubDatasheet = { ...ds }
+    const r = report
+    hydrated.job_info.tag_id = hydrated.job_info.tag_id || r.job_number || ''
+    hydrated.job_info.customer = hydrated.job_info.customer || r.customer || ''
+    hydrated.job_info.ex_station_pf = hydrated.job_info.ex_station_pf || r.ex_station || ''
+    hydrated.job_info.project = hydrated.job_info.project || r.project || ''
+    hydrated.job_info.ro_no = hydrated.job_info.ro_no || r.ro_no || ''
+    hydrated.job_info.insp_report_no = hydrated.job_info.insp_report_no || r.report_no || ''
+    hydrated.job_info.insp_report_date = hydrated.job_info.insp_report_date || r.report_date || ''
+    hydrated.valve_data.size_class = hydrated.valve_data.size_class || [r.size, r.class].filter(Boolean).join(' / ')
+    hydrated.valve_data.end_connection = hydrated.valve_data.end_connection || r.end_connection || ''
+    hydrated.valve_data.operated = hydrated.valve_data.operated || r.operated || ''
+    setReport((prev) => prev ? { ...prev, sub_datasheet: hydrated } : prev)
+  }
+
   const BOM_SECTIONS = [
     { value: 'valve', label: 'Valve Parts' },
     { value: 'machining', label: 'Machining' },
@@ -1112,6 +1155,98 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
               </tr>
             </tbody>
           </table>
+
+          <div className="mt-6">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-base font-bold text-gray-800">SUB DATASHEET</h4>
+              <div className="flex items-center gap-2">
+                {(report.valve_type ?? '').toUpperCase().includes('CHOKE') && (
+                  <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">CHOKE VALVE</span>
+                )}
+                <button
+                  onClick={() => saveSubDatasheet()}
+                  className="text-xs px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition"
+                >
+                  Simpan Datasheet
+                </button>
+              </div>
+            </div>
+            {report.sub_datasheet?.type === 'choke' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  {DATASHEET_GROUPS.filter(g => g !== 'technical_req').slice(0, 2).map((group) => (
+                    <div key={group} className="border rounded-lg overflow-hidden">
+                      <div className="bg-blue-900 text-white px-3 py-1.5 text-xs font-bold uppercase">{datasheetGroupTitle(group)}</div>
+                      <div className="divide-y divide-gray-100">
+                        {Object.entries(DATASHEET_LABELS[group] || {}).map(([key, label]) => (
+                          <div key={key} className="grid grid-cols-[130px_1fr] text-sm">
+                            <div className="px-3 py-1.5 bg-gray-50 text-xs font-semibold text-gray-700">{label}</div>
+                            <input
+                              className="w-full px-3 py-1.5 text-xs focus:outline-none focus:bg-blue-50"
+                              value={(report.sub_datasheet as SubDatasheet)[group]?.[key] || ''}
+                              onChange={(e) => updateSubDatasheetGroup(group, key, e.target.value)}
+                              onBlur={() => saveSubDatasheet()}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-3">
+                  {DATASHEET_GROUPS.filter(g => g !== 'technical_req').slice(2).map((group) => (
+                    <div key={group} className="border rounded-lg overflow-hidden">
+                      <div className="bg-blue-900 text-white px-3 py-1.5 text-xs font-bold uppercase">{datasheetGroupTitle(group)}</div>
+                      <div className="divide-y divide-gray-100">
+                        {Object.entries(DATASHEET_LABELS[group] || {}).map(([key, label]) => (
+                          <div key={key} className="grid grid-cols-[130px_1fr] text-sm">
+                            <div className="px-3 py-1.5 bg-gray-50 text-xs font-semibold text-gray-700">{label}</div>
+                            <input
+                              className="w-full px-3 py-1.5 text-xs focus:outline-none focus:bg-blue-50"
+                              value={(report.sub_datasheet as SubDatasheet)[group]?.[key] || ''}
+                              onChange={(e) => updateSubDatasheetGroup(group, key, e.target.value)}
+                              onBlur={() => saveSubDatasheet()}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => { initSubDatasheet(); }}
+                className="text-sm px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+              >
+                + Buat Sub Datasheet (Choke Valve)
+              </button>
+            )}
+
+            {DATASHEET_GROUPS.includes('technical_req' as DatasheetGroupKey) && report.sub_datasheet?.type === 'choke' && (
+              <div className="mt-3 border rounded-lg overflow-hidden">
+                <div className="bg-blue-900 text-white px-3 py-1.5 text-xs font-bold uppercase">
+                  {datasheetGroupTitle('technical_req')} - DOCUMENTATION
+                </div>
+                <div className="divide-y divide-gray-100">
+                  {Object.entries(DATASHEET_LABELS['technical_req'] || {}).map(([key, label]) => (
+                    <label key={key} className="flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={(report.sub_datasheet as SubDatasheet).technical_req?.[key] === 'yes' || (report.sub_datasheet as SubDatasheet).technical_req?.[key] === 'true'}
+                        onChange={(e) => {
+                          updateSubDatasheetGroup('technical_req', key, e.target.checked ? 'yes' : 'no')
+                          saveSubDatasheet()
+                        }}
+                        className="accent-blue-600"
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
