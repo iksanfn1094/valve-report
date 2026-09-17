@@ -353,11 +353,11 @@ function drawResumeSection(doc: jsPDF, report: ReportData, M: number, CW: number
 
   if (report.sub_datasheet && report.sub_datasheet.type === 'choke') {
     const ds = report.sub_datasheet
-    const label = (report.valve_type ?? '').toUpperCase().includes('CHOKE') ? 'CHOKE VALVE' : 'SUB DATASHEET'
+    const label = (report.valve_type ?? '').toUpperCase().includes('CHOKE') ? 'CHOKE VALVE' : 'DATASHEET'
     doc.setTextColor(...BLUE)
     doc.setFontSize(10)
     doc.setFont('helvetica', 'bold')
-    doc.text('SUB DATASHEET - ' + label, M, y)
+    doc.text('DATASHEET - ' + label, M, y)
     y += 6
 
     for (const group of DATASHEET_GROUPS) {

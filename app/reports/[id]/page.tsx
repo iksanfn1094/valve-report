@@ -781,17 +781,31 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     const ds = ensureSubDatasheet()
     const hydrated: SubDatasheet = { ...ds }
     const r = report
+    const sizeClass = [r.size, r.class].filter(Boolean).join(' / ')
+    hydrated.valve_data.sn_fig = hydrated.valve_data.sn_fig || r.serial_no || ''
+    hydrated.valve_data.brand = hydrated.valve_data.brand || r.manufacture || ''
+    hydrated.valve_data.type_model = hydrated.valve_data.type_model || r.valve_type || ''
+    hydrated.valve_data.size_class = hydrated.valve_data.size_class || sizeClass
+    hydrated.valve_data.end_connection = hydrated.valve_data.end_connection || r.end_connection || ''
+    hydrated.valve_data.operated = hydrated.valve_data.operated || r.operated || ''
     hydrated.job_info.tag_id = hydrated.job_info.tag_id || r.job_number || ''
+    hydrated.job_info.size_class = hydrated.job_info.size_class || sizeClass
     hydrated.job_info.customer = hydrated.job_info.customer || r.customer || ''
     hydrated.job_info.ex_station_pf = hydrated.job_info.ex_station_pf || r.ex_station || ''
     hydrated.job_info.project = hydrated.job_info.project || r.project || ''
     hydrated.job_info.ro_no = hydrated.job_info.ro_no || r.ro_no || ''
     hydrated.job_info.insp_report_no = hydrated.job_info.insp_report_no || r.report_no || ''
     hydrated.job_info.insp_report_date = hydrated.job_info.insp_report_date || r.report_date || ''
-    hydrated.valve_data.size_class = hydrated.valve_data.size_class || [r.size, r.class].filter(Boolean).join(' / ')
-    hydrated.valve_data.end_connection = hydrated.valve_data.end_connection || r.end_connection || ''
-    hydrated.valve_data.operated = hydrated.valve_data.operated || r.operated || ''
     setReport((prev) => prev ? { ...prev, sub_datasheet: hydrated } : prev)
+  }
+
+  function deleteSubDatasheet() {
+    if (!report) return
+    supabase.from('report_inspection').update({ sub_datasheet: null }).eq('id', id)
+      .then(({ error }) => {
+        if (error) return alert(error.message)
+        setReport((prev) => prev ? { ...prev, sub_datasheet: null } : prev)
+      })
   }
 
   const BOM_SECTIONS = [
@@ -1158,10 +1172,18 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
 
           <div className="mt-6">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-base font-bold text-gray-800">SUB DATASHEET</h4>
+              <h4 className="text-base font-bold text-gray-800">DATASHEET</h4>
               <div className="flex items-center gap-2">
                 {(report.valve_type ?? '').toUpperCase().includes('CHOKE') && (
                   <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">CHOKE VALVE</span>
+                )}
+                {report.sub_datasheet?.type === 'choke' && (
+                  <button
+                    onClick={() => deleteSubDatasheet()}
+                    className="text-xs px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition"
+                  >
+                    Hapus Datasheet
+                  </button>
                 )}
                 <button
                   onClick={() => saveSubDatasheet()}
@@ -1219,7 +1241,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 onClick={() => { initSubDatasheet(); }}
                 className="text-sm px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
               >
-                + Buat Sub Datasheet (Choke Valve)
+                + Buat Datasheet (Choke Valve)
               </button>
             )}
 
