@@ -72,6 +72,7 @@ const TEST_LABELS: Record<string, string> = {
   hp_closure_b: 'HIGH PRESSURE CLOSURE TEST B', lp_closure_a: 'LOW PRESSURE CLOSURE TEST A',
   hp_closure_a: 'HIGH PRESSURE CLOSURE TEST A', lp_closure_b: 'LOW PRESSURE CLOSURE TEST B',
   hp_closure_seat_test_i: 'HIGH PRESSURE CLOSURE SEAT TEST I', hp_closure_seat_test_ii: 'HIGH PRESSURE CLOSURE SEAT TEST II',
+  dpe_seat: 'DPE SEAT TEST', spe_seat: 'SPE SEAT TEST',
   seat: 'LOW-PRESSURE SEAT LEAK TEST', lp_seat: 'LOW PRESSURE SEAT TEST',
   func0: 'FUNCTION TEST 0%', func25: 'FUNCTION TEST 25%',
   func50: 'FUNCTION TEST 50%', func75: 'FUNCTION TEST 75%', func100: 'FUNCTION TEST 100%',
@@ -95,6 +96,7 @@ const TEST_CRITERIA: Record<string, string> = {
   lp_closure_b: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
   lp_seat: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
   seat: '',
+  dpe_seat: '', spe_seat: '',
   func0: 'SMOOTH and LINEAR', func25: 'SMOOTH and LINEAR',
   func50: 'SMOOTH and LINEAR', func75: 'SMOOTH and LINEAR', func100: 'SMOOTH and LINEAR',
 }
@@ -616,6 +618,9 @@ async function drawTestSection(doc: jsPDF, report: ReportData, valveTest: ValveT
     let acceptance = TEST_CRITERIA[key] || ''
     if (key === 'seat' || key === 'seat_leak') {
       acceptance = cv ? `ALLOWABLE LEAK ${(cv * 0.186).toFixed(3)} SCFH` : 'ALLOWABLE LEAK 0.000 SCFH'
+    }
+    if (key === 'dpe_seat' || key === 'spe_seat') {
+      acceptance = p('acceptance') || '-'
     }
     return [
       TEST_LABELS[key] || key,
