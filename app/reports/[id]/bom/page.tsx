@@ -18,6 +18,7 @@ type BomItem = {
 
 const SECTIONS = [
   { value: 'valve', label: 'Valve Parts' },
+  { value: 'actuator', label: 'Actuator Parts' },
   { value: 'machining', label: 'Machining' },
   { value: 'coating', label: 'Coating' },
 ]

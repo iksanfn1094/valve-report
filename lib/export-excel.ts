@@ -110,7 +110,7 @@ export function exportReportExcel(
 
   // Sheet 4: BOM (if any)
   if (bomItems.length > 0) {
-    const sL: Record<string, string> = { valve: 'Valve Parts', machining: 'Machining', coating: 'Coating' }
+    const sL: Record<string, string> = { valve: 'Valve Parts', actuator: 'Actuator Parts', machining: 'Machining', coating: 'Coating' }
     const bomHeader = ['Section', 'No', 'Qty', 'Unit', 'Description', 'Specification', 'Dimension', 'Keterangan']
     const bomRows = bomItems.map((b) => [
       sL[b.section] || b.section,

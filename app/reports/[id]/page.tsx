@@ -850,6 +850,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
 
   const BOM_SECTIONS = [
     { value: 'valve', label: 'Valve Parts' },
+    { value: 'actuator', label: 'Actuator Parts' },
     { value: 'machining', label: 'Machining' },
     { value: 'coating', label: 'Coating' },
   ]
