@@ -317,7 +317,7 @@ const COMPONENTS = [
   'Stem Connector', 'Stem holder', 'Stopper', 'Stud and nut', 'Stud Bolt Body Bonnet',
   'Stud Bolt Mounting Adaptor', 'Stuffing box', 'Thrust Bearing', 'Top plate',
   'Torque shaft', 'Travel indicator', 'Trunnion', 'Trunnion plate', 'Valve Unit',
-  'Washer', 'Washer Stem', 'Wave spring', 'Wedge', 'Worm gear', 'Worm shaft', 'Yoke',
+  'Washer', 'Washer Stem', 'Wave spring', 'Wedge', 'Worm gear', 'Worm shaft', 'Yoke', 'Yoke nut',
 ]
 
 export default function ReportDetail({ params }: { params: Promise<{ id: string }> }) {
