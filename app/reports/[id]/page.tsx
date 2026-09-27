@@ -795,7 +795,11 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
 
   function ensureSubDatasheet(): SubDatasheet {
     if (report?.sub_datasheet) return report.sub_datasheet
-    return defaultDatasheet((report?.valve_type ?? '').toUpperCase().includes('BALL') ? 'ball' : 'choke')
+    const vt = (report?.valve_type ?? '').toUpperCase()
+    let type = 'choke'
+    if (vt.includes('BALL')) type = 'ball'
+    else if (vt.includes('CHECK')) type = 'check'
+    return defaultDatasheet(type)
   }
 
   async function saveSubDatasheet() {
@@ -1238,12 +1242,13 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
               <h4 className="text-base font-bold text-gray-800">DATASHEET</h4>
               <div className="flex items-center gap-2">
                 <select
-                  value={report.sub_datasheet?.type || ((report.valve_type ?? '').toUpperCase().includes('BALL') ? 'ball' : 'choke')}
+                  value={report.sub_datasheet?.type || ((report.valve_type ?? '').toUpperCase().includes('BALL') ? 'ball' : (report.valve_type ?? '').toUpperCase().includes('CHECK') ? 'check' : 'choke')}
                   onChange={(e) => setSubDatasheetType(e.target.value)}
                   className="text-xs px-2 py-1 border rounded"
                 >
                   <option value="choke">Choke Valve</option>
                   <option value="ball">Ball Valve</option>
+                  <option value="check">Check Valve</option>
                 </select>
                 {report.sub_datasheet && (
                   <button
