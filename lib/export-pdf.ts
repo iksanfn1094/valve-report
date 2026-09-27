@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { SubDatasheet, DATASHEET_LABELS, DATASHEET_GROUPS, datasheetGroupTitle } from './datasheet'
+import { SubDatasheet, datasheetLabels, DATASHEET_GROUPS, datasheetGroupTitle } from './datasheet'
 
 type ReportData = {
   job_number: string
@@ -356,9 +356,12 @@ function drawResumeSection(doc: jsPDF, report: ReportData, M: number, CW: number
     y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 5
   }
 
-  if (report.sub_datasheet && report.sub_datasheet.type === 'choke') {
+  if (report.sub_datasheet) {
     const ds = report.sub_datasheet
-    const label = (report.valve_type ?? '').toUpperCase().includes('CHOKE') ? 'CHOKE VALVE' : 'DATASHEET'
+    const label = (report.sub_datasheet.type || '').toUpperCase() === 'CHOKE' ? 'CHOKE VALVE'
+      : (report.sub_datasheet.type || '').toUpperCase() === 'BALL' ? 'BALL VALVE'
+      : (report.valve_type ?? '').toUpperCase().includes('CHOKE') ? 'CHOKE VALVE'
+      : (report.valve_type ?? '').toUpperCase().includes('BALL') ? 'BALL VALVE' : 'DATASHEET'
     doc.setTextColor(...BLUE)
     doc.setFontSize(10)
     doc.setFont('helvetica', 'bold')
@@ -366,9 +369,9 @@ function drawResumeSection(doc: jsPDF, report: ReportData, M: number, CW: number
     y += 6
 
     for (const group of DATASHEET_GROUPS) {
-      const entries = DATASHEET_LABELS[group] || {}
-      const keys = Object.keys(entries)
-      const labelsArr = keys.map(k => entries[k])
+      const entries = datasheetLabels(ds.type, group)
+      const keys = Object.keys((ds[group] as Record<string, string>) || {})
+      const labelsArr = keys.map(k => entries[k] || k)
       const values = keys.map(k => (ds[group][k] || '-'))
 
       doc.setTextColor(...BLUE)

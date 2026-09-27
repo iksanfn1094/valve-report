@@ -4,7 +4,7 @@ import { useEffect, useState, use, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { exportReportPDF } from '@/lib/export-pdf'
 import { exportReportExcel } from '@/lib/export-excel'
-import { SubDatasheet, DatasheetGroupKey, defaultChokeDatasheet, DATASHEET_LABELS, DATASHEET_GROUPS, datasheetGroupTitle } from '@/lib/datasheet'
+import { SubDatasheet, DatasheetGroupKey, defaultDatasheet, datasheetLabels, DATASHEET_GROUPS, datasheetGroupTitle } from '@/lib/datasheet'
 
 type Report = {
   id: string
@@ -794,9 +794,8 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   }
 
   function ensureSubDatasheet(): SubDatasheet {
-    if (report?.sub_datasheet?.type === 'choke') return report.sub_datasheet
-    const ds = defaultChokeDatasheet()
-    return ds
+    if (report?.sub_datasheet) return report.sub_datasheet
+    return defaultDatasheet((report?.valve_type ?? '').toUpperCase().includes('BALL') ? 'ball' : 'choke')
   }
 
   async function saveSubDatasheet() {
@@ -810,10 +809,25 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
 
   function updateSubDatasheetGroup(group: DatasheetGroupKey, field: string, value: string) {
     if (!report) return
-    const ds = report.sub_datasheet?.type === 'choke' ? report.sub_datasheet : ensureSubDatasheet()
+    const ds = report.sub_datasheet ?? ensureSubDatasheet()
     const current = ds[group] ?? {}
     const next = { ...ds, [group]: { ...current, [field]: value } } as SubDatasheet
     setReport((prev) => prev ? { ...prev, sub_datasheet: next } : prev)
+  }
+
+  function setSubDatasheetType(type: string) {
+    if (!report) return
+    const existing = report.sub_datasheet
+    const fresh = defaultDatasheet(type)
+    if (!existing) {
+      setReport((prev) => prev ? { ...prev, sub_datasheet: fresh } : prev)
+      return
+    }
+    const preserved: SubDatasheet = { ...fresh }
+    preserved.job_info = { ...fresh.job_info, ...existing.job_info }
+    preserved.component_part = { ...fresh.component_part, ...existing.component_part }
+    preserved.technical_req = { ...fresh.technical_req, ...existing.technical_req }
+    setReport((prev) => prev ? { ...prev, sub_datasheet: preserved } : prev)
   }
 
   function initSubDatasheet() {
@@ -1223,10 +1237,15 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-base font-bold text-gray-800">DATASHEET</h4>
               <div className="flex items-center gap-2">
-                {(report.valve_type ?? '').toUpperCase().includes('CHOKE') && (
-                  <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">CHOKE VALVE</span>
-                )}
-                {report.sub_datasheet?.type === 'choke' && (
+                <select
+                  value={report.sub_datasheet?.type || ((report.valve_type ?? '').toUpperCase().includes('BALL') ? 'ball' : 'choke')}
+                  onChange={(e) => setSubDatasheetType(e.target.value)}
+                  className="text-xs px-2 py-1 border rounded"
+                >
+                  <option value="choke">Choke Valve</option>
+                  <option value="ball">Ball Valve</option>
+                </select>
+                {report.sub_datasheet && (
                   <button
                     onClick={() => deleteSubDatasheet()}
                     className="text-xs px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition"
@@ -1242,16 +1261,16 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 </button>
               </div>
             </div>
-            {report.sub_datasheet?.type === 'choke' ? (
+            {report.sub_datasheet ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-3">
                   {DATASHEET_GROUPS.filter(g => g !== 'technical_req').slice(0, 2).map((group) => (
                     <div key={group} className="border rounded-lg overflow-hidden">
                       <div className="bg-blue-900 text-white px-3 py-1.5 text-xs font-bold uppercase">{datasheetGroupTitle(group)}</div>
                       <div className="divide-y divide-gray-100">
-                        {Object.entries(DATASHEET_LABELS[group] || {}).map(([key, label]) => (
+                        {Object.keys(report.sub_datasheet![group] || {}).map((key) => (
                           <div key={key} className="grid grid-cols-[130px_1fr] text-sm">
-                            <div className="px-3 py-1.5 bg-gray-50 text-xs font-semibold text-gray-700">{label}</div>
+                            <div className="px-3 py-1.5 bg-gray-50 text-xs font-semibold text-gray-700">{datasheetLabels(report.sub_datasheet!.type, group)[key] || key}</div>
                             <input
                               className="w-full px-3 py-1.5 text-xs focus:outline-none focus:bg-blue-50"
                               value={(report.sub_datasheet as SubDatasheet)[group]?.[key] || ''}
@@ -1269,9 +1288,9 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                     <div key={group} className="border rounded-lg overflow-hidden">
                       <div className="bg-blue-900 text-white px-3 py-1.5 text-xs font-bold uppercase">{datasheetGroupTitle(group)}</div>
                       <div className="divide-y divide-gray-100">
-                        {Object.entries(DATASHEET_LABELS[group] || {}).map(([key, label]) => (
+                        {Object.keys(report.sub_datasheet![group] || {}).map((key) => (
                           <div key={key} className="grid grid-cols-[130px_1fr] text-sm">
-                            <div className="px-3 py-1.5 bg-gray-50 text-xs font-semibold text-gray-700">{label}</div>
+                            <div className="px-3 py-1.5 bg-gray-50 text-xs font-semibold text-gray-700">{datasheetLabels(report.sub_datasheet!.type, group)[key] || key}</div>
                             <input
                               className="w-full px-3 py-1.5 text-xs focus:outline-none focus:bg-blue-50"
                               value={(report.sub_datasheet as SubDatasheet)[group]?.[key] || ''}
@@ -1290,17 +1309,17 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 onClick={() => { initSubDatasheet(); }}
                 className="text-sm px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
               >
-                + Buat Datasheet (Choke Valve)
+                + Buat Datasheet
               </button>
             )}
 
-            {DATASHEET_GROUPS.includes('technical_req' as DatasheetGroupKey) && report.sub_datasheet?.type === 'choke' && (
+            {report.sub_datasheet && (
               <div className="mt-3 border rounded-lg overflow-hidden">
                 <div className="bg-blue-900 text-white px-3 py-1.5 text-xs font-bold uppercase">
                   {datasheetGroupTitle('technical_req')} - DOCUMENTATION
                 </div>
                 <div className="divide-y divide-gray-100">
-                  {Object.entries(DATASHEET_LABELS['technical_req'] || {}).map(([key, label]) => (
+                  {Object.keys(report.sub_datasheet.technical_req || {}).map((key) => (
                     <label key={key} className="flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 cursor-pointer">
                       <input
                         type="checkbox"
@@ -1311,7 +1330,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                         }}
                         className="accent-blue-600"
                       />
-                      {label}
+                      {(report.sub_datasheet as SubDatasheet).type && datasheetLabels((report.sub_datasheet as SubDatasheet).type, 'technical_req')[key] || key}
                     </label>
                   ))}
                 </div>
