@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { SubDatasheet, datasheetLabels, DATASHEET_GROUPS, datasheetGroupTitle } from './datasheet'
+import { SubDatasheet, DatasheetGroupKey, datasheetLabels, DATASHEET_GROUPS, datasheetGroupTitle } from './datasheet'
 
 type ReportData = {
   job_number: string
@@ -374,42 +374,53 @@ function drawResumeSection(doc: jsPDF, report: ReportData, M: number, CW: number
     doc.text('DATASHEET - ' + label, M, y)
     y += 6
 
-    for (const group of DATASHEET_GROUPS) {
+    const nonEmptyGroups = DATASHEET_GROUPS.filter(g => Object.keys((ds[g] as Record<string, string>) || {}).length > 0)
+    const halfW = (CW - 4) / 2
+
+    function drawDsGroup(group: DatasheetGroupKey, leftX: number, width: number, topY: number): number {
       const entries = datasheetLabels(ds.type, group)
       const keys = Object.keys((ds[group] as Record<string, string>) || {})
-      if (keys.length === 0) continue
       const labelsArr = keys.map(k => entries[k] || k)
       const values = keys.map(k => (ds[group][k] || '-'))
+      const rows: [string, string][] = keys.map((_, i) => [labelsArr[i], values[i]])
 
       doc.setTextColor(...BLUE)
       doc.setFontSize(7)
       doc.setFont('helvetica', 'bold')
-      doc.text(datasheetGroupTitle(group), M, y)
-      y += 1.5
+      doc.text(datasheetGroupTitle(group), leftX, topY)
+      topY += 1.5
 
-      const widthC = 55
-      const twoCol = group === 'job_info' ? false : keys.length % 2 === 0
-      const colW = twoCol ? (CW - widthC) / 2 : CW
-      const rows: [string, string][] = []
-      if (twoCol) {
-        for (let i = 0; i < keys.length; i += 2) {
-          rows.push([`${labelsArr[i]} : ${values[i]}`, i + 1 < keys.length ? `${labelsArr[i + 1]} : ${values[i + 1]}` : ''])
-        }
-      } else {
-        for (let i = 0; i < keys.length; i++) rows.push([`${labelsArr[i]} : ${values[i]}`, ''])
-      }
-
+      const labelW = 50
       autoTable(doc, {
-        startY: y,
-        margin: { left: M, right: M },
+        startY: topY,
+        margin: { left: leftX, right: M + CW - leftX - width },
         body: rows,
-        styles: { fontSize: 6, cellPadding: 1.5, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak' },
+        styles: { fontSize: 6, cellPadding: 1, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak' },
         columnStyles: {
-          0: { cellWidth: twoCol ? colW : CW, halign: 'left' },
-          1: { cellWidth: twoCol ? colW : undefined, halign: 'left' },
+          0: { cellWidth: labelW, halign: 'left', fontStyle: 'bold', textColor: [70, 90, 120] },
+          1: { cellWidth: width - labelW, halign: 'left' },
         },
       })
-      y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
+      return (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY
+    }
+
+    function drawDsRow(groups: DatasheetGroupKey[], topY: number): number {
+      if (groups.length === 1) {
+        const fy = drawDsGroup(groups[0], M, CW, topY)
+        return fy + 4
+      }
+      const fyL = drawDsGroup(groups[0], M, halfW, topY)
+      const fyR = drawDsGroup(groups[1], M + halfW + 4, halfW, topY)
+      return Math.max(fyL, fyR) + 4
+    }
+
+    if (nonEmptyGroups.length > 0) {
+      const row1 = nonEmptyGroups.slice(0, 2)
+      const row2 = nonEmptyGroups.slice(2, 4)
+      const row3 = nonEmptyGroups.slice(4, 6)
+      if (row1.length > 0) y = drawDsRow(row1, y)
+      if (row2.length > 0) y = drawDsRow(row2, y)
+      if (row3.length > 0) y = drawDsRow(row3, y)
     }
   }
 
