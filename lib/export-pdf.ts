@@ -375,7 +375,6 @@ function drawResumeSection(doc: jsPDF, report: ReportData, M: number, CW: number
     y += 6
 
     const nonEmptyGroups = DATASHEET_GROUPS.filter(g => Object.keys((ds[g] as Record<string, string>) || {}).length > 0)
-    const halfW = (CW - 4) / 2
 
     function drawDsGroup(group: DatasheetGroupKey, leftX: number, width: number, topY: number): number {
       const entries = datasheetLabels(ds.type, group)
@@ -390,7 +389,7 @@ function drawResumeSection(doc: jsPDF, report: ReportData, M: number, CW: number
       doc.text(datasheetGroupTitle(group), leftX, topY)
       topY += 1.5
 
-      const labelW = 50
+      const labelW = width > 90 ? 50 : 30
       autoTable(doc, {
         startY: topY,
         margin: { left: leftX, right: M + CW - leftX - width },
@@ -405,22 +404,22 @@ function drawResumeSection(doc: jsPDF, report: ReportData, M: number, CW: number
     }
 
     function drawDsRow(groups: DatasheetGroupKey[], topY: number): number {
-      if (groups.length === 1) {
-        const fy = drawDsGroup(groups[0], M, CW, topY)
-        return fy + 4
-      }
-      const fyL = drawDsGroup(groups[0], M, halfW, topY)
-      const fyR = drawDsGroup(groups[1], M + halfW + 4, halfW, topY)
-      return Math.max(fyL, fyR) + 4
+      const n = groups.length
+      const gap = 4
+      const colW = (CW - gap * (n - 1)) / n
+      let maxY = 0
+      groups.forEach((g, i) => {
+        const fy = drawDsGroup(g, M + i * (colW + gap), colW, topY)
+        if (fy > maxY) maxY = fy
+      })
+      return maxY + 4
     }
 
     if (nonEmptyGroups.length > 0) {
-      const row1 = nonEmptyGroups.slice(0, 2)
-      const row2 = nonEmptyGroups.slice(2, 4)
-      const row3 = nonEmptyGroups.slice(4, 6)
+      const row1 = nonEmptyGroups.slice(0, 3)
+      const row2 = nonEmptyGroups.slice(3, 5)
       if (row1.length > 0) y = drawDsRow(row1, y)
       if (row2.length > 0) y = drawDsRow(row2, y)
-      if (row3.length > 0) y = drawDsRow(row3, y)
     }
   }
 
