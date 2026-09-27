@@ -799,6 +799,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     let type = 'choke'
     if (vt.includes('BALL')) type = 'ball'
     else if (vt.includes('CHECK')) type = 'check'
+    else if (vt.includes('CONTROL')) type = 'control'
     return defaultDatasheet(type)
   }
 
@@ -828,9 +829,14 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       return
     }
     const preserved: SubDatasheet = { ...fresh }
-    preserved.job_info = { ...fresh.job_info, ...existing.job_info }
-    preserved.component_part = { ...fresh.component_part, ...existing.component_part }
-    preserved.technical_req = { ...fresh.technical_req, ...existing.technical_req }
+    for (const g of DATASHEET_GROUPS) {
+      const targetKeys = Object.keys((fresh[g] as Record<string, string>) || {})
+      preserved[g] = { ...(fresh[g] as Record<string, string>) }
+      for (const key of targetKeys) {
+        const val = (existing as SubDatasheet)[g]?.[key]
+        if (val) (preserved[g] as Record<string, string>)[key] = val
+      }
+    }
     setReport((prev) => prev ? { ...prev, sub_datasheet: preserved } : prev)
   }
 
@@ -1242,13 +1248,14 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
               <h4 className="text-base font-bold text-gray-800">DATASHEET</h4>
               <div className="flex items-center gap-2">
                 <select
-                  value={report.sub_datasheet?.type || ((report.valve_type ?? '').toUpperCase().includes('BALL') ? 'ball' : (report.valve_type ?? '').toUpperCase().includes('CHECK') ? 'check' : 'choke')}
+                  value={report.sub_datasheet?.type || ((report.valve_type ?? '').toUpperCase().includes('BALL') ? 'ball' : (report.valve_type ?? '').toUpperCase().includes('CHECK') ? 'check' : (report.valve_type ?? '').toUpperCase().includes('CONTROL') ? 'control' : 'choke')}
                   onChange={(e) => setSubDatasheetType(e.target.value)}
                   className="text-xs px-2 py-1 border rounded"
                 >
                   <option value="choke">Choke Valve</option>
                   <option value="ball">Ball Valve</option>
                   <option value="check">Check Valve</option>
+                  <option value="control">Control Valve</option>
                 </select>
                 {report.sub_datasheet && (
                   <button
@@ -1269,7 +1276,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
             {report.sub_datasheet ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-3">
-                  {DATASHEET_GROUPS.filter(g => g !== 'technical_req').slice(0, 2).map((group) => (
+                  {DATASHEET_GROUPS.filter(g => g !== 'technical_req' && Object.keys(report.sub_datasheet![g] || {}).length > 0).slice(0, 2).map((group) => (
                     <div key={group} className="border rounded-lg overflow-hidden">
                       <div className="bg-blue-900 text-white px-3 py-1.5 text-xs font-bold uppercase">{datasheetGroupTitle(group)}</div>
                       <div className="divide-y divide-gray-100">
@@ -1289,7 +1296,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                   ))}
                 </div>
                 <div className="space-y-3">
-                  {DATASHEET_GROUPS.filter(g => g !== 'technical_req').slice(2).map((group) => (
+                  {DATASHEET_GROUPS.filter(g => g !== 'technical_req' && Object.keys(report.sub_datasheet![g] || {}).length > 0).slice(2).map((group) => (
                     <div key={group} className="border rounded-lg overflow-hidden">
                       <div className="bg-blue-900 text-white px-3 py-1.5 text-xs font-bold uppercase">{datasheetGroupTitle(group)}</div>
                       <div className="divide-y divide-gray-100">
