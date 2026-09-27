@@ -800,6 +800,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     if (vt.includes('BALL')) type = 'ball'
     else if (vt.includes('CHECK')) type = 'check'
     else if (vt.includes('CONTROL')) type = 'control'
+    else if (vt.includes('SDV') || vt.includes('SHUT')) type = 'sdv'
     return defaultDatasheet(type)
   }
 
@@ -1248,7 +1249,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
               <h4 className="text-base font-bold text-gray-800">DATASHEET</h4>
               <div className="flex items-center gap-2">
                 <select
-                  value={report.sub_datasheet?.type || ((report.valve_type ?? '').toUpperCase().includes('BALL') ? 'ball' : (report.valve_type ?? '').toUpperCase().includes('CHECK') ? 'check' : (report.valve_type ?? '').toUpperCase().includes('CONTROL') ? 'control' : 'choke')}
+                  value={report.sub_datasheet?.type || ((report.valve_type ?? '').toUpperCase().includes('BALL') ? 'ball' : (report.valve_type ?? '').toUpperCase().includes('CHECK') ? 'check' : (report.valve_type ?? '').toUpperCase().includes('CONTROL') ? 'control' : (report.valve_type ?? '').toUpperCase().includes('SDV') || (report.valve_type ?? '').toUpperCase().includes('SHUT') ? 'sdv' : 'choke')}
                   onChange={(e) => setSubDatasheetType(e.target.value)}
                   className="text-xs px-2 py-1 border rounded"
                 >
@@ -1256,6 +1257,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                   <option value="ball">Ball Valve</option>
                   <option value="check">Check Valve</option>
                   <option value="control">Control Valve</option>
+                  <option value="sdv">Shutdown Valve</option>
                 </select>
                 {report.sub_datasheet && (
                   <button

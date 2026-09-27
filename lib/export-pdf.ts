@@ -362,10 +362,12 @@ function drawResumeSection(doc: jsPDF, report: ReportData, M: number, CW: number
       : (report.sub_datasheet.type || '').toUpperCase() === 'BALL' ? 'BALL VALVE'
       : (report.sub_datasheet.type || '').toUpperCase() === 'CHECK' ? 'CHECK VALVE'
       : (report.sub_datasheet.type || '').toUpperCase() === 'CONTROL' ? 'CONTROL VALVE'
+      : (report.sub_datasheet.type || '').toUpperCase() === 'SDV' ? 'SHUTDOWN VALVE'
       : (report.valve_type ?? '').toUpperCase().includes('CHOKE') ? 'CHOKE VALVE'
       : (report.valve_type ?? '').toUpperCase().includes('BALL') ? 'BALL VALVE'
       : (report.valve_type ?? '').toUpperCase().includes('CHECK') ? 'CHECK VALVE'
-      : (report.valve_type ?? '').toUpperCase().includes('CONTROL') ? 'CONTROL VALVE' : 'DATASHEET'
+      : (report.valve_type ?? '').toUpperCase().includes('CONTROL') ? 'CONTROL VALVE'
+      : (report.valve_type ?? '').toUpperCase().includes('SDV') || (report.valve_type ?? '').toUpperCase().includes('SHUT') ? 'SHUTDOWN VALVE' : 'DATASHEET'
     doc.setTextColor(...BLUE)
     doc.setFontSize(10)
     doc.setFont('helvetica', 'bold')
