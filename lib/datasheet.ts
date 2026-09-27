@@ -264,6 +264,58 @@ const DATASHEET_LABELS_BY_TYPE: Record<string, Record<string, Record<string, str
       doc_warranty_letter: 'WARRANTY LETTER',
     },
   },
+  bdv: {
+    valve_data: {
+      sn_fig: 'S/N OR FIG.',
+      brand: 'BRAND',
+      type_model: 'TYPE MODEL',
+      size_class: 'SIZE / CLASS',
+      end_connection: 'END CONNECTION',
+      stem_material: 'STEM MATERIAL',
+      body_material: 'BODY MATERIAL',
+      ball_disc_plug_material: 'BALL/DISC/PLUG MATERIAL',
+      seat_material: 'SEAT MATERIAL',
+      operated: 'OPERATED',
+    },
+    actuator_data: {
+      sn_fig: 'S/N OR FIG.',
+      brand: 'BRAND',
+      model_type: 'MODEL/TYPE',
+      action: 'ACTION',
+      size: 'SIZE',
+      pressure_range: 'PRESSURE RANGE',
+      fail_mode: 'FAIL MODE',
+      travel: 'TRAVEL',
+      function: 'FUNCTION',
+      torque_ratio: 'TORQUE RATIO',
+    },
+    valve_design: {},
+    job_info: {
+      tag_id: 'TAG ID',
+      size_class: 'SIZE / CLASS',
+      customer: 'CUSTOMER',
+      ex_station_pf: 'EX STATION & P/F',
+      project: 'PROJECT',
+      ro_no: 'RO NO.',
+      project_no: 'PROJECT NO.',
+      insp_report_no: 'INSP. REPORT NO.',
+      insp_report_date: 'INSP. REPORT DATE',
+      painting: 'PAINTING',
+    },
+    component_part: {
+      stem_packing: 'STEM PACKING',
+      o_ring: 'O-RING',
+      stud_bolt: 'STUD BOLT',
+      nuts: 'NUTS',
+    },
+    technical_req: {
+      doc_inspection_report: 'INSPECTION REPORT',
+      doc_penetrant: 'PENETRANT REPORT (IF ANY FABRICATED / WELDING)',
+      doc_material_certificate: 'MATERIAL CERTIFICATE',
+      doc_technical_report: 'TECHNICAL REPORT',
+      doc_warranty_letter: 'WARRANTY LETTER',
+    },
+  },
 }
 
 export function datasheetLabels(type: string, group: DatasheetGroupKey): Record<string, string> {
@@ -568,7 +620,15 @@ export function defaultSdvDatasheet(): SubDatasheet {
   }
 }
 
+export function defaultBdvDatasheet(): SubDatasheet {
+  return {
+    ...defaultSdvDatasheet(),
+    type: 'bdv',
+  }
+}
+
 export function defaultDatasheet(type: string): SubDatasheet {
+  if (type === 'bdv') return defaultBdvDatasheet()
   if (type === 'sdv') return defaultSdvDatasheet()
   if (type === 'control') return defaultControlDatasheet()
   if (type === 'ball') return defaultBallDatasheet()
