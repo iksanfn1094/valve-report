@@ -370,7 +370,7 @@ function drawResumeSection(doc: jsPDF, report: ReportData, M: number, CW: number
       : (report.valve_type ?? '').toUpperCase().includes('CONTROL') ? 'CONTROL VALVE'
       : (report.valve_type ?? '').toUpperCase().includes('SDV') || (report.valve_type ?? '').toUpperCase().includes('SHUT') ? 'SHUTDOWN VALVE' : (report.valve_type ?? '').toUpperCase().includes('BDV') || (report.valve_type ?? '').toUpperCase().includes('BLOW') ? 'BLOWDOWN VALVE' : 'DATASHEET'
     doc.setTextColor(...BLUE)
-    doc.setFontSize(10)
+    doc.setFontSize(9)
     doc.setFont('helvetica', 'bold')
     doc.text('DATASHEET - ' + label, M, y)
     y += 6
