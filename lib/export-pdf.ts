@@ -376,43 +376,49 @@ function drawResumeSection(doc: jsPDF, report: ReportData, M: number, CW: number
 
     const nonEmptyGroups = DATASHEET_GROUPS.filter(g => Object.keys((ds[g] as Record<string, string>) || {}).length > 0)
 
-    function drawDsGroup(group: DatasheetGroupKey, leftX: number, width: number, topY: number): number {
-      const entries = datasheetLabels(ds.type, group)
-      const keys = Object.keys((ds[group] as Record<string, string>) || {})
-      const labelsArr = keys.map(k => entries[k] || k)
-      const values = keys.map(k => (ds[group][k] || '-'))
-      const rows: [string, string][] = keys.map((_, i) => [labelsArr[i], values[i]])
-
+    function drawDsRow(groups: DatasheetGroupKey[], topY: number): number {
       doc.setTextColor(...BLUE)
       doc.setFontSize(7)
       doc.setFont('helvetica', 'bold')
-      doc.text(datasheetGroupTitle(group), leftX, topY)
+      const gap = 4
+      const colCount = groups.length * 2
+      const labelW = groups.length === 3 ? 30 : 50
+      const valueW = (CW - groups.length * labelW - (groups.length - 1) * gap) / groups.length
+      const groupRows = groups.map(g => {
+        const entries = datasheetLabels(ds.type, g)
+        const keys = Object.keys((ds[g] as Record<string, string>) || {})
+        return keys.map(k => [entries[k] || k, ds[g][k] || '-'])
+      })
+      const maxRows = Math.max(...groupRows.map(r => r.length))
+      const body: string[][] = []
+      for (let r = 0; r < maxRows; r++) {
+        const row: string[] = []
+        groups.forEach((_, i) => {
+          const src = groupRows[i]
+          row.push(r < src.length ? src[r][0] : '', r < src.length ? src[r][1] : '')
+        })
+        body.push(row)
+      }
+
+      groups.forEach((g, i) => {
+        const x = M + i * (labelW + valueW + gap)
+        doc.text(datasheetGroupTitle(g), x, topY)
+      })
       topY += 1.5
 
-      const labelW = width > 90 ? 50 : 30
+      const columnStyles: Record<string, { cellWidth: number; halign: 'left'; fontStyle?: 'bold'; textColor?: [number, number, number] }> = {}
+      for (let i = 0; i < groups.length; i++) {
+        columnStyles[i * 2] = { cellWidth: labelW, halign: 'left', fontStyle: 'bold', textColor: [70, 90, 120] }
+        columnStyles[i * 2 + 1] = { cellWidth: valueW, halign: 'left' }
+      }
       autoTable(doc, {
         startY: topY,
-        margin: { left: leftX, right: M + CW - leftX - width },
-        body: rows,
+        margin: { left: M, right: M },
+        body,
         styles: { fontSize: 6, cellPadding: 1, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak' },
-        columnStyles: {
-          0: { cellWidth: labelW, halign: 'left', fontStyle: 'bold', textColor: [70, 90, 120] },
-          1: { cellWidth: width - labelW, halign: 'left' },
-        },
+        columnStyles,
       })
-      return (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY
-    }
-
-    function drawDsRow(groups: DatasheetGroupKey[], topY: number): number {
-      const n = groups.length
-      const gap = 4
-      const colW = (CW - gap * (n - 1)) / n
-      let maxY = 0
-      groups.forEach((g, i) => {
-        const fy = drawDsGroup(g, M + i * (colW + gap), colW, topY)
-        if (fy > maxY) maxY = fy
-      })
-      return maxY + 4
+      return (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
     }
 
     if (nonEmptyGroups.length > 0) {
