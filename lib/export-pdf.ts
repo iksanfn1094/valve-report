@@ -719,11 +719,8 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
   let y = startY
   if (docItems.length === 0) return y
 
-  const GAP = 3
-  const halfGap = 8
-  const halfW = (CW - halfGap) / 2
-  const colsPerHalf = 3
-  const IMG_SZ = (halfW - (colsPerHalf - 1) * GAP) / colsPerHalf
+  const IMG_SZ = 24
+  const GAP = 2
 
   const beforeData = new Map<string, (string | null)[]>()
   const afterData = new Map<string, (string | null)[]>()
@@ -737,56 +734,74 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
     afterData.set(key, aArr)
   }
 
-  function drawPhotoGrid(arr: (string | null)[], topY: number, leftX: number, width: number): number {
-    const imgs = arr.filter((b): b is string => !!b)
-    if (imgs.length === 0) return topY
-    let yy = topY
-    for (let j = 0; j < imgs.length; j += colsPerHalf) {
-      const chunk = imgs.slice(j, j + colsPerHalf)
-      if (yy + IMG_SZ + 3 > 297 - M) { doc.addPage(); yy = M }
-      const totalInRow = chunk.length
-      const offsetX = (width - totalInRow * (IMG_SZ + GAP)) / 2
-      chunk.forEach((b64, ci) => {
-        try { doc.addImage(b64, 'JPEG', leftX + offsetX + ci * (IMG_SZ + GAP), yy, IMG_SZ, IMG_SZ) } catch { /* skip */ }
-      })
-      yy += IMG_SZ + GAP
-    }
-    return yy + 2
-  }
+  const photoColW = 80
+  const maxPerRow = Math.floor(photoColW / (IMG_SZ + GAP))
 
   doc.setTextColor(...BLUE)
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
   doc.text('DOCUMENTATION', M, y)
-  y += 4
+  y += 3
 
-  docItems.forEach((d, i) => {
-    const key = d.id || d.component_name + i
-    const bArr = beforeData.get(key) || []
-    const aArr = afterData.get(key) || []
-
-    doc.setTextColor(...BLUE)
-    doc.setFontSize(7.5)
-    doc.setFont('helvetica', 'bold')
-    doc.text(`NO: ${i + 1}   COMPONENT / PART: ${d.component_name || '-'}`, M, y)
-    y += 2.5
-
-    const bHas = bArr.filter(Boolean).length > 0
-    const aHas = aArr.filter(Boolean).length > 0
-    if (bHas || aHas) {
-      doc.setFontSize(6.5)
-      doc.setFont('helvetica', 'italic')
-      doc.setTextColor(90, 90, 90)
-      if (bHas) doc.text('PHOTO BEFORE', M, y)
-      if (aHas) doc.text('PHOTO AFTER', M + halfW + halfGap, y)
-      y += 1.5
-      const yB = bHas ? drawPhotoGrid(bArr, y, M, halfW) : y
-      const yA = aHas ? drawPhotoGrid(aArr, y, M + halfW + halfGap, halfW) : y
-      y = Math.max(yB, yA) + 1
-    }
+  autoTable(doc, {
+    startY: y,
+    margin: { left: M, right: M },
+    head: [['No', 'Component', 'Photo Before', 'Photo After']],
+    body: docItems.map((_, i) => {
+      const key = docItems[i].id || docItems[i].component_name + i
+      const bCount = (beforeData.get(key) || []).filter(Boolean).length
+      const aCount = (afterData.get(key) || []).filter(Boolean).length
+      return [String(i + 1), docItems[i].component_name || '-', ' ', ' ']
+    }),
+    styles: { fontSize: 6, cellPadding: 1, lineColor: GRID, lineWidth: 0.2 },
+    headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6, fontStyle: 'bold', halign: 'center' },
+    alternateRowStyles: { fillColor: LIGHT_BG },
+    columnStyles: {
+      0: { cellWidth: 8, halign: 'center', valign: 'middle' },
+      1: { cellWidth: CW - 8 - photoColW * 2, halign: 'center', valign: 'middle' },
+      2: { cellWidth: photoColW, halign: 'center', valign: 'middle' },
+      3: { cellWidth: photoColW, halign: 'center', valign: 'middle' },
+    },
+    didParseCell: (data) => {
+      if (data.section !== 'body') return
+      const key = docItems[data.row.index].id || docItems[data.row.index].component_name + data.row.index
+      const arr = data.column.index === 2 ? (beforeData.get(key) || []) : data.column.index === 3 ? (afterData.get(key) || []) : null
+      if (arr) {
+        const count = arr.filter(Boolean).length
+        const rows = count > 0 ? Math.ceil(count / maxPerRow) : 1
+        data.cell.styles.minCellHeight = Math.max(IMG_SZ + 4, rows * (IMG_SZ + GAP) + 4)
+        data.cell.styles.cellPadding = { top: 2, bottom: 2, left: 1, right: 1 }
+      }
+    },
+    didDrawCell: (data) => {
+      if (data.section !== 'body') return
+      const col = data.column.index
+      const rowIdx = data.row.index
+      if (col !== 2 && col !== 3) return
+      const key = docItems[rowIdx].id || docItems[rowIdx].component_name + rowIdx
+      const arr = col === 2 ? (beforeData.get(key) || []) : (afterData.get(key) || [])
+      const imgs = arr.filter((b): b is string => !!b)
+      if (imgs.length === 0) {
+        doc.setFontSize(7)
+        doc.setFont('helvetica', 'italic')
+        doc.setTextColor(150, 150, 150)
+        doc.text('N/A', data.cell.x + data.cell.width / 2, data.cell.y + data.cell.height / 2, { align: 'center' })
+        return
+      }
+      const perRow = Math.min(maxPerRow, Math.floor(data.cell.width / (IMG_SZ + GAP)))
+      imgs.forEach((b64, ci) => {
+        const row = Math.floor(ci / perRow)
+        const c = ci % perRow
+        const totalInRow = Math.min(perRow, imgs.length - row * perRow)
+        const offsetX = (data.cell.width - totalInRow * (IMG_SZ + GAP)) / 2
+        const x = data.cell.x + offsetX + c * (IMG_SZ + GAP)
+        const contentH = (Math.ceil(imgs.length / perRow)) * (IMG_SZ + GAP) - GAP
+        const y2 = data.cell.y + (data.cell.height - contentH) / 2 + row * (IMG_SZ + GAP)
+        try { doc.addImage(b64, 'JPEG', x, y2, IMG_SZ, IMG_SZ) } catch { /* skip */ }
+      })
+    },
   })
-
-  return y
+  return (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 7
 }
 
 export async function exportReportPDF(
