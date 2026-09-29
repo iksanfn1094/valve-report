@@ -316,18 +316,34 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
     doc.text(label, rightX + 9, cy + 2.5)
   })
   if (showRecommendation) {
+    const midX = rightX + rightW / 2
     doc.setFontSize(8)
     doc.setFont('helvetica', 'bold')
-    doc.text('Recommendation', rightX + 2, startY2 + 29)
-    const recs: [string, string][] = [['C', 'Cleaning'], ['RP', 'Repair'], ['RE', 'Replace']]
-    recs.forEach(([code, label], ci) => {
-      const cy = startY2 + 33 + ci * 3.5
+    doc.setTextColor(0, 0, 0)
+    doc.text('Condition', rightX + 2, startY2 + 29)
+    doc.text('Recommendation', midX + 2, startY2 + 29)
+    const conds: [string, string][] = [
+      ['G', 'Good'],
+      ['R', 'Need Repair'],
+      ['U', 'Unrepairable'],
+      ['M', 'Missing/NA'],
+    ]
+    conds.forEach(([code, label], ci) => {
+      const cy = startY2 + 32.5 + ci * 3.3
       doc.setFontSize(6)
       doc.setFont('helvetica', 'bold')
-      doc.setTextColor(0, 0, 0)
-      doc.text(code, rightX + 3, cy + 1.5)
+      doc.text(code, rightX + 2, cy)
       doc.setFont('helvetica', 'normal')
-      doc.text(label, rightX + 10, cy + 1.5)
+      doc.text(': ' + label, rightX + 5.5, cy)
+    })
+    const recs: [string, string][] = [['C', 'Cleaning'], ['RP', 'Repair'], ['RE', 'Replace']]
+    recs.forEach(([code, label], ci) => {
+      const cy = startY2 + 32.5 + ci * 3.3
+      doc.setFontSize(6)
+      doc.setFont('helvetica', 'bold')
+      doc.text(code, midX + 2, cy)
+      doc.setFont('helvetica', 'normal')
+      doc.text(label, midX + 9, cy)
     })
   }
   return Math.max(y, startY2 + boxH + 5)
