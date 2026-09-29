@@ -54,6 +54,18 @@ type Item = {
   spec_material: string
 }
 
+type VisualDimensional = {
+  visual_acc: boolean
+  visual_failed: boolean
+  dims: {
+    name: string
+    ref: string
+    spec: string
+    actual: string
+    result: 'ACC' | 'FAILED' | ''
+  }[]
+}
+
 type Photo = {
   id: string
   item_id: string
@@ -366,6 +378,20 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     })
   const [savingTest, setSavingTest] = useState(false)
 
+  function defaultVisualDimensional(): VisualDimensional {
+    return {
+      visual_acc: false,
+      visual_failed: false,
+      dims: [
+        { name: 'FACE TO FACE', ref: '', spec: '', actual: '', result: '' },
+        { name: 'FLANGE OD', ref: '', spec: '', actual: '', result: '' },
+        { name: 'FLANGE THK', ref: '', spec: '', actual: '', result: '' },
+      ],
+    }
+  }
+  const [visualDimensional, setVisualDimensional] = useState<VisualDimensional>(defaultVisualDimensional)
+  const [savingVisual, setSavingVisual] = useState(false)
+
   function getTestRows(): string[] {
     try { return JSON.parse(valveTest.test_rows) } catch { return [] }
   }
@@ -514,7 +540,17 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         supabase.from('report_bom_items').select('*').eq('report_id', id).order('sort_order'),
       ])
       if (cancelled) return
-      if (reportRes.data) setReport(reportRes.data)
+      if (reportRes.data) {
+        setReport(reportRes.data)
+        const vd = reportRes.data.visual_dimensional as unknown as VisualDimensional | null
+        if (vd) {
+          setVisualDimensional((prev) => ({
+            visual_acc: vd.visual_acc ?? false,
+            visual_failed: vd.visual_failed ?? false,
+            dims: (vd.dims ?? prev.dims).map((d) => ({ name: d.name ?? '', ref: d.ref ?? '', spec: d.spec ?? '', actual: d.actual ?? '', result: (d.result as VisualDimensional['dims'][number]['result']) ?? '' })),
+          }))
+        }
+      }
       if (itemsRes.data) {
         setItems(itemsRes.data.map((it) => ({
           ...it,
@@ -796,6 +832,17 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       .eq('id', id)
     if (error) return alert(error.message)
     setReport((prev) => prev ? { ...prev, ...updates } : prev)
+  }
+
+  async function saveVisualDimensional() {
+    setSavingVisual(true)
+    const { error } = await supabase
+      .from('report_inspection')
+      .update({ visual_dimensional: visualDimensional as unknown as Record<string, unknown> })
+      .eq('id', id)
+    setSavingVisual(false)
+    if (error) return alert('Error: ' + error.message)
+    alert('Visual Inspection & Dimensional Check tersimpan!')
   }
 
   function ensureSubDatasheet(): SubDatasheet {
@@ -1629,6 +1676,113 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         <p className="text-xs text-gray-400 mt-2">
           * Click &quot;+ Photo&quot; to upload photo per component. Row must be saved first before uploading.
         </p>
+      </div>
+
+      {/* VISUAL INSPECTION & DIMENSIONAL CHECK RESULT Section */}
+      <div className="bg-white rounded-lg shadow border p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-bold text-gray-800">VISUAL INSPECTION & DIMENSIONAL CHECK RESULT</h3>
+          <button
+            onClick={saveVisualDimensional}
+            disabled={savingVisual}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition font-medium disabled:opacity-50"
+          >
+            {savingVisual ? 'Menyimpan...' : 'Simpan'}
+          </button>
+        </div>
+
+        <div className="mb-4">
+          <div className="font-semibold text-sm text-gray-700 mb-1">VISUAL INSPECTION RESULT:</div>
+          <div className="flex gap-2 text-sm">
+            <label className={`flex items-center gap-1 px-3 py-1 rounded border cursor-pointer ${visualDimensional.visual_acc ? 'bg-green-50 border-green-300' : 'border-gray-300'}`}>
+              <input
+                type="checkbox"
+                checked={visualDimensional.visual_acc}
+                onChange={(e) => setVisualDimensional((prev) => ({ ...prev, visual_acc: e.target.checked }))}
+                className="rounded accent-green-600"
+              />
+              ACC
+            </label>
+            <label className={`flex items-center gap-1 px-3 py-1 rounded border cursor-pointer ${visualDimensional.visual_failed ? 'bg-red-50 border-red-300' : 'border-gray-300'}`}>
+              <input
+                type="checkbox"
+                checked={visualDimensional.visual_failed}
+                onChange={(e) => setVisualDimensional((prev) => ({ ...prev, visual_failed: e.target.checked }))}
+                className="rounded accent-red-600"
+              />
+              FAILED
+            </label>
+          </div>
+        </div>
+
+        <div className="font-semibold text-sm text-gray-700 mb-1">DIMENSIONAL CHECK</div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border px-2 py-1 w-10">No</th>
+                <th className="border px-2 py-1 text-left">Item</th>
+                <th className="border px-2 py-1 text-left">REF. STANDARD/CODE</th>
+                <th className="border px-2 py-1 w-24">SPEC. (mm)</th>
+                <th className="border px-2 py-1 w-24">ACTUAL (mm)</th>
+                <th className="border px-2 py-1 w-28">RESULT</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visualDimensional.dims.map((d, idx) => (
+                <tr key={idx} className="hover:bg-gray-50">
+                  <td className="border px-2 py-1 text-center text-gray-500">{idx + 1}</td>
+                  <td className="border px-2 py-1 font-semibold text-gray-700">{d.name}</td>
+                  <td className="border px-2 py-1">
+                    <input
+                      className="w-full border-0 bg-transparent text-xs focus:outline-none focus:border-b focus:border-blue-500"
+                      value={d.ref}
+                      placeholder="ex. API 6D / ASME B16.34 / Standard"
+                      onChange={(e) => setVisualDimensional((prev) => ({
+                        ...prev,
+                        dims: prev.dims.map((x, i) => i === idx ? { ...x, ref: e.target.value } : x),
+                      }))}
+                    />
+                  </td>
+                  <td className="border px-2 py-1">
+                    <input
+                      className="w-full border-0 bg-transparent text-xs text-center focus:outline-none focus:border-b focus:border-blue-500"
+                      value={d.spec}
+                      onChange={(e) => setVisualDimensional((prev) => ({
+                        ...prev,
+                        dims: prev.dims.map((x, i) => i === idx ? { ...x, spec: e.target.value } : x),
+                      }))}
+                    />
+                  </td>
+                  <td className="border px-2 py-1">
+                    <input
+                      className="w-full border-0 bg-transparent text-xs text-center focus:outline-none focus:border-b focus:border-blue-500"
+                      value={d.actual}
+                      onChange={(e) => setVisualDimensional((prev) => ({
+                        ...prev,
+                        dims: prev.dims.map((x, i) => i === idx ? { ...x, actual: e.target.value } : x),
+                      }))}
+                    />
+                  </td>
+                  <td className="border px-2 py-1 text-center">
+                    <select
+                      className={`w-full border-0 rounded text-xs text-center focus:outline-none ${d.result === 'ACC' ? 'text-green-700 font-semibold' : d.result === 'FAILED' ? 'text-red-700 font-semibold' : 'text-gray-400'}`}
+                      value={d.result}
+                      onChange={(e) => setVisualDimensional((prev) => ({
+                        ...prev,
+                        dims: prev.dims.map((x, i) => i === idx ? { ...x, result: e.target.value as 'ACC' | 'FAILED' | '' } : x),
+                      }))}
+                    >
+                      <option value="">-</option>
+                      <option value="ACC">ACC</option>
+                      <option value="FAILED">FAILED</option>
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* BOM Section */}
