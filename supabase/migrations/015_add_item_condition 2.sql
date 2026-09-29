@@ -1,0 +1,1 @@
+ALTER TABLE report_inspection_items ADD COLUMN IF NOT EXISTS condition text[];
