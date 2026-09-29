@@ -767,28 +767,27 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
     y += headerH
   }
 
-  let needHeader = true
+  drawHeader()
   for (const [i, d] of docItems.entries()) {
     const bImgs = allBefore[i].filter((b): b is string => !!b)
     const aImgs = allAfter[i].filter((b): b is string => !!b)
     const totalRows = Math.max(Math.ceil(bImgs.length / colsPerHalf), Math.ceil(aImgs.length / colsPerHalf), 1)
+    const hideRowLines = Math.max(bImgs.length, aImgs.length) >= 3
     const name = d.component_name || '-'
 
     let globalRow = 0
     while (globalRow < totalRows) {
-      if (needHeader) drawHeader()
       const avail = Math.floor((PH - M - y) / RH)
       if (avail < 1) {
         doc.addPage()
         y = M
-        needHeader = true
         continue
       }
       const segTop = y
       const rowsHere = Math.min(avail, totalRows - globalRow)
       for (let r = 0; r < rowsHere; r++) {
         const rowTop = y
-        if (r > 0) {
+        if (r > 0 && !hideRowLines) {
           doc.setDrawColor(...GRID)
           doc.setLineWidth(0.2)
           doc.line(M, rowTop, rightEdge, rowTop)
@@ -835,7 +834,6 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
       if (globalRow < totalRows) {
         doc.addPage()
         y = M
-        needHeader = true
       }
     }
   }
