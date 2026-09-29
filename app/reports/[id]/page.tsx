@@ -47,7 +47,6 @@ type Item = {
   component_name: string
   qty: number | null
   condition_note: string
-  condition: string[]
   recommendation: string[]
   repair_category: string
   comment: string
@@ -519,7 +518,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         setItems(itemsRes.data.map((it) => ({
           ...it,
           recommendation: it.recommendation ?? [],
-          condition: it.condition ?? [],
         })))
       }
       if (bomRes.data) setBomItems(bomRes.data)
@@ -629,7 +627,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         component_name: '',
         qty: 1,
         condition_note: '',
-        condition: [],
         recommendation: [],
         repair_category: '',
         comment: '',
@@ -676,7 +673,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           component_name: it.component_name,
           qty: it.qty,
           condition_note: it.condition_note,
-          condition: it.condition,
           recommendation: it.recommendation,
           repair_category: it.repair_category,
           comment: it.comment,
@@ -694,7 +690,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         component_name: it.component_name,
         qty: it.qty,
         condition_note: it.condition_note,
-        condition: it.condition,
         recommendation: it.recommendation,
         repair_category: it.repair_category,
         comment: it.comment,
@@ -716,7 +711,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           if (it.id) return it
           const inserted = data[dataIdx]
           dataIdx++
-          return { ...it, id: inserted.id, recommendation: inserted.recommendation ?? [], condition: inserted.condition ?? [] }
+          return { ...it, id: inserted.id, recommendation: inserted.recommendation ?? [] }
         })
         setItems(merged)
       }
@@ -1373,7 +1368,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 <th className="border px-1 py-1 text-xs w-10" rowSpan={2}>No</th>
                 <th className="border px-1 py-1 text-xs w-40" rowSpan={2}>Component / Part Description</th>
                 <th className="border px-1 py-1 text-xs w-14" rowSpan={2}>Qty</th>
-                <th className="border px-1 py-1 text-xs" rowSpan={2}>Condition</th>
                 <th className="border px-1 py-1 text-xs" colSpan={3}>Recommendation</th>
                 <th className="border px-1 py-1 text-xs w-28" rowSpan={2}>Repair Category</th>
                 <th className="border px-1 py-1 text-xs" rowSpan={2}>Comment / Notes / Dimension</th>
@@ -1414,30 +1408,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                         onChange={(e) => updateRow(idx, 'qty', Number(e.target.value) || null)}
                       />
                     </td>
-                    <td className="border px-1 py-1 text-center">
-                      <div className="flex gap-1 justify-center">
-                        {['G', 'R', 'U', 'M'].map((c) => (
-                          <label
-                            key={c}
-                            className={`flex flex-col items-center cursor-pointer ${item.condition.includes(c) ? 'text-blue-700' : 'text-gray-400'}`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={item.condition.includes(c)}
-                              onChange={(e) => {
-                                const next = e.target.checked
-                                  ? [...item.condition, c]
-                                  : item.condition.filter((x) => x !== c)
-                                updateRow(idx, 'condition', next)
-                              }}
-                              className="rounded accent-blue-600"
-                            />
-                            <span className="text-[10px] leading-tight">{c}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </td>
-                    <td className={`border px-1 py-1 text-center ${item.recommendation.includes('C') ? 'bg-green-100' : ''}`}>
+                    <td className="border px-1 py-1 text-center ${item.recommendation.includes('C') ? 'bg-green-100' : ''}">
                       <input
                         type="checkbox"
                         checked={item.recommendation.includes('C')}
