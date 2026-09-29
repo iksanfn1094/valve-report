@@ -1418,28 +1418,57 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                         onChange={(e) => updateRow(idx, 'qty', Number(e.target.value) || null)}
                       />
                     </td>
-                    <td className="border px-1 py-1 text-center" colSpan={4}>
-                      <div className="flex gap-1 justify-center">
-                        {['G', 'R', 'U', 'M'].map((c) => (
-                          <label
-                            key={c}
-                            className={`flex flex-col items-center cursor-pointer ${item.condition.includes(c) ? 'text-blue-700' : 'text-gray-400'}`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={item.condition.includes(c)}
-                              onChange={(e) => {
-                                const next = e.target.checked
-                                  ? [...item.condition, c]
-                                  : item.condition.filter((x) => x !== c)
-                                updateRow(idx, 'condition', next)
-                              }}
-                              className="rounded accent-blue-600"
-                            />
-                            <span className="text-[10px] leading-tight">{c}</span>
-                          </label>
-                        ))}
-                      </div>
+                    <td className={`border px-1 py-1 w-8 text-center ${item.condition.includes('G') ? 'bg-blue-50' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={item.condition.includes('G')}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...item.condition, 'G']
+                            : item.condition.filter((x) => x !== 'G')
+                          updateRow(idx, 'condition', next)
+                        }}
+                        className="rounded accent-blue-600"
+                      />
+                    </td>
+                    <td className={`border px-1 py-1 w-8 text-center ${item.condition.includes('R') ? 'bg-blue-50' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={item.condition.includes('R')}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...item.condition, 'R']
+                            : item.condition.filter((x) => x !== 'R')
+                          updateRow(idx, 'condition', next)
+                        }}
+                        className="rounded accent-blue-600"
+                      />
+                    </td>
+                    <td className={`border px-1 py-1 w-8 text-center ${item.condition.includes('U') ? 'bg-blue-50' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={item.condition.includes('U')}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...item.condition, 'U']
+                            : item.condition.filter((x) => x !== 'U')
+                          updateRow(idx, 'condition', next)
+                        }}
+                        className="rounded accent-blue-600"
+                      />
+                    </td>
+                    <td className={`border px-1 py-1 w-8 text-center ${item.condition.includes('M') ? 'bg-blue-50' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={item.condition.includes('M')}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...item.condition, 'M']
+                            : item.condition.filter((x) => x !== 'M')
+                          updateRow(idx, 'condition', next)
+                        }}
+                        className="rounded accent-blue-600"
+                      />
                     </td>
                     <td className={`border px-1 py-1 text-center ${item.recommendation.includes('C') ? 'bg-green-100' : ''}`}>
                       <input
