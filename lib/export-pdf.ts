@@ -767,6 +767,12 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
     y += headerH
   }
 
+  const newPage = () => {
+    doc.addPage()
+    y = M
+    drawHeader()
+  }
+
   drawHeader()
   for (const [i, d] of docItems.entries()) {
     const bImgs = allBefore[i].filter((b): b is string => !!b)
@@ -783,14 +789,12 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
       if (keepTogether && (totalRows - globalRow) * RH > PH - M - y) {
         const wholeFitsPage = totalRows * RH <= PH - M
         if (wholeFitsPage) {
-          doc.addPage()
-          y = M
+          newPage()
         }
       }
       const avail = Math.floor((PH - M - y) / RH)
       if (avail < 1) {
-        doc.addPage()
-        y = M
+        newPage()
         continue
       }
       const segTop = y
@@ -844,8 +848,7 @@ for (const vx of [M, M + colNo, M + colNo + colComp, xBefore, xBefore + halfW, r
       doc.text(name, M + colNo + colComp / 2, midY, { align: 'center', baseline: 'middle' })
       doc.setTextColor(0, 0, 0)
       if (globalRow < totalRows) {
-        doc.addPage()
-        y = M
+        newPage()
       }
     }
   }
