@@ -1373,7 +1373,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 <th className="border px-1 py-1 text-xs w-10" rowSpan={2}>No</th>
                 <th className="border px-1 py-1 text-xs w-40" rowSpan={2}>Component / Part Description</th>
                 <th className="border px-1 py-1 text-xs w-14" rowSpan={2}>Qty</th>
-                <th className="border px-1 py-1 text-xs" colSpan={4}>Condition</th>
+                <th className="border px-1 py-1 text-xs" rowSpan={2}>Condition</th>
                 <th className="border px-1 py-1 text-xs" colSpan={3}>Recommendation</th>
                 <th className="border px-1 py-1 text-xs w-28" rowSpan={2}>Repair Category</th>
                 <th className="border px-1 py-1 text-xs" rowSpan={2}>Comment / Notes / Dimension</th>
@@ -1382,10 +1382,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 <th className="border px-1 py-1 text-xs w-8" rowSpan={2}></th>
               </tr>
               <tr className="bg-blue-900 text-white">
-                <th className="border px-1 py-1 w-8 text-xs">G</th>
-                <th className="border px-1 py-1 w-8 text-xs">R</th>
-                <th className="border px-1 py-1 w-8 text-xs">U</th>
-                <th className="border px-1 py-1 w-8 text-xs">M</th>
                 <th className="border px-1 py-1 w-8 text-xs">C</th>
                 <th className="border px-1 py-1 w-8 text-xs">RP</th>
                 <th className="border px-1 py-1 w-8 text-xs">RE</th>
