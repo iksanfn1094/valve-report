@@ -736,10 +736,9 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
   }
 
   const colNo = 8
-  const colComp = 30
-  const colGap = 4
-  const halfW = (CW - colNo - colComp - colGap) / 2
-  const GAP = 3
+  const colComp = 28
+  const halfW = (CW - colNo - colComp) / 2
+  const GAP = 2
   const colsPerHalf = 2
   const IMG_SZ = (halfW - (colsPerHalf - 1) * GAP) / colsPerHalf
   const RH = IMG_SZ + 2
@@ -747,7 +746,8 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
   const PH = 297
   const rightEdge = M + CW
   const xBefore = M + colNo + colComp
-  const xAfter = xBefore + halfW + colGap
+  const xAfter = xBefore + halfW
+  const xAfterCenter = xAfter + halfW / 2
 
   const drawHeader = () => {
     doc.setFillColor(...BLUE)
@@ -763,7 +763,7 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
     doc.text('NO', M + colNo / 2, y + headerH / 2, { align: 'center' })
     doc.text('COMPONENT / PART', M + colNo + colComp / 2, y + headerH / 2, { align: 'center' })
     doc.text('PHOTO BEFORE', xBefore + halfW / 2, y + headerH / 2, { align: 'center' })
-    doc.text('PHOTO AFTER', xAfter + halfW / 2, y + headerH / 2, { align: 'center' })
+    doc.text('PHOTO AFTER', xAfterCenter, y + headerH / 2, { align: 'center' })
     y += headerH
   }
 
@@ -773,10 +773,20 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
     const aImgs = allAfter[i].filter((b): b is string => !!b)
     const totalRows = Math.max(Math.ceil(bImgs.length / colsPerHalf), Math.ceil(aImgs.length / colsPerHalf), 1)
     const hideRowLines = Math.max(bImgs.length, aImgs.length) >= 3
+    const keepTogether = hideRowLines
     const name = d.component_name || '-'
 
     let globalRow = 0
     while (globalRow < totalRows) {
+      // components with 3+ photos move as a whole block to the next page
+      // when they cannot fit in remaining space
+      if (keepTogether && (totalRows - globalRow) * RH > PH - M - y) {
+        const wholeFitsPage = totalRows * RH <= PH - M
+        if (wholeFitsPage) {
+          doc.addPage()
+          y = M
+        }
+      }
       const avail = Math.floor((PH - M - y) / RH)
       if (avail < 1) {
         doc.addPage()
@@ -785,6 +795,8 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
       }
       const segTop = y
       const rowsHere = Math.min(avail, totalRows - globalRow)
+      // horizontal separator between rows: only the segment's first row gets a
+      // separator line when continuing (photos 3+ hide their row lines anyway)
       for (let r = 0; r < rowsHere; r++) {
         const rowTop = y
         if (r > 0 && !hideRowLines) {
@@ -820,7 +832,7 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
       doc.setDrawColor(...GRID)
       doc.setLineWidth(0.2)
       doc.line(M, segBottom, rightEdge, segBottom)
-      for (const vx of [M, M + colNo, M + colNo + colComp, xBefore, xBefore + halfW, xAfter, rightEdge]) {
+for (const vx of [M, M + colNo, M + colNo + colComp, xBefore, xBefore + halfW, rightEdge]) {
         doc.line(vx, segTop, vx, segBottom)
       }
       // No & Component values centered vertically within this segment's cell
