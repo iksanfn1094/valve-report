@@ -720,8 +720,10 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
   if (docItems.length === 0) return y
 
   const GAP = 3
-  const cols = 5
-  const IMG_SZ = (CW - (cols - 1) * GAP) / cols
+  const halfGap = 8
+  const halfW = (CW - halfGap) / 2
+  const colsPerHalf = 3
+  const IMG_SZ = (halfW - (colsPerHalf - 1) * GAP) / colsPerHalf
 
   const beforeData = new Map<string, (string | null)[]>()
   const afterData = new Map<string, (string | null)[]>()
@@ -735,17 +737,17 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
     afterData.set(key, aArr)
   }
 
-  function drawPhotoGrid(arr: (string | null)[], topY: number): number {
+  function drawPhotoGrid(arr: (string | null)[], topY: number, leftX: number, width: number): number {
     const imgs = arr.filter((b): b is string => !!b)
     if (imgs.length === 0) return topY
     let yy = topY
-    for (let j = 0; j < imgs.length; j += cols) {
-      const chunk = imgs.slice(j, j + cols)
+    for (let j = 0; j < imgs.length; j += colsPerHalf) {
+      const chunk = imgs.slice(j, j + colsPerHalf)
       if (yy + IMG_SZ + 3 > 297 - M) { doc.addPage(); yy = M }
       const totalInRow = chunk.length
-      const offsetX = (CW - totalInRow * (IMG_SZ + GAP)) / 2
+      const offsetX = (width - totalInRow * (IMG_SZ + GAP)) / 2
       chunk.forEach((b64, ci) => {
-        try { doc.addImage(b64, 'JPEG', M + offsetX + ci * (IMG_SZ + GAP), yy, IMG_SZ, IMG_SZ) } catch { /* skip */ }
+        try { doc.addImage(b64, 'JPEG', leftX + offsetX + ci * (IMG_SZ + GAP), yy, IMG_SZ, IMG_SZ) } catch { /* skip */ }
       })
       yy += IMG_SZ + GAP
     }
@@ -769,23 +771,19 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
     doc.text(`NO: ${i + 1}   COMPONENT / PART: ${d.component_name || '-'}`, M, y)
     y += 2.5
 
-    if (bArr.filter(Boolean).length > 0) {
+    const bHas = bArr.filter(Boolean).length > 0
+    const aHas = aArr.filter(Boolean).length > 0
+    if (bHas || aHas) {
       doc.setFontSize(6.5)
       doc.setFont('helvetica', 'italic')
       doc.setTextColor(90, 90, 90)
-      doc.text('PHOTO BEFORE', M, y)
+      if (bHas) doc.text('PHOTO BEFORE', M, y)
+      if (aHas) doc.text('PHOTO AFTER', M + halfW + halfGap, y)
       y += 1.5
-      y = drawPhotoGrid(bArr, y)
+      const yB = bHas ? drawPhotoGrid(bArr, y, M, halfW) : y
+      const yA = aHas ? drawPhotoGrid(aArr, y, M + halfW + halfGap, halfW) : y
+      y = Math.max(yB, yA) + 1
     }
-    if (aArr.filter(Boolean).length > 0) {
-      doc.setFontSize(6.5)
-      doc.setFont('helvetica', 'italic')
-      doc.setTextColor(90, 90, 90)
-      doc.text('PHOTO AFTER', M, y)
-      y += 1.5
-      y = drawPhotoGrid(aArr, y)
-    }
-    if (i < docItems.length - 1) y += 1
   })
 
   return y
