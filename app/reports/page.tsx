@@ -135,6 +135,7 @@ export default function ReportsList() {
         component_name: (it.component_name as string) || '',
         qty: it.qty as number | null,
         condition_note: (it.condition_note as string) || '',
+        condition: (it.condition as string[]) || [],
         recommendation: (it.recommendation as string[]) || [],
         comment: (it.comment as string) || '',
         spec_material: (it.spec_material as string) || '',

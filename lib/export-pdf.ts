@@ -31,6 +31,7 @@ type ItemData = {
   component_name: string
   qty: number | null
   condition_note: string
+  condition: string[]
   recommendation: string[]
   comment: string
   spec_material: string
@@ -470,20 +471,23 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
         { content: 'No', rowSpan: 2 },
         { content: 'Component / Part Description', rowSpan: 2 },
         { content: 'Qty', rowSpan: 2 },
-        { content: 'Condition', rowSpan: 2 },
+        { content: 'Condition', colSpan: 4 },
         { content: 'Recommendation', colSpan: 3 },
         { content: 'Repair Category', rowSpan: 2 },
         { content: 'Comment / Notes / Dimension', rowSpan: 2 },
         { content: 'Photo', rowSpan: 2 },
         { content: 'Material Spec.', rowSpan: 2 },
       ],
-      ['C', 'RP', 'RE'],
+      ['G', 'R', 'U', 'M', 'C', 'RP', 'RE'],
     ],
     body: items.map((it) => [
       String(it.item_no),
       it.component_name || '-',
       it.qty?.toString() || '-',
-      '-',
+      '',
+      '',
+      '',
+      '',
       '',
       '',
       '',
@@ -499,14 +503,17 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
       0: { cellWidth: 7, halign: 'center' },
       1: { cellWidth: 30, halign: 'left' },
       2: { cellWidth: 8, halign: 'center' },
-      3: { cellWidth: 30, halign: 'left' },
+      3: { cellWidth: 7, halign: 'center' },
       4: { cellWidth: 7, halign: 'center' },
       5: { cellWidth: 7, halign: 'center' },
       6: { cellWidth: 7, halign: 'center' },
-      7: { cellWidth: 16, halign: 'center' },
-      8: { cellWidth: 26, halign: 'left' },
-      9: { cellWidth: 32, halign: 'center', valign: 'middle' },
-      10: { cellWidth: 20, halign: 'left' },
+      7: { cellWidth: 7, halign: 'center' },
+      8: { cellWidth: 7, halign: 'center' },
+      9: { cellWidth: 7, halign: 'center' },
+      10: { cellWidth: 16, halign: 'center' },
+      11: { cellWidth: 26, halign: 'left' },
+      12: { cellWidth: 32, halign: 'center', valign: 'middle' },
+      13: { cellWidth: 20, halign: 'left' },
     },
     didParseCell: (data) => {
       if (data.section !== 'body') return
@@ -515,7 +522,7 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
       const b64s = photosBase64.get(item.id || '') || []
       if (b64s.length > 0) {
         data.cell.styles.minCellHeight = 34
-        if (data.column.index === 9) {
+        if (data.column.index === 12) {
           data.cell.styles.cellPadding = { top: 2, bottom: 2, left: 1, right: 1 }
         }
       }
@@ -524,28 +531,21 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
       if (data.section !== 'body') return
       const item = items[data.row.index]
       if (!item) return
-      if (data.column.index === 4 && item.recommendation.includes('C')) {
+      const drawCheck = (col: number) => {
         const cx = data.cell.x + data.cell.width / 2, cy = data.cell.y + data.cell.height / 2
         doc.setDrawColor(0); doc.setLineWidth(0.4)
         doc.line(cx - 1.5, cy - 0.3, cx - 0.3, cy + 0.8)
         doc.line(cx - 0.3, cy + 0.8, cx + 2, cy - 1.2)
         doc.setLineWidth(0.2)
       }
-      if (data.column.index === 5 && item.recommendation.includes('RP')) {
-        const cx = data.cell.x + data.cell.width / 2, cy = data.cell.y + data.cell.height / 2
-        doc.setDrawColor(0); doc.setLineWidth(0.4)
-        doc.line(cx - 1.5, cy - 0.3, cx - 0.3, cy + 0.8)
-        doc.line(cx - 0.3, cy + 0.8, cx + 2, cy - 1.2)
-        doc.setLineWidth(0.2)
-      }
-      if (data.column.index === 6 && item.recommendation.includes('RE')) {
-        const cx = data.cell.x + data.cell.width / 2, cy = data.cell.y + data.cell.height / 2
-        doc.setDrawColor(0); doc.setLineWidth(0.4)
-        doc.line(cx - 1.5, cy - 0.3, cx - 0.3, cy + 0.8)
-        doc.line(cx - 0.3, cy + 0.8, cx + 2, cy - 1.2)
-        doc.setLineWidth(0.2)
-      }
-      if (data.column.index === 9) {
+      if (data.column.index === 3 && item.condition.includes('G')) drawCheck(3)
+      if (data.column.index === 4 && item.condition.includes('R')) drawCheck(4)
+      if (data.column.index === 5 && item.condition.includes('U')) drawCheck(5)
+      if (data.column.index === 6 && item.condition.includes('M')) drawCheck(6)
+      if (data.column.index === 7 && item.recommendation.includes('C')) drawCheck(7)
+      if (data.column.index === 8 && item.recommendation.includes('RP')) drawCheck(8)
+      if (data.column.index === 9 && item.recommendation.includes('RE')) drawCheck(9)
+      if (data.column.index === 12) {
         const b64s = photosBase64.get(item.id || '') || []
         if (b64s.length > 0) {
           const photoSize = 30
