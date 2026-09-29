@@ -742,6 +742,7 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
   const GAP = 3
   const colsPerHalf = 2
   const IMG_SZ = (halfW - (colsPerHalf - 1) * GAP) / colsPerHalf
+  const RH = IMG_SZ + 2
   const headerH = 6
   const PH = 297
   const rightEdge = M + CW
@@ -778,8 +779,13 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
       doc.setTextColor(0, 0, 0)
       y += headerH
       // rows that fit on this page
-      const avail = Math.floor((PH - M - y) / (IMG_SZ + GAP))
-      const rowsHere = Math.max(1, Math.min(avail, totalRows - globalRow))
+      const avail = Math.floor((PH - M - y) / RH)
+      let rowsHere = Math.max(1, Math.min(avail, totalRows - globalRow))
+      if (rowsHere * RH > PH - M - y) {
+        doc.addPage()
+        y = M
+        continue
+      }
       for (let r = 0; r < rowsHere; r++) {
         const rowTop = y
         // Photo Before
@@ -787,7 +793,8 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
         const bChunk = bImgs.slice(bStart, bStart + colsPerHalf)
         bChunk.forEach((b64, ci) => {
           const totalInRow = bChunk.length
-          const offsetX = (halfW - totalInRow * (IMG_SZ + GAP)) / 2
+          const totalW = totalInRow * IMG_SZ + (totalInRow - 1) * GAP
+          const offsetX = (halfW - totalW) / 2
           const x = xBefore + offsetX + ci * (IMG_SZ + GAP)
           try { doc.addImage(b64, 'JPEG', x, rowTop + 1, IMG_SZ, IMG_SZ) } catch { /* skip */ }
         })
@@ -796,25 +803,23 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
         const aChunk = aImgs.slice(aStart, aStart + colsPerHalf)
         aChunk.forEach((b64, ci) => {
           const totalInRow = aChunk.length
-          const offsetX = (halfW - totalInRow * (IMG_SZ + GAP)) / 2
+          const totalW = totalInRow * IMG_SZ + (totalInRow - 1) * GAP
+          const offsetX = (halfW - totalW) / 2
           const x = xAfter + offsetX + ci * (IMG_SZ + GAP)
           try { doc.addImage(b64, 'JPEG', x, rowTop + 1, IMG_SZ, IMG_SZ) } catch { /* skip */ }
         })
-        y += IMG_SZ + GAP
+        y += RH
       }
       globalRow += rowsHere
       // close this page segment: border + verticals
-      const segBottom = y - GAP
+      const segBottom = y
       doc.setDrawColor(...GRID)
       doc.setLineWidth(0.2)
+      doc.line(M, segBottom, rightEdge, segBottom)
       for (const vx of [M, M + colNo, M + colNo + colComp, xBefore, xBefore + halfW, xAfter, rightEdge]) {
         doc.line(vx, segTop, vx, segBottom)
       }
-      doc.line(M, segBottom, rightEdge, segBottom)
-      y = segBottom
-      if (globalRow < totalRows) { y += 5 }
     }
-    y += 5
   }
 
   return y
