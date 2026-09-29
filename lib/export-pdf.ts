@@ -291,11 +291,12 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(0, 0, 0)
   doc.text('Repair Category', rightX + 2, startY2 + 5)
+  const catLevel: number = { inspection: 0, minor: 1, major: 2, junk: 3 }[report.category || ''] ?? -1
   const cats: [string, boolean][] = [
-    ['Inspection', report.category === 'inspection'],
-    ['Minor', report.category === 'minor'],
-    ['Major', report.category === 'major'],
-    ['Junk', report.category === 'junk'],
+    ['Inspection', catLevel === 0 || catLevel === 1 || catLevel === 2],
+    ['Minor', catLevel === 1 || catLevel === 2],
+    ['Major', catLevel === 2],
+    ['Junk', catLevel === 3],
   ]
   cats.forEach(([label, checked], ci) => {
     const cy = startY2 + 6.5 + ci * 5
