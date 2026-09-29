@@ -736,9 +736,9 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
   }
 
   const maxPhotos = Math.max(1, ...docItems.map(d => Math.max(d.photo_before?.length || 0, d.photo_after?.length || 0)))
-  const IMG_SZ = 22
+  const IMG_SZ = 33
   const GAP = 2
-  const photoColW = Math.min(90, maxPhotos * (IMG_SZ + GAP) + 4)
+  const photoColW = Math.min(76, maxPhotos * (IMG_SZ + GAP) + 4)
 
   autoTable(doc, {
     startY: y,
