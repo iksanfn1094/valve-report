@@ -722,7 +722,7 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
   doc.text('DOCUMENTATION', M, y)
-  y += 3
+  y += 4
 
   const allBefore: (string | null)[][] = []
   const allAfter: (string | null)[][] = []
@@ -735,56 +735,89 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
     allAfter.push(aArr)
   }
 
-  const maxPhotos = Math.max(1, ...docItems.map(d => Math.max(d.photo_before?.length || 0, d.photo_after?.length || 0)))
-  const IMG_SZ = 33
-  const GAP = 2
-  const photoColW = Math.min(76, maxPhotos * (IMG_SZ + GAP) + 4)
+  const colNo = 8
+  const colComp = 30
+  const colGap = 4
+  const halfW = (CW - colNo - colComp - colGap) / 2
+  const GAP = 3
+  const colsPerHalf = 2
+  const IMG_SZ = (halfW - (colsPerHalf - 1) * GAP) / colsPerHalf
+  const headerH = 6
+  const PH = 297
+  const rightEdge = M + CW
 
-  autoTable(doc, {
-    startY: y,
-    margin: { left: M, right: M },
-    head: [['No', 'Component', 'Photo Before', 'Photo After']],
-    body: docItems.map((d, i) => [
-      String(i + 1),
-      d.component_name || '-',
-      ' ',
-      ' ',
-    ]),
-    styles: { fontSize: 6, cellPadding: 1, lineColor: GRID, lineWidth: 0.2 },
-    headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6, fontStyle: 'bold', halign: 'center' },
-    alternateRowStyles: { fillColor: LIGHT_BG },
-    columnStyles: {
-      0: { cellWidth: 8, halign: 'center', valign: 'middle' },
-      1: { cellWidth: 30, halign: 'center', valign: 'middle' },
-      2: { cellWidth: photoColW, halign: 'center', minCellHeight: IMG_SZ + 4 },
-      3: { cellWidth: photoColW, halign: 'center', minCellHeight: IMG_SZ + 4 },
-    },
-    didDrawCell: (data) => {
-      if (data.section !== 'body') return
-      const col = data.column.index
-      const rowIdx = data.row.index
-      const arr = col === 2 ? allBefore[rowIdx] : col === 3 ? allAfter[rowIdx] : null
-      if (arr && arr.length > 0) {
-        const maxPerRow = Math.floor(data.cell.width / (IMG_SZ + GAP))
-        arr.forEach((b64, ci) => {
-          if (!b64) return
-          const row = Math.floor(ci / maxPerRow)
-          const c = ci % maxPerRow
-          const totalInRow = Math.min(maxPerRow, arr.length - row * maxPerRow)
-          const offsetX = (data.cell.width - totalInRow * (IMG_SZ + GAP)) / 2
-          const x = data.cell.x + offsetX + c * (IMG_SZ + GAP)
-          const y2 = data.cell.y + (data.cell.height - IMG_SZ) / 2 + row * (IMG_SZ + GAP)
-          try { doc.addImage(b64, 'JPEG', x, y2, IMG_SZ, IMG_SZ) } catch { /* skip */ }
+  for (const [i, d] of docItems.entries()) {
+    const bImgs = allBefore[i].filter((b): b is string => !!b)
+    const aImgs = allAfter[i].filter((b): b is string => !!b)
+    const totalRows = Math.max(Math.ceil(bImgs.length / colsPerHalf), Math.ceil(aImgs.length / colsPerHalf), 1)
+    const xBefore = M + colNo + colComp
+    const xAfter = xBefore + halfW + colGap
+
+    let globalRow = 0
+    while (globalRow < totalRows) {
+      if (y + headerH > PH - M) { doc.addPage(); y = M }
+      const segTop = y
+      // header bar
+      doc.setDrawColor(...GRID)
+      doc.setLineWidth(0.2)
+      doc.setFillColor(...LIGHT_BG)
+      doc.rect(M, y, CW, headerH, 'FD')
+      doc.line(M + colNo, y, M + colNo, y + headerH)
+      doc.line(M + colNo + colComp, y, M + colNo + colComp, y + headerH)
+      doc.line(xBefore + halfW, y, xBefore + halfW, y + headerH)
+      doc.setTextColor(70, 90, 120)
+      doc.setFontSize(6.5)
+      doc.setFont('helvetica', 'bold')
+      doc.text('NO', M + 2, y + 4)
+      doc.text('COMPONENT / PART', M + colNo + 2, y + 4)
+      doc.text('PHOTO BEFORE', xBefore + halfW / 2, y + 4, { align: 'center' })
+      doc.text('PHOTO AFTER', xAfter + halfW / 2, y + 4, { align: 'center' })
+      doc.text(String(i + 1), M + colNo / 2, y + headerH - 1, { align: 'center' })
+      doc.setFont('helvetica', 'normal')
+      doc.text(d.component_name || '-', M + colNo + 2, y + headerH - 1)
+      doc.setTextColor(0, 0, 0)
+      y += headerH
+      // rows that fit on this page
+      const avail = Math.floor((PH - M - y) / (IMG_SZ + GAP))
+      const rowsHere = Math.max(1, Math.min(avail, totalRows - globalRow))
+      for (let r = 0; r < rowsHere; r++) {
+        const rowTop = y
+        // Photo Before
+        const bStart = (globalRow + r) * colsPerHalf
+        const bChunk = bImgs.slice(bStart, bStart + colsPerHalf)
+        bChunk.forEach((b64, ci) => {
+          const totalInRow = bChunk.length
+          const offsetX = (halfW - totalInRow * (IMG_SZ + GAP)) / 2
+          const x = xBefore + offsetX + ci * (IMG_SZ + GAP)
+          try { doc.addImage(b64, 'JPEG', x, rowTop + 1, IMG_SZ, IMG_SZ) } catch { /* skip */ }
         })
-      } else if (col === 2 || col === 3) {
-        doc.setFontSize(7)
-        doc.setFont('helvetica', 'italic')
-        doc.setTextColor(150, 150, 150)
-        doc.text('N/A', data.cell.x + data.cell.width / 2, data.cell.y + data.cell.height / 2, { align: 'center' })
+        // Photo After
+        const aStart = (globalRow + r) * colsPerHalf
+        const aChunk = aImgs.slice(aStart, aStart + colsPerHalf)
+        aChunk.forEach((b64, ci) => {
+          const totalInRow = aChunk.length
+          const offsetX = (halfW - totalInRow * (IMG_SZ + GAP)) / 2
+          const x = xAfter + offsetX + ci * (IMG_SZ + GAP)
+          try { doc.addImage(b64, 'JPEG', x, rowTop + 1, IMG_SZ, IMG_SZ) } catch { /* skip */ }
+        })
+        y += IMG_SZ + GAP
       }
-    },
-  })
-  return (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 7
+      globalRow += rowsHere
+      // close this page segment: border + verticals
+      const segBottom = y - GAP
+      doc.setDrawColor(...GRID)
+      doc.setLineWidth(0.2)
+      for (const vx of [M, M + colNo, M + colNo + colComp, xBefore, xBefore + halfW, xAfter, rightEdge]) {
+        doc.line(vx, segTop, vx, segBottom)
+      }
+      doc.line(M, segBottom, rightEdge, segBottom)
+      y = segBottom
+      if (globalRow < totalRows) { y += 5 }
+    }
+    y += 5
+  }
+
+  return y
 }
 
 export async function exportReportPDF(
