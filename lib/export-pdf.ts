@@ -23,6 +23,7 @@ type ReportData = {
   recommendations: string | null
   conclusion: string | null
   sub_datasheet: SubDatasheet | null
+  visual_dimensional?: VisualDimensionalData | null
 }
 
 type ItemData = {
@@ -36,6 +37,18 @@ type ItemData = {
   comment: string
   spec_material: string
   repair_category?: string
+}
+
+type VisualDimensionalData = {
+  visual_acc?: boolean
+  visual_failed?: boolean
+  dims?: {
+    name?: string
+    ref?: string
+    spec?: string
+    actual?: string
+    result?: 'ACC' | 'FAILED' | '' | null
+  }[]
 }
 
 type BomData = {
@@ -579,6 +592,89 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
   return y
 }
 
+function drawVisualDimensionalTable(
+  doc: jsPDF,
+  report: ReportData,
+  M: number,
+  CW: number,
+  PW: number,
+  PH: number,
+  startY: number
+): number {
+  let y = startY
+  const vd = report.visual_dimensional
+  const dims = vd?.dims && vd.dims.length > 0 ? vd.dims : [
+    { name: 'FACE TO FACE', ref: '', spec: '', actual: '', result: '' },
+    { name: 'FLANGE OD', ref: '', spec: '', actual: '', result: '' },
+    { name: 'FLANGE THK', ref: '', spec: '', actual: '', result: '' },
+  ]
+
+  doc.setTextColor(...BLUE)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'bold')
+  doc.text('VISUAL INSPECTION & DIMENSIONAL CHECK RESULT', M, y)
+  y += 6
+
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(0, 0, 0)
+  doc.text('VISUAL INSPECTION RESULT:', M, y)
+  y += 4
+
+  const drawVisualItem = (label: string, checked: boolean) => {
+    doc.setDrawColor(0)
+    doc.setLineWidth(0.3)
+    doc.rect(M, y - 3, 3, 3, 'S')
+    if (checked) {
+      doc.setLineWidth(0.5)
+      doc.line(M + 0.5, y - 1.5, M + 1.2, y - 0.5)
+      doc.line(M + 1.2, y - 0.5, M + 2.5, y - 2.5)
+      doc.setLineWidth(0.2)
+    }
+    doc.setFont('helvetica', 'normal')
+    doc.text(label, M + 5, y)
+  }
+  drawVisualItem('ACC', !!vd?.visual_acc)
+  doc.text('FAILED', M + 40, y)
+  if (!!vd?.visual_failed) {
+    doc.setDrawColor(0)
+    doc.setLineWidth(0.5)
+    doc.line(M + 40, y - 1.5, M + 40.5, y - 0.5)
+    doc.line(M + 40.5, y - 0.5, M + 41.7, y - 2.5)
+    doc.setLineWidth(0.2)
+  }
+  y += 5
+  doc.setLineWidth(0.2)
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: M, right: M },
+    head: [['No', 'ITEM', 'REF. STANDARD/CODE', 'SPEC. (mm)', 'ACTUAL (mm)', 'RESULT']],
+    body: dims.map((d, i) => [
+      String(i + 1),
+      d.name || '',
+      d.ref || '',
+      d.spec || '',
+      d.actual || '',
+      d.result || '',
+    ]),
+    styles: { fontSize: 6.5, cellPadding: 1.5, lineColor: GRID, lineWidth: 0.2, valign: 'middle' },
+    headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6.5, fontStyle: 'bold', halign: 'center', valign: 'middle' },
+    alternateRowStyles: { fillColor: LIGHT_BG },
+    columnStyles: {
+      0: { cellWidth: 8, halign: 'center' },
+      1: { cellWidth: 30, halign: 'left' },
+      2: { cellWidth: CW - 8 - 30 - 22 - 22 - 20, halign: 'left' },
+      3: { cellWidth: 22, halign: 'center' },
+      4: { cellWidth: 22, halign: 'center' },
+      5: { cellWidth: 20, halign: 'center' },
+    },
+  })
+  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
+
+  return y
+}
+
 function drawBomTable(doc: jsPDF, bomItems: BomData[], M: number, CW: number, startY: number): number {
   let y = startY
   if (bomItems.length === 0) return y
@@ -905,6 +1001,7 @@ export async function exportReportPDF(
       y = drawJobInfo(doc, report, M, CW, y)
       y = drawConstruction(doc, report, M, CW, y)
       y = await drawItemsTable(doc, items, photos, M, CW, PW, PH, y)
+      y = drawVisualDimensionalTable(doc, report, M, CW, PW, PH, y)
       drawSignature(doc, report, M, CW, y, PW, PH)
     }
 
@@ -968,6 +1065,7 @@ export async function exportReportPDF(
     if (tab === 'inspection') {
       y = drawConstruction(doc, report, M, CW, y)
       y = await drawItemsTable(doc, items, photos, M, CW, PW, PH, y)
+      y = drawVisualDimensionalTable(doc, report, M, CW, PW, PH, y)
     }
     if (tab === 'documentation') {
       y = await drawDocumentationSection(doc, docItems, M, CW, y)
