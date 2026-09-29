@@ -1368,7 +1368,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 <th className="border px-1 py-1 text-xs w-10" rowSpan={2}>No</th>
                 <th className="border px-1 py-1 text-xs w-40" rowSpan={2}>Component / Part Description</th>
                 <th className="border px-1 py-1 text-xs w-14" rowSpan={2}>Qty</th>
-                <th className="border px-1 py-1 text-xs w-56" rowSpan={2}>Condition</th>
                 <th className="border px-1 py-1 text-xs" colSpan={3}>Recommendation</th>
                 <th className="border px-1 py-1 text-xs w-28" rowSpan={2}>Repair Category</th>
                 <th className="border px-1 py-1 text-xs" rowSpan={2}>Comment / Notes / Dimension</th>
@@ -1409,16 +1408,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                         onChange={(e) => updateRow(idx, 'qty', Number(e.target.value) || null)}
                       />
                     </td>
-                    <td className="border px-1 py-1 w-56">
-                      <input
-                        className="w-full border-0 bg-transparent text-xs focus:outline-none"
-                        style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}
-                        value={item.condition_note}
-                        placeholder="Condition description..."
-                        onChange={(e) => updateRow(idx, 'condition_note', e.target.value)}
-                      />
-                    </td>
-                    <td className={`border px-1 py-1 text-center ${item.recommendation.includes('C') ? 'bg-green-100' : ''}`}>
+                    <td className="border px-1 py-1 text-center ${item.recommendation.includes('C') ? 'bg-green-100' : ''}">
                       <input
                         type="checkbox"
                         checked={item.recommendation.includes('C')}
@@ -1473,7 +1463,15 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                       <input
                         className="w-full border-0 bg-transparent text-xs focus:outline-none"
                         style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}
+                        value={item.condition_note}
+                        placeholder="Condition / Notes / Dimension..."
+                        onChange={(e) => updateRow(idx, 'condition_note', e.target.value)}
+                      />
+                      <input
+                        className="w-full border-0 bg-transparent text-xs mt-1 focus:outline-none"
+                        style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}
                         value={item.comment}
+                        placeholder="Comment..."
                         onChange={(e) => updateRow(idx, 'comment', e.target.value)}
                       />
                     </td>
