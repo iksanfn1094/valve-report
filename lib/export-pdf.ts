@@ -746,48 +746,53 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
   const headerH = 6
   const PH = 297
   const rightEdge = M + CW
+  const xBefore = M + colNo + colComp
+  const xAfter = xBefore + halfW + colGap
 
+  const drawHeader = () => {
+    doc.setFillColor(...BLUE)
+    doc.setDrawColor(...BLUE)
+    doc.setLineWidth(0.2)
+    doc.rect(M, y, CW, headerH, 'FD')
+    doc.line(M + colNo, y, M + colNo, y + headerH)
+    doc.line(M + colNo + colComp, y, M + colNo + colComp, y + headerH)
+    doc.line(xBefore + halfW, y, xBefore + halfW, y + headerH)
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(6.5)
+    doc.setFont('helvetica', 'bold')
+    doc.text('NO', M + colNo / 2, y + headerH / 2, { align: 'center' })
+    doc.text('COMPONENT / PART', M + colNo + colComp / 2, y + headerH / 2, { align: 'center' })
+    doc.text('PHOTO BEFORE', xBefore + halfW / 2, y + headerH / 2, { align: 'center' })
+    doc.text('PHOTO AFTER', xAfter + halfW / 2, y + headerH / 2, { align: 'center' })
+    y += headerH
+  }
+
+  let needHeader = true
   for (const [i, d] of docItems.entries()) {
     const bImgs = allBefore[i].filter((b): b is string => !!b)
     const aImgs = allAfter[i].filter((b): b is string => !!b)
     const totalRows = Math.max(Math.ceil(bImgs.length / colsPerHalf), Math.ceil(aImgs.length / colsPerHalf), 1)
-    const xBefore = M + colNo + colComp
-    const xAfter = xBefore + halfW + colGap
+    const name = d.component_name || '-'
 
     let globalRow = 0
     while (globalRow < totalRows) {
-      if (y + headerH > PH - M) { doc.addPage(); y = M }
-      const segTop = y
-      // header bar
-      doc.setDrawColor(...GRID)
-      doc.setLineWidth(0.2)
-      doc.setFillColor(...LIGHT_BG)
-      doc.rect(M, y, CW, headerH, 'FD')
-      doc.line(M + colNo, y, M + colNo, y + headerH)
-      doc.line(M + colNo + colComp, y, M + colNo + colComp, y + headerH)
-      doc.line(xBefore + halfW, y, xBefore + halfW, y + headerH)
-      doc.setTextColor(70, 90, 120)
-      doc.setFontSize(6.5)
-      doc.setFont('helvetica', 'bold')
-      doc.text('NO', M + 2, y + 4)
-      doc.text('COMPONENT / PART', M + colNo + 2, y + 4)
-      doc.text('PHOTO BEFORE', xBefore + halfW / 2, y + 4, { align: 'center' })
-      doc.text('PHOTO AFTER', xAfter + halfW / 2, y + 4, { align: 'center' })
-      doc.text(String(i + 1), M + colNo / 2, y + headerH - 1, { align: 'center' })
-      doc.setFont('helvetica', 'normal')
-      doc.text(d.component_name || '-', M + colNo + 2, y + headerH - 1)
-      doc.setTextColor(0, 0, 0)
-      y += headerH
-      // rows that fit on this page
+      if (needHeader) drawHeader()
       const avail = Math.floor((PH - M - y) / RH)
-      let rowsHere = Math.max(1, Math.min(avail, totalRows - globalRow))
-      if (rowsHere * RH > PH - M - y) {
+      if (avail < 1) {
         doc.addPage()
         y = M
+        needHeader = true
         continue
       }
+      const segTop = y
+      const rowsHere = Math.min(avail, totalRows - globalRow)
       for (let r = 0; r < rowsHere; r++) {
         const rowTop = y
+        if (r > 0) {
+          doc.setDrawColor(...GRID)
+          doc.setLineWidth(0.2)
+          doc.line(M, rowTop, rightEdge, rowTop)
+        }
         // Photo Before
         const bStart = (globalRow + r) * colsPerHalf
         const bChunk = bImgs.slice(bStart, bStart + colsPerHalf)
@@ -811,7 +816,7 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
         y += RH
       }
       globalRow += rowsHere
-      // close this page segment: border + verticals
+      // close this page segment: borders + verticals
       const segBottom = y
       doc.setDrawColor(...GRID)
       doc.setLineWidth(0.2)
@@ -819,8 +824,22 @@ async function drawDocumentationSection(doc: jsPDF, docItems: DocData[], M: numb
       for (const vx of [M, M + colNo, M + colNo + colComp, xBefore, xBefore + halfW, xAfter, rightEdge]) {
         doc.line(vx, segTop, vx, segBottom)
       }
+      // No & Component values centered vertically within this segment's cell
+      doc.setFontSize(6.5)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(60, 70, 90)
+      const midY = segTop + (segBottom - segTop) / 2
+      doc.text(String(i + 1), M + colNo / 2, midY, { align: 'center', baseline: 'middle' })
+      doc.text(name, M + colNo + colComp / 2, midY, { align: 'center', baseline: 'middle' })
+      doc.setTextColor(0, 0, 0)
+      if (globalRow < totalRows) {
+        doc.addPage()
+        y = M
+        needHeader = true
+      }
     }
   }
+  y += 5
 
   return y
 }
