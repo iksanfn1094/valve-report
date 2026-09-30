@@ -412,11 +412,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   function addPackagingPhoto() {
     setPackagingPhotos([...getPackagingPhotos(), { id: crypto.randomUUID(), weight: '', photos: [] }])
   }
-  function updatePackagingPhoto(idx: number, weight: string) {
-    const p = getPackagingPhotos()
-    p[idx].weight = weight
-    setPackagingPhotos(p)
-  }
   function removePackagingPhoto(idx: number) {
     const p = getPackagingPhotos()
     p.splice(idx, 1)
@@ -2225,13 +2220,12 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
 
         <div>
           <h3 className="text-lg font-bold text-gray-800 mb-1">PACKAGING PHOTO RECORDS</h3>
-          <p className="text-xs text-gray-400 mb-2">in kg weight / item</p>
+          <p className="text-xs text-gray-400 mb-2">weight / item (kg)</p>
           <div className="overflow-x-auto">
             <table className="w-full text-xs border-collapse">
               <thead>
                 <tr className="bg-blue-900 text-white">
                   <th className="border px-2 py-2 text-center w-8">No</th>
-                  <th className="border px-2 py-2 text-left w-32">WEIGHT (KG)</th>
                   <th className="border px-2 py-2 text-center">Photo</th>
                   <th className="border px-2 py-2 text-center w-8"></th>
                 </tr>
@@ -2240,9 +2234,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 {getPackagingPhotos().map((row, i) => (
                   <tr key={row.id} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
                     <td className="border px-2 py-1 text-center text-gray-500">{i + 1}</td>
-                    <td className="border px-1 py-1">
-                      <input type="text" value={row.weight} onChange={e => updatePackagingPhoto(i, e.target.value)} className="w-full border-0 bg-transparent text-xs text-center focus:outline-none" placeholder="kg" />
-                    </td>
                     <td className="border px-1 py-1">
                       <div className="flex flex-wrap items-center gap-1">
                         {row.photos.map((url, j) => (
@@ -2261,7 +2252,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                   </tr>
                 ))}
                 {getPackagingPhotos().length === 0 && (
-                  <tr><td colSpan={4} className="border px-2 py-6 text-center text-gray-400">No photos yet. Click &quot;+ Tambah Baris&quot; to add.</td></tr>
+                  <tr><td colSpan={3} className="border px-2 py-6 text-center text-gray-400">No photos yet. Click &quot;+ Tambah Baris&quot; to add.</td></tr>
                 )}
               </tbody>
             </table>
