@@ -162,6 +162,7 @@ const HEADER_H = 20
 // first usable y below that band
 const CONTENT_TOP = HEADER_H + 5
 const INSPECTION_TITLE = 'INSPECTION REPORT'
+const RESUME_TITLE = 'RESUME REPORT'
 // height of one signature box, used to reserve the bottom strip that repeats
 // on every inspection page
 const SIG_BOX_H = 32
@@ -280,13 +281,25 @@ function stampSignaturesAt(doc: jsPDF, report: ReportData, M: number, CW: number
   doc.setPage(doc.getNumberOfPages())
 }
 
-// Stamps the signature strip at the bottom of every page in [fromPage, toPage].
-// Used by the inspection section, where the table reserves a bottom margin so
-// the strip can repeat on each page instead of appearing once at the end.
-function stampSignatures(doc: jsPDF, report: ReportData, M: number, CW: number, PH: number, fromPage: number, toPage: number) {
-  const pages: number[] = []
-  for (let p = fromPage; p <= toPage; p++) pages.push(p)
-  stampSignaturesAt(doc, report, M, CW, PH - M - SIG_BOX_H, pages)
+// Stamps the strip across a whole section. Every page in [fromPage, end] gets one
+// at the bottom, except the page a block was pushed onto, where it sits directly
+// under that block instead. Pages the pushed block later spills onto are still
+// covered, which a simple from..movedToPage-1 range would have missed.
+function stampSectionSignatures(
+  doc: jsPDF,
+  report: ReportData,
+  M: number,
+  CW: number,
+  PH: number,
+  fromPage: number,
+  movedToPage: number | null,
+  blockEndY: number
+) {
+  const total = doc.getNumberOfPages()
+  const rest: number[] = []
+  for (let p = fromPage; p <= total; p++) if (p !== movedToPage) rest.push(p)
+  stampSignaturesAt(doc, report, M, CW, PH - M - SIG_BOX_H, rest)
+  if (movedToPage !== null) stampSignaturesAt(doc, report, M, CW, blockEndY, [movedToPage])
 }
 
 function drawFooter(doc: jsPDF, report: ReportData, tabLabel: string, PW: number, PH: number) {
@@ -414,48 +427,116 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
   return Math.max(y, startY2 + boxH + 5)
 }
 
-// Redraws the top of an inspection continuation page: the blue band with the
-// logo, section title and company name, followed by the repeated
-// JOB INFORMATION and CONSTRUCTION (AS FOUND) blocks.
-function drawInspectionContinuationHeader(doc: jsPDF, report: ReportData, M: number, CW: number, PW: number) {
-  drawHeader(doc, INSPECTION_TITLE, PW)
+// Redraws the top of a continuation page: the blue band with the logo, section
+// title and company name, followed by the repeated JOB INFORMATION and
+// CONSTRUCTION (AS FOUND) blocks.
+function drawSectionContinuationHeader(
+  doc: jsPDF,
+  report: ReportData,
+  M: number,
+  CW: number,
+  PW: number,
+  title: string,
+  showRecommendation = true
+) {
+  drawHeader(doc, title, PW)
   const ry = drawJobInfo(doc, report, M, CW, CONTENT_TOP)
-  drawConstruction(doc, report, M, CW, ry)
+  drawConstruction(doc, report, M, CW, ry, showRecommendation)
 }
 
-function drawResumeSection(doc: jsPDF, report: ReportData, M: number, CW: number, startY: number): number {
+// Measures a block on a throwaway doc, then draws it, first pushing it to a
+// fresh page when the remaining room is too small. Returning the page it landed
+// on lets the caller place the signature strip under it instead of at the very
+// bottom. A block that cannot fit an empty page is still pushed (a clean start
+// beats a cramped one) and simply flows from there.
+function drawKeepTogetherBlock(
+  doc: jsPDF,
+  report: ReportData,
+  M: number,
+  CW: number,
+  PW: number,
+  PH: number,
+  startY: number,
+  title: string,
+  showRecommendation: boolean,
+  draw: (d: jsPDF, y: number) => number
+): { y: number; movedToPage: number | null } {
+  const probe = new jsPDF('p', 'mm', 'a4')
+  const h = draw(probe, 0)
+  // a block that already needed more than one probe page can never fit the
+  // remaining room, so the exact height no longer matters
+  const cannotFitAnywhere = probe.getNumberOfPages() > 1
+  const bottomLimit = PH - (M + SIG_BOX_H)
+
   let y = startY
-
-  const sections: [string, string | null][] = [
-    ['FINDINGS', report.findings],
-    ['RECOMMENDATIONS', report.recommendations?.replace(/\b(C\s+Cleaning|RP\s+Repair|RE\s+Replace)\b/g, '').replace(/\s{2,}/g, ' ').trim() || null],
-    ['CONCLUSION', report.conclusion],
-  ]
-
-  for (const [title, content] of sections) {
-    doc.setTextColor(...BLUE)
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'bold')
-    doc.text(title, M, y)
-    y += 2
-
-    autoTable(doc, {
-      startY: y,
-      margin: { left: M, right: M },
-      body: [[content || '-']],
-      styles: { fontSize: 8, cellPadding: 4, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak', minCellHeight: 30 },
-    })
-    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 5
+  let movedToPage: number | null = null
+  if (cannotFitAnywhere || y + h > bottomLimit) {
+    doc.addPage()
+    drawSectionContinuationHeader(doc, report, M, CW, PW, title, showRecommendation)
+    y = CONTENT_TOP + REPEAT_BLOCK_H
+    movedToPage = doc.getNumberOfPages()
   }
+  return { y: draw(doc, y), movedToPage }
+}
 
-  if (report.sub_datasheet) {
-    const ds = report.sub_datasheet
-    const label = (report.sub_datasheet.type || '').toUpperCase() === 'CHOKE' ? 'CHOKE VALVE'
-      : (report.sub_datasheet.type || '').toUpperCase() === 'BALL' ? 'BALL VALVE'
-      : (report.sub_datasheet.type || '').toUpperCase() === 'CHECK' ? 'CHECK VALVE'
-      : (report.sub_datasheet.type || '').toUpperCase() === 'CONTROL' ? 'CONTROL VALVE'
-      : (report.sub_datasheet.type || '').toUpperCase() === 'SDV' ? 'SHUTDOWN VALVE'
-      : (report.sub_datasheet.type || '').toUpperCase() === 'BDV' ? 'BLOWDOWN VALVE'
+// Letterhead context shared by every resume block, so a page break can rebuild
+// the same header the next block will sit under.
+type ResumeBlockCtx = { PW: number }
+
+// One titled text box (FINDINGS / RECOMMENDATIONS / CONCLUSION).
+function drawResumeTextBlock(
+  doc: jsPDF,
+  report: ReportData,
+  M: number,
+  CW: number,
+  title: string,
+  content: string | null,
+  startY: number,
+  ctx: ResumeBlockCtx
+): number {
+  let y = startY
+  const firstPage = doc.getNumberOfPages()
+  doc.setTextColor(...BLUE)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'bold')
+  doc.text(title, M, y)
+  y += 2
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: M, right: M, top: CONTENT_TOP + REPEAT_BLOCK_H, bottom: M + SIG_BOX_H },
+    // safety net in case one box is long enough to overflow on its own
+    willDrawPage: (data) => {
+      if (data.pageNumber <= 1 && data.doc.getNumberOfPages() === firstPage) return
+      drawSectionContinuationHeader(data.doc, report, M, CW, ctx.PW, RESUME_TITLE, false)
+    },
+    body: [[content || '-']],
+    styles: { fontSize: 8, cellPadding: 4, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak', minCellHeight: 30 },
+  })
+  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 5
+  return y
+}
+
+// The DATASHEET group grid, kept as one block so its title never ends up
+// stranded at the foot of a page with the grid itself overleaf.
+function drawResumeDatasheetBlock(
+  doc: jsPDF,
+  report: ReportData,
+  M: number,
+  CW: number,
+  startY: number,
+  ctx: ResumeBlockCtx
+): number {
+  let y = startY
+  {
+    const ds = report.sub_datasheet!
+
+    const label = (ds.type || '').toUpperCase() === 'CHOKE' ? 'CHOKE VALVE'
+      : (ds.type || '').toUpperCase() === 'BALL' ? 'BALL VALVE'
+      : (ds.type || '').toUpperCase() === 'CHECK' ? 'CHECK VALVE'
+      : (ds.type || '').toUpperCase() === 'CONTROL' ? 'CONTROL VALVE'
+      : (ds.type || '').toUpperCase() === 'SDV' ? 'SHUTDOWN VALVE'
+      : (ds.type || '').toUpperCase() === 'BDV' ? 'BLOWDOWN VALVE'
       : (report.valve_type ?? '').toUpperCase().includes('CHOKE') ? 'CHOKE VALVE'
       : (report.valve_type ?? '').toUpperCase().includes('BALL') ? 'BALL VALVE'
       : (report.valve_type ?? '').toUpperCase().includes('CHECK') ? 'CHECK VALVE'
@@ -504,9 +585,14 @@ function drawResumeSection(doc: jsPDF, report: ReportData, M: number, CW: number
         columnStyles[i * 2] = { cellWidth: labelW, halign: 'left', fontStyle: 'bold', textColor: [70, 90, 120] }
         columnStyles[i * 2 + 1] = { cellWidth: valueW, halign: 'left' }
       }
+      const dsFirstPage = doc.getNumberOfPages()
       autoTable(doc, {
         startY: topY,
-        margin: { left: M, right: M },
+        margin: { left: M, right: M, top: CONTENT_TOP + REPEAT_BLOCK_H, bottom: M + SIG_BOX_H },
+        willDrawPage: (data) => {
+          if (data.pageNumber <= 1 && data.doc.getNumberOfPages() === dsFirstPage) return
+          drawSectionContinuationHeader(data.doc, report, M, CW, ctx.PW, RESUME_TITLE, false)
+        },
         body,
         styles: { fontSize: 6, cellPadding: 1, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak' },
         columnStyles,
@@ -523,6 +609,48 @@ function drawResumeSection(doc: jsPDF, report: ReportData, M: number, CW: number
   }
 
   return y
+}
+
+// Renders FINDINGS, RECOMMENDATIONS, CONCLUSION and DATASHEET, each treated as
+// an atomic block: it moves to the next page rather than being split across the
+// boundary. Reports the last page a block was pushed onto, if any, so the
+// signature strip can sit directly under it.
+function drawResumeSection(
+  doc: jsPDF,
+  report: ReportData,
+  M: number,
+  CW: number,
+  PW: number,
+  PH: number,
+  startY: number
+): { y: number; lastMovedPage: number | null } {
+  const ctx: ResumeBlockCtx = { PW }
+  let y = startY
+  let lastMovedPage: number | null = null
+
+  const sections: [string, string | null][] = [
+    ['FINDINGS', report.findings],
+    ['RECOMMENDATIONS', report.recommendations?.replace(/\b(C\s+Cleaning|RP\s+Repair|RE\s+Replace)\b/g, '').replace(/\s{2,}/g, ' ').trim() || null],
+    ['CONCLUSION', report.conclusion],
+  ]
+
+  for (const [title, content] of sections) {
+    const r = drawKeepTogetherBlock(doc, report, M, CW, PW, PH, y, RESUME_TITLE, false, (d, sy) =>
+      drawResumeTextBlock(d, report, M, CW, title, content, sy, ctx)
+    )
+    y = r.y
+    if (r.movedToPage !== null) lastMovedPage = r.movedToPage
+  }
+
+  if (report.sub_datasheet) {
+    const r = drawKeepTogetherBlock(doc, report, M, CW, PW, PH, y, RESUME_TITLE, false, (d, sy) =>
+      drawResumeDatasheetBlock(d, report, M, CW, sy, ctx)
+    )
+    y = r.y
+    if (r.movedToPage !== null) lastMovedPage = r.movedToPage
+  }
+
+  return { y, lastMovedPage }
 }
 
 async function drawItemsTable(doc: jsPDF, report: ReportData, items: ItemData[], photos: PhotoData[], M: number, CW: number, PW: number, PH: number, startY: number): Promise<number> {
@@ -547,7 +675,7 @@ async function drawItemsTable(doc: jsPDF, report: ReportData, items: ItemData[],
       // table began on (covers both real page breaks and a forced break
       // pushed by a startY near the page bottom)
       if (data.pageNumber <= 1 && data.doc.getNumberOfPages() === firstPage) return
-      drawInspectionContinuationHeader(doc, report, M, CW, PW)
+      drawSectionContinuationHeader(doc, report, M, CW, PW, INSPECTION_TITLE)
     },
     head: [
       [
@@ -691,7 +819,7 @@ function drawVisualDimensionalBody(
       ? {
           willDrawPage: (data: { pageNumber: number; doc: jsPDF }) => {
             if (data.pageNumber <= 1 && data.doc.getNumberOfPages() === bodyFirstPage) return
-            drawInspectionContinuationHeader(doc, report, M, CW, repeatHeader.PW)
+            drawSectionContinuationHeader(doc, report, M, CW, repeatHeader.PW, INSPECTION_TITLE)
           },
         }
       : {}),
@@ -745,7 +873,7 @@ function drawVisualDimensionalTable(
   let movedToPage: number | null = null
   if (y + blockH > bottomLimit) {
     doc.addPage()
-    drawInspectionContinuationHeader(doc, report, M, CW, PW)
+    drawSectionContinuationHeader(doc, report, M, CW, PW, INSPECTION_TITLE)
     y = CONTENT_TOP + REPEAT_BLOCK_H
     movedToPage = doc.getNumberOfPages()
   }
@@ -1168,12 +1296,13 @@ export async function exportReportPDF(
   if (tab === 'all') {
     // ========== 1. RESUME SECTION ==========
     {
-      drawHeader(doc, 'RESUME REPORT', PW)
-      let y = 25
+      drawHeader(doc, RESUME_TITLE, PW)
+      const sigFrom = doc.getNumberOfPages()
+      let y = CONTENT_TOP
       y = drawJobInfo(doc, report, M, CW, y)
       y = drawConstruction(doc, report, M, CW, y, false)
-      y = drawResumeSection(doc, report, M, CW, y)
-      drawSignature(doc, report, M, CW, y, PW, PH)
+      const rs = drawResumeSection(doc, report, M, CW, PW, PH, y)
+      stampSectionSignatures(doc, report, M, CW, PH, sigFrom, rs.lastMovedPage, rs.y + 6)
     }
 
     // ========== 2. INSPECTION SECTION ==========
@@ -1186,14 +1315,9 @@ export async function exportReportPDF(
       y = drawConstruction(doc, report, M, CW, y)
       y = await drawItemsTable(doc, report, items, photos, M, CW, PW, PH, y)
       const vd = drawVisualDimensionalTable(doc, report, M, CW, PW, PH, y)
-      if (vd.movedToPage !== null) {
-        // the visual section got its own page: keep the strip directly beneath
-        // it, and bottom-anchor the strip on the earlier pages
-        stampSignatures(doc, report, M, CW, PH, sigFrom, vd.movedToPage - 1)
-        stampSignaturesAt(doc, report, M, CW, vd.y + 6, [vd.movedToPage])
-      } else {
-        stampSignatures(doc, report, M, CW, PH, sigFrom, doc.getNumberOfPages())
-      }
+      // the visual section may have been pushed to its own page, where the
+      // strip belongs directly beneath it rather than at the very bottom
+      stampSectionSignatures(doc, report, M, CW, PH, sigFrom, vd.movedToPage, vd.y + 6)
     }
 
     // ========== 3. BOM SECTION ==========
@@ -1247,12 +1371,13 @@ export async function exportReportPDF(
   } else {
     // Single tab mode
     if (tab === 'resume') {
-      drawHeader(doc, 'RESUME REPORT', PW)
-      let y = 25
+      drawHeader(doc, RESUME_TITLE, PW)
+      const sigFrom = doc.getNumberOfPages()
+      let y = CONTENT_TOP
       y = drawJobInfo(doc, report, M, CW, y)
       y = drawConstruction(doc, report, M, CW, y, false)
-      y = drawResumeSection(doc, report, M, CW, y)
-      drawSignature(doc, report, M, CW, y, PW, PH)
+      const rs = drawResumeSection(doc, report, M, CW, PW, PH, y)
+      stampSectionSignatures(doc, report, M, CW, PH, sigFrom, rs.lastMovedPage, rs.y + 6)
       drawFooter(doc, report, 'Resume', PW, PH)
     } else {
     drawHeader(doc, tab === 'test' ? 'TEST REPORT' : tab === 'documentation' ? 'DOCUMENTATION REPORT' : tab === 'packaging' ? 'PACKAGING REPORT' : INSPECTION_TITLE, PW)
@@ -1269,14 +1394,9 @@ export async function exportReportPDF(
       y = drawConstruction(doc, report, M, CW, y)
       y = await drawItemsTable(doc, report, items, photos, M, CW, PW, PH, y)
       const vd = drawVisualDimensionalTable(doc, report, M, CW, PW, PH, y)
-      if (vd.movedToPage !== null) {
-        // the visual section got its own page: keep the strip directly beneath
-        // it, and bottom-anchor the strip on the earlier pages
-        stampSignatures(doc, report, M, CW, PH, sigFrom, vd.movedToPage - 1)
-        stampSignaturesAt(doc, report, M, CW, vd.y + 6, [vd.movedToPage])
-      } else {
-        stampSignatures(doc, report, M, CW, PH, sigFrom, doc.getNumberOfPages())
-      }
+      // the visual section may have been pushed to its own page, where the
+      // strip belongs directly beneath it rather than at the very bottom
+      stampSectionSignatures(doc, report, M, CW, PH, sigFrom, vd.movedToPage, vd.y + 6)
     }
     if (tab === 'documentation') {
       y = await drawDocumentationSection(doc, docItems, M, CW, y)
