@@ -438,10 +438,11 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   }
   async function savePackaging() {
     setSavingPackaging(true)
-    const payload = { ...packaging, packaging_photos: report?.packaging_photos || '[]' }
+    const payload = { packaging, packaging_photos: report?.packaging_photos || '[]' }
     const { error } = await supabase.from('report_inspection').update(payload as unknown as Record<string, unknown>).eq('id', id)
     setSavingPackaging(false)
     if (error) return alert('Error: ' + error.message)
+    setReport(prev => prev ? { ...prev, ...payload } : prev)
     alert('Packaging tersimpan!')
   }
 
