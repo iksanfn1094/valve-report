@@ -39,6 +39,8 @@ type Report = {
   recommendations: string | null
   conclusion: string | null
   sub_datasheet: SubDatasheet | null
+  packaging: Packaging | null
+  packaging_photos: string | null
 }
 
 type Item = {
@@ -64,6 +66,11 @@ type VisualDimensional = {
     actual: string
     result: 'ACC' | 'FAILED' | ''
   }[]
+}
+
+type Packaging = {
+  qty: string
+  weight: string
 }
 
 type Photo = {
@@ -392,6 +399,52 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   const [visualDimensional, setVisualDimensional] = useState<VisualDimensional>(defaultVisualDimensional)
   const [savingVisual, setSavingVisual] = useState(false)
 
+  const [packaging, setPackaging] = useState<Packaging>({ qty: '', weight: '' })
+  const [savingPackaging, setSavingPackaging] = useState(false)
+
+  type PackagingPhotoRow = { id: string; weight: string; photos: string[] }
+  function getPackagingPhotos(): PackagingPhotoRow[] {
+    try { const p = JSON.parse(report?.packaging_photos || '[]'); return Array.isArray(p) ? p : [] } catch { return [] }
+  }
+  function setPackagingPhotos(rows: PackagingPhotoRow[]) {
+    setReport(prev => prev ? { ...prev, packaging_photos: JSON.stringify(rows) } : prev)
+  }
+  function addPackagingPhoto() {
+    setPackagingPhotos([...getPackagingPhotos(), { id: crypto.randomUUID(), weight: '', photos: [] }])
+  }
+  function updatePackagingPhoto(idx: number, weight: string) {
+    const p = getPackagingPhotos()
+    p[idx].weight = weight
+    setPackagingPhotos(p)
+  }
+  function removePackagingPhoto(idx: number) {
+    const p = getPackagingPhotos()
+    p.splice(idx, 1)
+    setPackagingPhotos(p)
+  }
+  function removePackagingPhotoImg(idx: number, imgIdx: number) {
+    const p = getPackagingPhotos()
+    p[idx].photos.splice(imgIdx, 1)
+    setPackagingPhotos(p)
+  }
+  async function uploadPackagingPhoto(file: File, idx: number) {
+    const path = `packaging-photos/${id}/${Date.now()}-${file.name}`
+    const { error } = await supabase.storage.from('report-photos').upload(path, file)
+    if (error) return alert('Upload gagal: ' + error.message)
+    const { data } = supabase.storage.from('report-photos').getPublicUrl(path)
+    const p = getPackagingPhotos()
+    p[idx].photos.push(data.publicUrl)
+    setPackagingPhotos(p)
+  }
+  async function savePackaging() {
+    setSavingPackaging(true)
+    const payload = { ...packaging, packaging_photos: report?.packaging_photos || '[]' }
+    const { error } = await supabase.from('report_inspection').update(payload as unknown as Record<string, unknown>).eq('id', id)
+    setSavingPackaging(false)
+    if (error) return alert('Error: ' + error.message)
+    alert('Packaging tersimpan!')
+  }
+
   function getTestRows(): string[] {
     try { return JSON.parse(valveTest.test_rows) } catch { return [] }
   }
@@ -549,6 +602,10 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
             visual_failed: vd.visual_failed ?? false,
             dims: (vd.dims ?? prev.dims).map((d) => ({ name: d.name ?? '', ref: d.ref ?? '', spec: d.spec ?? '', actual: d.actual ?? '', result: (d.result as VisualDimensional['dims'][number]['result']) ?? '' })),
           }))
+        }
+        const pk = reportRes.data.packaging as unknown as Packaging | null
+        if (pk) {
+          setPackaging({ qty: pk.qty ?? '', weight: pk.weight ?? '' })
         }
       }
       if (itemsRes.data) {
@@ -2116,6 +2173,104 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           <button onClick={saveDocItems} disabled={savingDoc} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition font-medium disabled:opacity-50">
             {savingDoc ? 'Menyimpan...' : 'Simpan'}
           </button>
+        </div>
+      </div>
+      )}
+
+      {/* Packaging Tab */}
+      {activeTab === 'packaging' && (
+      <div className="bg-white rounded-lg shadow border p-4 space-y-6">
+        <div>
+          <h3 className="text-lg font-bold text-gray-800 mb-3">PACKAGING</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-blue-900 text-white">
+                  <th className="border px-2 py-2 text-xs w-24">QTY</th>
+                  <th className="border px-2 py-2 text-xs">WEIGHT</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="border px-2 py-2 text-center">
+                    <input
+                      className="w-full border-0 bg-transparent text-sm text-center focus:outline-none focus:border-b focus:border-blue-500"
+                      value={packaging.qty}
+                      placeholder="......"
+                      onChange={(e) => setPackaging((prev) => ({ ...prev, qty: e.target.value }))}
+                    />
+                  </td>
+                  <td className="border px-2 py-2 text-center">
+                    <span className="flex items-center justify-center gap-1 text-sm">
+                      <input
+                        className="w-24 border-0 bg-transparent text-sm text-center focus:outline-none focus:border-b focus:border-blue-500"
+                        value={packaging.weight}
+                        placeholder="......."
+                        onChange={(e) => setPackaging((prev) => ({ ...prev, weight: e.target.value }))}
+                      />
+                      <span>KG / ITEM</span>
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div className="flex gap-2 mt-3">
+            <button onClick={savePackaging} disabled={savingPackaging} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition font-medium disabled:opacity-50">
+              {savingPackaging ? 'Menyimpan...' : 'Simpan'}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-lg font-bold text-gray-800 mb-1">PACKAGING PHOTO RECORDS</h3>
+          <p className="text-xs text-gray-400 mb-2">in kg weight / item</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-blue-900 text-white">
+                  <th className="border px-2 py-2 text-center w-8">No</th>
+                  <th className="border px-2 py-2 text-left w-32">WEIGHT (KG)</th>
+                  <th className="border px-2 py-2 text-center">Photo</th>
+                  <th className="border px-2 py-2 text-center w-8"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {getPackagingPhotos().map((row, i) => (
+                  <tr key={row.id} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
+                    <td className="border px-2 py-1 text-center text-gray-500">{i + 1}</td>
+                    <td className="border px-1 py-1">
+                      <input type="text" value={row.weight} onChange={e => updatePackagingPhoto(i, e.target.value)} className="w-full border-0 bg-transparent text-xs text-center focus:outline-none" placeholder="kg" />
+                    </td>
+                    <td className="border px-1 py-1">
+                      <div className="flex flex-wrap items-center gap-1">
+                        {row.photos.map((url, j) => (
+                          <div key={j} className="relative">
+                            <img src={url} alt="" className="w-10 h-10 object-cover rounded cursor-pointer" onClick={() => setPreviewPhoto(url)} />
+                            <button onClick={() => removePackagingPhotoImg(i, j)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-3 h-3 text-[8px] flex items-center justify-center leading-none">&#10005;</button>
+                          </div>
+                        ))}
+                        <label className="text-blue-600 hover:text-blue-800 cursor-pointer text-xs">
+                          + Photo
+                          <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadPackagingPhoto(f, i) }} />
+                        </label>
+                      </div>
+                    </td>
+                    <td className="border px-1 py-1 text-center"><button onClick={() => removePackagingPhoto(i)} className="text-red-400 hover:text-red-600 text-sm font-bold">&#10005;</button></td>
+                  </tr>
+                ))}
+                {getPackagingPhotos().length === 0 && (
+                  <tr><td colSpan={4} className="border px-2 py-6 text-center text-gray-400">No photos yet. Click &quot;+ Tambah Baris&quot; to add.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex gap-2 mt-3">
+            <button onClick={addPackagingPhoto} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-300 transition font-medium">+ Tambah Baris</button>
+            <button onClick={savePackaging} disabled={savingPackaging} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition font-medium disabled:opacity-50">
+              {savingPackaging ? 'Menyimpan...' : 'Simpan'}
+            </button>
+          </div>
         </div>
       </div>
       )}
