@@ -2277,7 +2277,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       )}
 
       {/* Placeholder for other tabs */}
-      {activeTab !== 'inspection' && activeTab !== 'documentation' && activeTab !== 'resume' && activeTab !== 'test' && (
+      {activeTab !== 'inspection' && activeTab !== 'documentation' && activeTab !== 'resume' && activeTab !== 'test' && activeTab !== 'packaging' && (
         <div className="bg-white rounded-lg shadow border p-8 text-center">
           <p className="text-gray-400 text-sm">This feature will be available soon.</p>
         </div>

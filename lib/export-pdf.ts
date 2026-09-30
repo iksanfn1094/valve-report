@@ -24,6 +24,8 @@ type ReportData = {
   conclusion: string | null
   sub_datasheet: SubDatasheet | null
   visual_dimensional?: VisualDimensionalData | null
+  packaging?: PackagingData | null
+  packaging_photos?: string | null
 }
 
 type ItemData = {
@@ -49,6 +51,17 @@ type VisualDimensionalData = {
     actual?: string
     result?: 'ACC' | 'FAILED' | '' | null
   }[]
+}
+
+type PackagingData = {
+  qty?: string | null
+  weight?: string | null
+}
+
+type PackagingPhotoData = {
+  id?: string
+  weight?: string
+  photos?: string[]
 }
 
 type BomData = {
@@ -982,6 +995,121 @@ for (const vx of [M, M + colNo, M + colNo + colComp, xBefore, xBefore + halfW, r
   return y
 }
 
+async function drawPackagingSection(doc: jsPDF, report: ReportData, M: number, CW: number, PW: number, PH: number, startY: number): Promise<number> {
+  let y = startY
+  const pk = report.packaging
+  const qty = pk?.qty?.trim() || ''
+  const weight = pk?.weight?.trim() || ''
+
+  let photoRows: PackagingPhotoData[] = []
+  try {
+    const parsed = JSON.parse(String(report.packaging_photos || '[]'))
+    if (Array.isArray(parsed)) photoRows = parsed
+  } catch { photoRows = [] }
+  const hasAny = !!qty || !!weight || photoRows.length > 0
+  if (!hasAny) return y
+
+  // ========== DATA PACKAGE ==========
+  doc.setTextColor(...BLUE)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'bold')
+  doc.text('DATA PACKAGE', M, y)
+  y += 3
+
+  const h = 6.5
+  const colW = [26, CW - 26]
+  doc.setFillColor(245, 245, 245)
+  doc.setDrawColor(...GRID)
+  doc.setLineWidth(0.2)
+
+  // QTY (EA)
+  doc.rect(M, y, colW[0], h, 'FD')
+  doc.rect(M + colW[0], y, colW[1], h, 'S')
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...LABEL_C)
+  doc.text('QTY (EA)', M + 1.5, y + h - 2)
+  doc.setFontSize(8)
+  doc.setTextColor(0, 0, 0)
+  doc.text(qty || '-', M + colW[0] + 2, y + h - 2)
+  y += h
+
+  // IN KG WEIGHT / (PER ITEM)
+  doc.rect(M, y, colW[0], h, 'FD')
+  doc.rect(M + colW[0], y, colW[1], h, 'S')
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...LABEL_C)
+  doc.text('IN KG WEIGHT / (PER ITEM)', M + 1.5, y + h - 2)
+  doc.setFontSize(8)
+  doc.setTextColor(0, 0, 0)
+  doc.text(weight ? `${weight} KG` : '-', M + colW[0] + 2, y + h - 2)
+  y += h + 6
+
+  // ========== PACKAGING PHOTO RECORDS ==========
+  if (photoRows.length === 0) return y
+
+  const rowsB64: (string | null)[][] = []
+  for (const r of photoRows) {
+    const arr: (string | null)[] = []
+    for (const url of (r.photos || [])) { arr.push(await fetchImageAsBase64(url)) }
+    rowsB64.push(arr)
+  }
+
+  const GAP = 2
+  const maxPerRow = 4
+  const INNER_PAD = 2
+  const LABEL_H = 6
+  const innerW = CW - INNER_PAD * 2
+  const IMG_SZ = (innerW - (maxPerRow - 1) * GAP) / maxPerRow
+
+  doc.setTextColor(...BLUE)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'bold')
+  doc.text('PACKAGING PHOTO RECORDS', M, y)
+  y += 3
+  doc.setFontSize(6.5)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...LABEL_C)
+  doc.text('IN KG WEIGHT / (PER ITEM)', M, y)
+  y += 3
+
+  for (const [i, b64s] of rowsB64.entries()) {
+    const imgs = b64s.filter((b): b is string => !!b)
+    const totalRows = Math.max(Math.ceil(imgs.length / maxPerRow), 1)
+    const photoAreaH = totalRows * IMG_SZ + (totalRows - 1) * GAP
+    const blockH = LABEL_H + INNER_PAD * 2 + photoAreaH
+
+    if (y + blockH > PH - M) {
+      doc.addPage()
+      y = M
+    }
+
+    const weightLabel = photoRows[i].weight?.trim() || '-'
+    doc.setDrawColor(...GRID)
+    doc.setLineWidth(0.2)
+    doc.rect(M, y, CW, LABEL_H, 'S')
+    doc.setFontSize(6.5)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(60, 70, 90)
+    doc.text(`WEIGHT: ${weightLabel} KG / ITEM`, M + 2, y + LABEL_H - 2)
+    doc.setTextColor(0, 0, 0)
+
+    const photoTop = y + LABEL_H
+    imgs.slice(0, totalRows * maxPerRow).forEach((b64, j) => {
+      const ci = j % maxPerRow
+      const ri = Math.floor(j / maxPerRow)
+      const px = M + INNER_PAD + ci * (IMG_SZ + GAP)
+      const py = photoTop + INNER_PAD + ri * (IMG_SZ + GAP)
+      try { doc.addImage(b64, 'JPEG', px, py, IMG_SZ, IMG_SZ) } catch { /* skip */ }
+    })
+    doc.rect(M, photoTop, CW, INNER_PAD * 2 + photoAreaH, 'S')
+    y = photoTop + INNER_PAD * 2 + photoAreaH + GAP
+  }
+
+  return y
+}
+
 export async function exportReportPDF(
   report: ReportData,
   items: ItemData[],
@@ -1051,7 +1179,18 @@ export async function exportReportPDF(
       drawSignature(doc, report, M, CW, y, PW, PH)
     }
 
-    // ========== 8. PACKAGING (placeholder) ==========
+    // ========== 8. PACKAGING SECTION ==========
+    if (report.packaging || report.packaging_photos) {
+      const hasPkg = !!(report.packaging?.qty?.trim() || report.packaging?.weight?.trim() || (report.packaging_photos && report.packaging_photos !== '[]'))
+      if (hasPkg) {
+        doc.addPage()
+        drawHeader(doc, 'PACKAGING REPORT', PW)
+        let y = 25
+        y = drawValveInfo(doc, report, M, CW, y)
+        y = await drawPackagingSection(doc, report, M, CW, PW, PH, y)
+        drawSignature(doc, report, M, CW, y, PW, PH)
+      }
+    }
 
     drawFooter(doc, report, 'Full Report', PW, PH)
   } else {
@@ -1065,10 +1204,10 @@ export async function exportReportPDF(
       drawSignature(doc, report, M, CW, y, PW, PH)
       drawFooter(doc, report, 'Resume', PW, PH)
     } else {
-    drawHeader(doc, tab === 'test' ? 'TEST REPORT' : tab === 'documentation' ? 'DOCUMENTATION REPORT' : 'INSPECTION REPORT', PW)
+    drawHeader(doc, tab === 'test' ? 'TEST REPORT' : tab === 'documentation' ? 'DOCUMENTATION REPORT' : tab === 'packaging' ? 'PACKAGING REPORT' : 'INSPECTION REPORT', PW)
     let y = 25
 
-    if (tab === 'test' || tab === 'documentation') {
+    if (tab === 'test' || tab === 'documentation' || tab === 'packaging') {
       y = drawValveInfo(doc, report, M, CW, y)
     } else {
       y = drawJobInfo(doc, report, M, CW, y)
@@ -1084,6 +1223,9 @@ export async function exportReportPDF(
     }
     if (tab === 'test' && valveTest) {
       y = await drawTestSection(doc, report, valveTest, M, CW, PW, PH, y)
+    }
+    if (tab === 'packaging') {
+      y = await drawPackagingSection(doc, report, M, CW, PW, PH, y)
     }
     if (tab === 'bom') {
       y = drawBomTable(doc, bomItems, M, CW, y)
