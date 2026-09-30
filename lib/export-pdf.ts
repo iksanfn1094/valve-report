@@ -798,31 +798,38 @@ async function drawTestSection(doc: jsPDF, report: ReportData, valveTest: ValveT
     doc.setFont('helvetica', 'bold')
     doc.text('VALVE TEST PHOTO RECORDS', M, y)
     y += 5
-    const IMG_SZ = 40
     const GAP = 3
-    const maxPerRow = Math.floor(CW / (IMG_SZ + GAP))
+    const maxPerRow = 4
+    const IMG_SZ = (CW - (maxPerRow - 1) * GAP) / maxPerRow
+    const LABEL_H = 6
     for (const row of testPhotos) {
       if (row.photos.length === 0) continue
       const label = TEST_LABELS[row.test_type] || row.test_type || '-'
-      doc.setFontSize(7)
-      doc.setFont('helvetica', 'bold')
-      doc.setTextColor(0, 0, 0)
-      doc.text(`${label}${row.description ? ' - ' + row.description : ''}`, M, y)
-      y += 3
       const b64s: string[] = []
       for (const url of row.photos) {
         const b64 = await fetchImageAsBase64(url)
         if (b64) b64s.push(b64)
       }
+      const rowsNeeded = Math.ceil(Math.max(b64s.length, 1) / maxPerRow)
+      const blockH = LABEL_H + rowsNeeded * IMG_SZ + GAP
+      if (y + blockH > PH - M) { doc.addPage(); y = M }
+      doc.setDrawColor(...GRID)
+      doc.setLineWidth(0.3)
+      doc.rect(M, y, CW, LABEL_H, 'S')
+      doc.setFontSize(7)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(0, 0, 0)
+      doc.text(`${label}${row.description ? ' - ' + row.description : ''}`, M + 2, y + LABEL_H / 2 + 0.8)
+      y += LABEL_H
       for (let j = 0; j < b64s.length; j += maxPerRow) {
         const chunk = b64s.slice(j, j + maxPerRow)
-        if (y + IMG_SZ + 3 > PH - M) { doc.addPage(); y = M }
         chunk.forEach((b64, ci) => {
-          try { doc.addImage(b64, 'JPEG', M + ci * (IMG_SZ + GAP), y, IMG_SZ, IMG_SZ) } catch { /* skip */ }
+          const px = M + ci * (IMG_SZ + GAP)
+          doc.rect(px, y, IMG_SZ, IMG_SZ, 'S')
+          try { doc.addImage(b64, 'JPEG', px, y, IMG_SZ, IMG_SZ) } catch { /* skip */ }
         })
-        y += IMG_SZ + 3
+        y += IMG_SZ + GAP
       }
-      y += 2
     }
   }
   return y
