@@ -265,16 +265,23 @@ function drawSignature(doc: jsPDF, report: ReportData, M: number, CW: number, st
   return drawSignatureBoxes(doc, report, M, CW, y + 6)
 }
 
-// Stamps the signature strip at the bottom of every page in [fromPage, toPage].
-// Used by the inspection section, where the table reserves a bottom margin so
-// the strip can repeat on each page instead of appearing once at the end.
-function stampSignatures(doc: jsPDF, report: ReportData, M: number, CW: number, PH: number, fromPage: number, toPage: number) {
-  const y = PH - M - SIG_BOX_H
-  for (let p = fromPage; p <= toPage; p++) {
+// Stamps the signature strip at an explicit y on the given pages, then returns
+// the cursor to the last page so following sections keep appending correctly.
+function stampSignaturesAt(doc: jsPDF, report: ReportData, M: number, CW: number, y: number, pages: number[]) {
+  for (const p of pages) {
     doc.setPage(p)
     drawSignatureBoxes(doc, report, M, CW, y)
   }
   doc.setPage(doc.getNumberOfPages())
+}
+
+// Stamps the signature strip at the bottom of every page in [fromPage, toPage].
+// Used by the inspection section, where the table reserves a bottom margin so
+// the strip can repeat on each page instead of appearing once at the end.
+function stampSignatures(doc: jsPDF, report: ReportData, M: number, CW: number, PH: number, fromPage: number, toPage: number) {
+  const pages: number[] = []
+  for (let p = fromPage; p <= toPage; p++) pages.push(p)
+  stampSignaturesAt(doc, report, M, CW, PH - M - SIG_BOX_H, pages)
 }
 
 function drawFooter(doc: jsPDF, report: ReportData, tabLabel: string, PW: number, PH: number) {
@@ -680,7 +687,8 @@ function drawVisualDimensionalBody(doc: jsPDF, report: ReportData, M: number, CW
 // Keeps VISUAL INSPECTION & DIMENSIONAL CHECK RESULT on a single page: when the
 // remaining room is too small the whole block is pushed to the next page
 // (together with the repeated JOB INFORMATION / CONSTRUCTION header) instead of
-// being split across the page boundary.
+// being split across the page boundary. Returns the y right after the block and
+// the page it was moved to (null when it stayed on the current page).
 function drawVisualDimensionalTable(
   doc: jsPDF,
   report: ReportData,
@@ -689,7 +697,7 @@ function drawVisualDimensionalTable(
   PW: number,
   PH: number,
   startY: number
-): number {
+): { y: number; movedToPage: number | null } {
   const bottomLimit = PH - (M + SIG_BOX_H)
   // measure the real rendered height on a throwaway doc so it stays exact even
   // when a dimension cell wraps onto extra lines
@@ -697,13 +705,15 @@ function drawVisualDimensionalTable(
   const blockH = drawVisualDimensionalBody(probe, report, M, CW, 0)
 
   let y = startY
+  let movedToPage: number | null = null
   if (y + blockH > bottomLimit) {
     doc.addPage()
     const ry = drawJobInfo(doc, report, M, CW, M)
     drawConstruction(doc, report, M, CW, ry)
     y = M + REPEAT_BLOCK_H
+    movedToPage = doc.getNumberOfPages()
   }
-  return drawVisualDimensionalBody(doc, report, M, CW, y)
+  return { y: drawVisualDimensionalBody(doc, report, M, CW, y), movedToPage }
 }
 
 function drawBomTable(doc: jsPDF, bomItems: BomData[], M: number, CW: number, startY: number): number {
@@ -1139,8 +1149,15 @@ export async function exportReportPDF(
       y = drawJobInfo(doc, report, M, CW, y)
       y = drawConstruction(doc, report, M, CW, y)
       y = await drawItemsTable(doc, report, items, photos, M, CW, PW, PH, y)
-      y = drawVisualDimensionalTable(doc, report, M, CW, PW, PH, y)
-      stampSignatures(doc, report, M, CW, PH, sigFrom, doc.getNumberOfPages())
+      const vd = drawVisualDimensionalTable(doc, report, M, CW, PW, PH, y)
+      if (vd.movedToPage !== null) {
+        // the visual section got its own page: keep the strip directly beneath
+        // it, and bottom-anchor the strip on the earlier pages
+        stampSignatures(doc, report, M, CW, PH, sigFrom, vd.movedToPage - 1)
+        stampSignaturesAt(doc, report, M, CW, vd.y + 6, [vd.movedToPage])
+      } else {
+        stampSignatures(doc, report, M, CW, PH, sigFrom, doc.getNumberOfPages())
+      }
     }
 
     // ========== 3. BOM SECTION ==========
@@ -1215,8 +1232,15 @@ export async function exportReportPDF(
       const sigFrom = doc.getNumberOfPages()
       y = drawConstruction(doc, report, M, CW, y)
       y = await drawItemsTable(doc, report, items, photos, M, CW, PW, PH, y)
-      y = drawVisualDimensionalTable(doc, report, M, CW, PW, PH, y)
-      stampSignatures(doc, report, M, CW, PH, sigFrom, doc.getNumberOfPages())
+      const vd = drawVisualDimensionalTable(doc, report, M, CW, PW, PH, y)
+      if (vd.movedToPage !== null) {
+        // the visual section got its own page: keep the strip directly beneath
+        // it, and bottom-anchor the strip on the earlier pages
+        stampSignatures(doc, report, M, CW, PH, sigFrom, vd.movedToPage - 1)
+        stampSignaturesAt(doc, report, M, CW, vd.y + 6, [vd.movedToPage])
+      } else {
+        stampSignatures(doc, report, M, CW, PH, sigFrom, doc.getNumberOfPages())
+      }
     }
     if (tab === 'documentation') {
       y = await drawDocumentationSection(doc, docItems, M, CW, y)
