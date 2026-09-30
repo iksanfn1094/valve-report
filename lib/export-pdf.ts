@@ -157,6 +157,9 @@ const JOB_INFO_BLOCK_H = 3 + FIELD_H * 2 + 5
 const CONSTRUCTION_BLOCK_H = 3 + FIELD_H * 8 + 5
 // JOB INFORMATION + CONSTRUCTION (AS FOUND), redrawn on every page break
 const REPEAT_BLOCK_H = JOB_INFO_BLOCK_H + CONSTRUCTION_BLOCK_H
+// height of one signature box, used to reserve the bottom strip that repeats
+// on every inspection page
+const SIG_BOX_H = 32
 
 const BULAN = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -222,12 +225,9 @@ function drawValveInfo(doc: jsPDF, report: ReportData, M: number, CW: number, st
   return y + 5
 }
 
-function drawSignature(doc: jsPDF, report: ReportData, M: number, CW: number, startY: number, PW: number, PH: number) {
-  let y = startY
-  if (y + 55 > PH - M) { doc.addPage(); y = M }
-  y += 6
+function drawSignatureBoxes(doc: jsPDF, report: ReportData, M: number, CW: number, y: number): number {
   const sigBoxW = (CW - 12) / 5
-  const sigBoxH = 32
+  const sigBoxH = SIG_BOX_H
   const rep = report as unknown as { engineering_name?: string; witness_name?: string; review_name?: string; acknowledge_name?: string; inspector_role?: string; engineering_role?: string; review_role?: string; acknowledge_role?: string; witness_role?: string }
   const sigBoxes = [
     { title: 'INSPECTED BY', role: rep.inspector_role || 'QC', name: report.inspector_name || '-' },
@@ -257,6 +257,24 @@ function drawSignature(doc: jsPDF, report: ReportData, M: number, CW: number, st
     doc.text(sb.role, sx + sigBoxW / 2, y + sigBoxH - 3, { align: 'center' })
   })
   return y + sigBoxH
+}
+
+function drawSignature(doc: jsPDF, report: ReportData, M: number, CW: number, startY: number, PW: number, PH: number) {
+  let y = startY
+  if (y + 6 + SIG_BOX_H > PH - M) { doc.addPage(); y = M }
+  return drawSignatureBoxes(doc, report, M, CW, y + 6)
+}
+
+// Stamps the signature strip at the bottom of every page in [fromPage, toPage].
+// Used by the inspection section, where the table reserves a bottom margin so
+// the strip can repeat on each page instead of appearing once at the end.
+function stampSignatures(doc: jsPDF, report: ReportData, M: number, CW: number, PH: number, fromPage: number, toPage: number) {
+  const y = PH - M - SIG_BOX_H
+  for (let p = fromPage; p <= toPage; p++) {
+    doc.setPage(p)
+    drawSignatureBoxes(doc, report, M, CW, y)
+  }
+  doc.setPage(doc.getNumberOfPages())
 }
 
 function drawFooter(doc: jsPDF, report: ReportData, tabLabel: string, PW: number, PH: number) {
@@ -502,7 +520,7 @@ async function drawItemsTable(doc: jsPDF, report: ReportData, items: ItemData[],
     startY: y,
     // top margin reserves room for the repeated JOB INFORMATION +
     // CONSTRUCTION (AS FOUND) block drawn by willDrawPage below
-    margin: { left: M, right: M, top: M + REPEAT_BLOCK_H, bottom: M },
+    margin: { left: M, right: M, top: M + REPEAT_BLOCK_H, bottom: M + SIG_BOX_H },
     willDrawPage: (data) => {
       // repeat on any page the table starts on that is not the page the
       // table began on (covers both real page breaks and a forced break
@@ -639,7 +657,7 @@ function drawVisualDimensionalTable(
   const firstPage = doc.getNumberOfPages()
   autoTable(doc, {
     startY: y,
-    margin: { left: M, right: M, top: M + REPEAT_BLOCK_H, bottom: M },
+    margin: { left: M, right: M, top: M + REPEAT_BLOCK_H, bottom: M + SIG_BOX_H },
     willDrawPage: (data) => {
       // repeat on any page the table starts on that is not the page the
       // table began on (covers both real page breaks and a forced break
@@ -1102,12 +1120,13 @@ export async function exportReportPDF(
     if (items.length > 0) {
       doc.addPage()
       drawHeader(doc, 'INSPECTION REPORT', PW)
+      const sigFrom = doc.getNumberOfPages()
       let y = 25
       y = drawJobInfo(doc, report, M, CW, y)
       y = drawConstruction(doc, report, M, CW, y)
       y = await drawItemsTable(doc, report, items, photos, M, CW, PW, PH, y)
       y = drawVisualDimensionalTable(doc, report, M, CW, PW, PH, y)
-      drawSignature(doc, report, M, CW, y, PW, PH)
+      stampSignatures(doc, report, M, CW, PH, sigFrom, doc.getNumberOfPages())
     }
 
     // ========== 3. BOM SECTION ==========
@@ -1179,9 +1198,11 @@ export async function exportReportPDF(
     }
 
     if (tab === 'inspection') {
+      const sigFrom = doc.getNumberOfPages()
       y = drawConstruction(doc, report, M, CW, y)
       y = await drawItemsTable(doc, report, items, photos, M, CW, PW, PH, y)
       y = drawVisualDimensionalTable(doc, report, M, CW, PW, PH, y)
+      stampSignatures(doc, report, M, CW, PH, sigFrom, doc.getNumberOfPages())
     }
     if (tab === 'documentation') {
       y = await drawDocumentationSection(doc, docItems, M, CW, y)
@@ -1196,7 +1217,7 @@ export async function exportReportPDF(
       y = drawBomTable(doc, bomItems, M, CW, y)
     }
 
-    drawSignature(doc, report, M, CW, y, PW, PH)
+    if (tab !== 'inspection') drawSignature(doc, report, M, CW, y, PW, PH)
     drawFooter(doc, report, tab.charAt(0).toUpperCase() + tab.slice(1), PW, PH)
     }
   }
