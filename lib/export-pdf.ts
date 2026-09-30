@@ -479,24 +479,7 @@ function drawResumeSection(doc: jsPDF, report: ReportData, M: number, CW: number
 async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: number, CW: number, PW: number, PH: number, startY: number): Promise<number> {
   let y = startY
   if (items.length === 0) return y
-
-  const photosByItem = new Map<string, PhotoData[]>()
-  for (const p of photos) {
-    if (!photosByItem.has(p.item_id)) photosByItem.set(p.item_id, [])
-    photosByItem.get(p.item_id)!.push(p)
-  }
-
-  const photosBase64 = new Map<string, string[]>()
-  for (const [itemId, itemPhotos] of photosByItem) {
-    const b64s: string[] = []
-    for (const p of itemPhotos) {
-      if (p.url) {
-        const b64 = await fetchImageAsBase64(p.url)
-        if (b64) b64s.push(b64)
-      }
-    }
-    photosBase64.set(itemId, b64s)
-  }
+  void photos
 
   doc.setTextColor(...BLUE)
   doc.setFontSize(9)
@@ -516,7 +499,6 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
         { content: 'Recommendation', colSpan: 3 },
         { content: 'Repair Category', rowSpan: 2 },
         { content: 'Comment / Notes / Dimension', rowSpan: 2 },
-        { content: 'Photo', rowSpan: 2 },
         { content: 'Material Spec.', rowSpan: 2 },
       ],
       ['G', 'R', 'U', 'M', 'C', 'RP', 'RE'],
@@ -534,7 +516,6 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
       '',
       it.repair_category || '-',
       [it.comment, it.condition_note].filter(Boolean).join(' | ') || '-',
-      '',
       it.spec_material || '-',
     ]),
     styles: { fontSize: 6, cellPadding: 1, lineColor: GRID, lineWidth: 0.2, overflow: 'linebreak', valign: 'middle' },
@@ -542,7 +523,7 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
     alternateRowStyles: { fillColor: LIGHT_BG },
     columnStyles: {
       0: { cellWidth: 7, halign: 'center' },
-      1: { cellWidth: 30, halign: 'left' },
+      1: { cellWidth: 34, halign: 'left' },
       2: { cellWidth: 8, halign: 'center' },
       3: { cellWidth: 7, halign: 'center' },
       4: { cellWidth: 7, halign: 'center' },
@@ -552,21 +533,8 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
       8: { cellWidth: 7, halign: 'center' },
       9: { cellWidth: 7, halign: 'center' },
       10: { cellWidth: 16, halign: 'center' },
-      11: { cellWidth: 26, halign: 'left' },
-      12: { cellWidth: 32, halign: 'center', valign: 'middle' },
-      13: { cellWidth: 20, halign: 'left' },
-    },
-    didParseCell: (data) => {
-      if (data.section !== 'body') return
-      const item = items[data.row.index]
-      if (!item) return
-      const b64s = photosBase64.get(item.id || '') || []
-      if (b64s.length > 0) {
-        data.cell.styles.minCellHeight = 34
-        if (data.column.index === 12) {
-          data.cell.styles.cellPadding = { top: 2, bottom: 2, left: 1, right: 1 }
-        }
-      }
+      11: { cellWidth: 46, halign: 'left' },
+      12: { cellWidth: 30, halign: 'left' },
     },
     didDrawCell: (data) => {
       if (data.section !== 'body') return
@@ -586,17 +554,6 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
       if (data.column.index === 7 && item.recommendation.includes('C')) drawCheck(7)
       if (data.column.index === 8 && item.recommendation.includes('RP')) drawCheck(8)
       if (data.column.index === 9 && item.recommendation.includes('RE')) drawCheck(9)
-      if (data.column.index === 12) {
-        const b64s = photosBase64.get(item.id || '') || []
-        if (b64s.length > 0) {
-          const photoSize = 30
-          b64s.slice(0, 1).forEach((b64) => {
-            const px = data.cell.x + (data.cell.width - photoSize) / 2
-            const py = data.cell.y + (data.cell.height - photoSize) / 2
-            try { doc.addImage(b64, 'JPEG', px, py, photoSize, photoSize) } catch { /* skip */ }
-          })
-        }
-      }
     },
   })
   y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4

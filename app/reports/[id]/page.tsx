@@ -351,7 +351,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   const [savingDoc, setSavingDoc] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [uploading, setUploading] = useState<string | null>(null)
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('inspection')
   const [valveTest, setValveTest] = useState<ValveTest>({
@@ -816,34 +815,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     alert('Tersimpan!')
   }
 
-  async function uploadPhoto(file: File, itemId: string) {
-    setUploading(itemId)
-    const uniqueId = crypto.randomUUID()
-    const path = `${id}/${itemId}/${uniqueId}-${file.name}`
-    const { error: uploadError } = await supabase.storage
-      .from('report-photos')
-      .upload(path, file)
-    if (uploadError) {
-      setUploading(null)
-      return alert('Upload gagal: ' + uploadError.message)
-    }
-    await supabase.from('report_photos').insert({
-      report_id: id,
-      item_id: itemId,
-      storage_path: path,
-      caption: file.name,
-    })
-    await fetchPhotos()
-    setUploading(null)
-  }
-
-  async function deletePhoto(photoId: string, storagePath: string) {
-    if (!confirm('Delete this photo?')) return
-    await supabase.storage.from('report-photos').remove([storagePath])
-    await supabase.from('report_photos').delete().eq('id', photoId)
-    await fetchPhotos()
-  }
-
   async function updateStatus(status: string) {
     const { error } = await supabase
       .from('report_inspection')
@@ -1177,10 +1148,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     { key: 'category', label: 'Category', type: 'select' },
   ]
 
-  function getPhotosForItem(itemId: string) {
-    return photos.filter((p) => p.item_id === itemId)
-  }
-
   if (loading) return <p className="text-gray-500 py-10 text-center">Loading...</p>
   if (!report) return <p className="text-red-500 py-10 text-center">Report tidak ditemukan.</p>
 
@@ -1477,7 +1444,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 <th className="border px-1 py-1 text-xs" colSpan={3}>Recommendation</th>
                 <th className="border px-1 py-1 text-xs w-28" rowSpan={2}>Repair Category</th>
                 <th className="border px-1 py-1 text-xs" rowSpan={2}>Comment / Notes / Dimension</th>
-                <th className="border px-1 py-1 text-xs w-24" rowSpan={2}>Photo</th>
                 <th className="border px-1 py-1 text-xs w-32" rowSpan={2}>Material Specification</th>
                 <th className="border px-1 py-1 text-xs w-8" rowSpan={2}></th>
               </tr>
@@ -1493,7 +1459,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
             </thead>
             <tbody>
               {items.map((item, idx) => {
-                const itemPhotos = item.id ? getPhotosForItem(item.id) : []
                 return (
                   <tr key={idx} className="hover:bg-gray-50">
                     <td className="border px-1 py-1 text-center text-gray-500 text-xs w-10">{idx + 1}</td>
@@ -1638,51 +1603,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                       />
                     </td>
                     <td className="border px-1 py-1">
-                      <div className="flex flex-col gap-1">
-                        {itemPhotos.length > 0 && (
-                          <div className="flex gap-1 flex-wrap">
-                            {itemPhotos.map((p) => (
-                              <div key={p.id} className="relative group">
-                                <img
-                                  src={p.url}
-                                  alt={p.caption || ''}
-                                  className="w-8 h-8 object-cover rounded cursor-pointer border hover:border-blue-400"
-                                  onClick={() => p.url && setPreviewPhoto(p.url)}
-                                />
-                                <button
-                                  onClick={() => deletePhoto(p.id, p.storage_path)}
-                                  className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-3 h-3 text-[8px] leading-none opacity-0 group-hover:opacity-100 transition flex items-center justify-center"
-                                >
-                                  x
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        {item.id ? (
-                          <label className="inline-flex items-center gap-1 text-[10px] text-blue-600 hover:text-blue-800 cursor-pointer">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              capture="environment"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0]
-                                if (file && item.id) uploadPhoto(file, item.id)
-                              }}
-                            />
-                            {uploading === item.id ? (
-                              <span className="text-yellow-600">Uploading...</span>
-                            ) : (
-                              <span>+ Photo</span>
-                            )}
-                          </label>
-                        ) : (
-                          <span className="text-[10px] text-gray-400">Simpan dulu</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="border px-1 py-1">
                       <input
                         className="w-full border-0 bg-transparent text-xs focus:outline-none"
                         value={item.spec_material}
@@ -1726,9 +1646,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
             {saving ? 'Menyimpan...' : 'Simpan Semua'}
           </button>
         </div>
-        <p className="text-xs text-gray-400 mt-2">
-          * Click &quot;+ Photo&quot; to upload photo per component. Row must be saved first before uploading.
-        </p>
       </div>
 
       {/* VISUAL INSPECTION & DIMENSIONAL CHECK RESULT Section */}
