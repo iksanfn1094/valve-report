@@ -157,6 +157,11 @@ const JOB_INFO_BLOCK_H = 3 + FIELD_H * 2 + 5
 const CONSTRUCTION_BLOCK_H = 3 + FIELD_H * 8 + 5
 // JOB INFORMATION + CONSTRUCTION (AS FOUND), redrawn on every page break
 const REPEAT_BLOCK_H = JOB_INFO_BLOCK_H + CONSTRUCTION_BLOCK_H
+// the blue band at the top of a report page (logo, section title, company)
+const HEADER_H = 20
+// first usable y below that band
+const CONTENT_TOP = HEADER_H + 5
+const INSPECTION_TITLE = 'INSPECTION REPORT'
 // height of one signature box, used to reserve the bottom strip that repeats
 // on every inspection page
 const SIG_BOX_H = 32
@@ -409,6 +414,15 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
   return Math.max(y, startY2 + boxH + 5)
 }
 
+// Redraws the top of an inspection continuation page: the blue band with the
+// logo, section title and company name, followed by the repeated
+// JOB INFORMATION and CONSTRUCTION (AS FOUND) blocks.
+function drawInspectionContinuationHeader(doc: jsPDF, report: ReportData, M: number, CW: number, PW: number) {
+  drawHeader(doc, INSPECTION_TITLE, PW)
+  const ry = drawJobInfo(doc, report, M, CW, CONTENT_TOP)
+  drawConstruction(doc, report, M, CW, ry)
+}
+
 function drawResumeSection(doc: jsPDF, report: ReportData, M: number, CW: number, startY: number): number {
   let y = startY
 
@@ -527,14 +541,13 @@ async function drawItemsTable(doc: jsPDF, report: ReportData, items: ItemData[],
     startY: y,
     // top margin reserves room for the repeated JOB INFORMATION +
     // CONSTRUCTION (AS FOUND) block drawn by willDrawPage below
-    margin: { left: M, right: M, top: M + REPEAT_BLOCK_H, bottom: M + SIG_BOX_H },
+    margin: { left: M, right: M, top: CONTENT_TOP + REPEAT_BLOCK_H, bottom: M + SIG_BOX_H },
     willDrawPage: (data) => {
       // repeat on any page the table starts on that is not the page the
       // table began on (covers both real page breaks and a forced break
       // pushed by a startY near the page bottom)
       if (data.pageNumber <= 1 && data.doc.getNumberOfPages() === firstPage) return
-      const ry = drawJobInfo(doc, report, M, CW, M)
-      drawConstruction(doc, report, M, CW, ry)
+      drawInspectionContinuationHeader(doc, report, M, CW, PW)
     },
     head: [
       [
@@ -708,9 +721,8 @@ function drawVisualDimensionalTable(
   let movedToPage: number | null = null
   if (y + blockH > bottomLimit) {
     doc.addPage()
-    const ry = drawJobInfo(doc, report, M, CW, M)
-    drawConstruction(doc, report, M, CW, ry)
-    y = M + REPEAT_BLOCK_H
+    drawInspectionContinuationHeader(doc, report, M, CW, PW)
+    y = CONTENT_TOP + REPEAT_BLOCK_H
     movedToPage = doc.getNumberOfPages()
   }
   return { y: drawVisualDimensionalBody(doc, report, M, CW, y), movedToPage }
@@ -1143,9 +1155,9 @@ export async function exportReportPDF(
     // ========== 2. INSPECTION SECTION ==========
     if (items.length > 0) {
       doc.addPage()
-      drawHeader(doc, 'INSPECTION REPORT', PW)
+      drawHeader(doc, INSPECTION_TITLE, PW)
       const sigFrom = doc.getNumberOfPages()
-      let y = 25
+      let y = CONTENT_TOP
       y = drawJobInfo(doc, report, M, CW, y)
       y = drawConstruction(doc, report, M, CW, y)
       y = await drawItemsTable(doc, report, items, photos, M, CW, PW, PH, y)
@@ -1219,8 +1231,8 @@ export async function exportReportPDF(
       drawSignature(doc, report, M, CW, y, PW, PH)
       drawFooter(doc, report, 'Resume', PW, PH)
     } else {
-    drawHeader(doc, tab === 'test' ? 'TEST REPORT' : tab === 'documentation' ? 'DOCUMENTATION REPORT' : tab === 'packaging' ? 'PACKAGING REPORT' : 'INSPECTION REPORT', PW)
-    let y = 25
+    drawHeader(doc, tab === 'test' ? 'TEST REPORT' : tab === 'documentation' ? 'DOCUMENTATION REPORT' : tab === 'packaging' ? 'PACKAGING REPORT' : INSPECTION_TITLE, PW)
+    let y = CONTENT_TOP
 
     if (tab === 'test' || tab === 'documentation' || tab === 'packaging') {
       y = drawValveInfo(doc, report, M, CW, y)
