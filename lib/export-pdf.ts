@@ -799,10 +799,9 @@ async function drawTestSection(doc: jsPDF, report: ReportData, valveTest: ValveT
     doc.text('VALVE TEST PHOTO RECORDS', M, y)
     y += 5
     const GAP = 3
-    const IMG_SZ = 44
+    const maxPerRow = 4
+    const IMG_SZ = (CW - (maxPerRow - 1) * GAP) / maxPerRow
     const LABEL_H = 6
-    const maxCols = Math.max(1, Math.floor((CW + GAP) / (IMG_SZ + GAP)))
-    const rowsData: { label: string; b64s: string[] }[] = []
     for (const row of testPhotos) {
       if (row.photos.length === 0) continue
       const label = TEST_LABELS[row.test_type] || row.test_type || '-'
@@ -811,32 +810,26 @@ async function drawTestSection(doc: jsPDF, report: ReportData, valveTest: ValveT
         const b64 = await fetchImageAsBase64(url)
         if (b64) b64s.push(b64)
       }
-      if (b64s.length > 0) {
-        rowsData.push({ label: `${label}${row.description ? ' - ' + row.description : ''}`, b64s })
+      const rowsNeeded = Math.ceil(Math.max(b64s.length, 1) / maxPerRow)
+      const blockH = LABEL_H + rowsNeeded * IMG_SZ + GAP
+      if (y + blockH > PH - M) { doc.addPage(); y = M }
+      doc.setDrawColor(...GRID)
+      doc.setLineWidth(0.3)
+      doc.rect(M, y, CW, LABEL_H, 'S')
+      doc.setFontSize(7)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(0, 0, 0)
+      doc.text(`${label}${row.description ? ' - ' + row.description : ''}`, M + 2, y + LABEL_H / 2 + 0.8)
+      y += LABEL_H
+      for (let j = 0; j < b64s.length; j += maxPerRow) {
+        const chunk = b64s.slice(j, j + maxPerRow)
+        chunk.forEach((b64, ci) => {
+          const px = M + ci * (IMG_SZ + GAP)
+          try { doc.addImage(b64, 'JPEG', px, y, IMG_SZ, IMG_SZ) } catch { /* skip */ }
+          doc.rect(px, y, IMG_SZ, IMG_SZ, 'S')
+        })
+        y += IMG_SZ + GAP
       }
-    }
-    for (let i = 0; i < rowsData.length; i += maxCols) {
-      const group = rowsData.slice(i, i + maxCols)
-      const colW = (CW - (group.length - 1) * GAP) / group.length
-      const groupH = Math.max(...group.map((g) => LABEL_H + g.b64s.length * (colW + GAP)))
-      if (y + groupH > PH - M) { doc.addPage(); y = M }
-      group.forEach((g, ci) => {
-        const px = M + ci * (colW + GAP)
-        doc.setDrawColor(...GRID)
-        doc.setLineWidth(0.3)
-        doc.rect(px, y, colW, LABEL_H, 'S')
-        doc.setFontSize(6)
-        doc.setFont('helvetica', 'bold')
-        doc.setTextColor(0, 0, 0)
-        doc.text(g.label, px + 1, y + LABEL_H / 2 + 0.8, { maxWidth: colW - 2 })
-        let py = y + LABEL_H
-        for (const b64 of g.b64s) {
-          try { doc.addImage(b64, 'JPEG', px, py, colW, colW) } catch { /* skip */ }
-          doc.rect(px, py, colW, colW, 'S')
-          py += colW + GAP
-        }
-      })
-      y += groupH + GAP
     }
   }
   return y
