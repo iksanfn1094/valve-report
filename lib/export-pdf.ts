@@ -825,8 +825,8 @@ async function drawTestSection(doc: jsPDF, report: ReportData, valveTest: ValveT
         const chunk = b64s.slice(j, j + maxPerRow)
         chunk.forEach((b64, ci) => {
           const px = M + ci * (IMG_SZ + GAP)
-          doc.rect(px, y, IMG_SZ, IMG_SZ, 'S')
           try { doc.addImage(b64, 'JPEG', px, y, IMG_SZ, IMG_SZ) } catch { /* skip */ }
+          doc.rect(px, y, IMG_SZ, IMG_SZ, 'S')
         })
         y += IMG_SZ + GAP
       }
