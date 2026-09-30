@@ -622,8 +622,19 @@ async function drawItemsTable(doc: jsPDF, report: ReportData, items: ItemData[],
 
 // Draws the whole VISUAL INSPECTION & DIMENSIONAL CHECK RESULT block with no
 // page handling of its own, so it can also be measured on a throwaway doc.
-function drawVisualDimensionalBody(doc: jsPDF, report: ReportData, M: number, CW: number, startY: number): number {
+// `repeatHeader` is set only for the real render. The throwaway probe used to
+// measure the block height must not reserve the header space, otherwise the
+// measured height would be inflated by it.
+function drawVisualDimensionalBody(
+  doc: jsPDF,
+  report: ReportData,
+  M: number,
+  CW: number,
+  startY: number,
+  repeatHeader?: { PW: number }
+): number {
   let y = startY
+  const bodyFirstPage = doc.getNumberOfPages()
   const vd = report.visual_dimensional
   const dims = vd?.dims && vd.dims.length > 0 ? vd.dims : [
     { name: 'FACE TO FACE', ref: '', spec: '', actual: '', result: '' },
@@ -670,7 +681,20 @@ function drawVisualDimensionalBody(doc: jsPDF, report: ReportData, M: number, CW
 
   autoTable(doc, {
     startY: y,
-    margin: { left: M, right: M, top: M, bottom: M + SIG_BOX_H },
+    margin: repeatHeader
+      ? { left: M, right: M, top: CONTENT_TOP + REPEAT_BLOCK_H, bottom: M + SIG_BOX_H }
+      : { left: M, right: M, top: M, bottom: M + SIG_BOX_H },
+    // safety net: the wrapper normally keeps this block on one page, but if a
+    // report carries enough dimension rows to overflow, continuation pages still
+    // get the letterhead and start below it instead of colliding with the band
+    ...(repeatHeader
+      ? {
+          willDrawPage: (data: { pageNumber: number; doc: jsPDF }) => {
+            if (data.pageNumber <= 1 && data.doc.getNumberOfPages() === bodyFirstPage) return
+            drawInspectionContinuationHeader(doc, report, M, CW, repeatHeader.PW)
+          },
+        }
+      : {}),
     head: [['No', 'ITEM', 'REF. STANDARD/CODE', 'SPEC. (mm)', 'ACTUAL (mm)', 'RESULT']],
     body: dims.map((d, i) => [
       String(i + 1),
@@ -725,7 +749,7 @@ function drawVisualDimensionalTable(
     y = CONTENT_TOP + REPEAT_BLOCK_H
     movedToPage = doc.getNumberOfPages()
   }
-  return { y: drawVisualDimensionalBody(doc, report, M, CW, y), movedToPage }
+  return { y: drawVisualDimensionalBody(doc, report, M, CW, y, { PW }), movedToPage }
 }
 
 function drawBomTable(doc: jsPDF, bomItems: BomData[], M: number, CW: number, startY: number): number {
