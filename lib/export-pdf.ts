@@ -600,15 +600,9 @@ async function drawItemsTable(doc: jsPDF, report: ReportData, items: ItemData[],
   return y
 }
 
-function drawVisualDimensionalTable(
-  doc: jsPDF,
-  report: ReportData,
-  M: number,
-  CW: number,
-  PW: number,
-  PH: number,
-  startY: number
-): number {
+// Draws the whole VISUAL INSPECTION & DIMENSIONAL CHECK RESULT block with no
+// page handling of its own, so it can also be measured on a throwaway doc.
+function drawVisualDimensionalBody(doc: jsPDF, report: ReportData, M: number, CW: number, startY: number): number {
   let y = startY
   const vd = report.visual_dimensional
   const dims = vd?.dims && vd.dims.length > 0 ? vd.dims : [
@@ -654,18 +648,9 @@ function drawVisualDimensionalTable(
   y += 5
   doc.setLineWidth(0.2)
 
-  const firstPage = doc.getNumberOfPages()
   autoTable(doc, {
     startY: y,
-    margin: { left: M, right: M, top: M + REPEAT_BLOCK_H, bottom: M + SIG_BOX_H },
-    willDrawPage: (data) => {
-      // repeat on any page the table starts on that is not the page the
-      // table began on (covers both real page breaks and a forced break
-      // pushed by a startY near the page bottom)
-      if (data.pageNumber <= 1 && data.doc.getNumberOfPages() === firstPage) return
-      const ry = drawJobInfo(doc, report, M, CW, M)
-      drawConstruction(doc, report, M, CW, ry)
-    },
+    margin: { left: M, right: M, top: M, bottom: M + SIG_BOX_H },
     head: [['No', 'ITEM', 'REF. STANDARD/CODE', 'SPEC. (mm)', 'ACTUAL (mm)', 'RESULT']],
     body: dims.map((d, i) => [
       String(i + 1),
@@ -690,6 +675,35 @@ function drawVisualDimensionalTable(
   y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
 
   return y
+}
+
+// Keeps VISUAL INSPECTION & DIMENSIONAL CHECK RESULT on a single page: when the
+// remaining room is too small the whole block is pushed to the next page
+// (together with the repeated JOB INFORMATION / CONSTRUCTION header) instead of
+// being split across the page boundary.
+function drawVisualDimensionalTable(
+  doc: jsPDF,
+  report: ReportData,
+  M: number,
+  CW: number,
+  PW: number,
+  PH: number,
+  startY: number
+): number {
+  const bottomLimit = PH - (M + SIG_BOX_H)
+  // measure the real rendered height on a throwaway doc so it stays exact even
+  // when a dimension cell wraps onto extra lines
+  const probe = new jsPDF('p', 'mm', 'a4')
+  const blockH = drawVisualDimensionalBody(probe, report, M, CW, 0)
+
+  let y = startY
+  if (y + blockH > bottomLimit) {
+    doc.addPage()
+    const ry = drawJobInfo(doc, report, M, CW, M)
+    drawConstruction(doc, report, M, CW, ry)
+    y = M + REPEAT_BLOCK_H
+  }
+  return drawVisualDimensionalBody(doc, report, M, CW, y)
 }
 
 function drawBomTable(doc: jsPDF, bomItems: BomData[], M: number, CW: number, startY: number): number {
