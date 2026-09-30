@@ -148,6 +148,16 @@ const LIGHT_BG: [number, number, number] = [248, 248, 248]
 const LABEL_C: [number, number, number] = [100, 100, 100]
 const GRID: [number, number, number] = [180, 180, 180]
 
+// height of a single drawField row, shared so the repeated inspection
+// header height below can never drift from the real blocks
+const FIELD_H = 5.5
+// drawJobInfo: title(3) + 2 field rows + trailing gap(5)
+const JOB_INFO_BLOCK_H = 3 + FIELD_H * 2 + 5
+// drawConstruction: title(3) + 8 field rows (== boxH 44) + trailing gap(5)
+const CONSTRUCTION_BLOCK_H = 3 + FIELD_H * 8 + 5
+// JOB INFORMATION + CONSTRUCTION (AS FOUND), redrawn on every page break
+const REPEAT_BLOCK_H = JOB_INFO_BLOCK_H + CONSTRUCTION_BLOCK_H
+
 const BULAN = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
@@ -282,9 +292,9 @@ function drawJobInfo(doc: jsPDF, report: ReportData, M: number, CW: number, star
   jobRows.forEach((row) => {
     row.forEach(([label, val], ci) => {
       const cx = M + ci * thirdW
-      drawField(doc, label, val || '', cx, y, thirdW, 5.5, thirdW / 2 + 2)
+      drawField(doc, label, val || '', cx, y, thirdW, FIELD_H, thirdW / 2 + 2)
     })
-    y += 5.5
+    y += FIELD_H
   })
   return y + 5
 }
@@ -305,10 +315,10 @@ function drawConstruction(doc: jsPDF, report: ReportData, M: number, CW: number,
     ['Operated', report.operated],
   ]
   leftFields.forEach(([label, val]) => {
-    drawField(doc, label, val || '', M, y, leftW, 5.5, 35)
-    y += 5.5
+    drawField(doc, label, val || '', M, y, leftW, FIELD_H, 35)
+    y += FIELD_H
   })
-  const boxH = 44
+  const boxH = FIELD_H * 8
   const startY2 = startY + 3
   doc.setDrawColor(...GRID)
   doc.setLineWidth(0.3)
@@ -476,7 +486,7 @@ function drawResumeSection(doc: jsPDF, report: ReportData, M: number, CW: number
   return y
 }
 
-async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[], M: number, CW: number, PW: number, PH: number, startY: number): Promise<number> {
+async function drawItemsTable(doc: jsPDF, report: ReportData, items: ItemData[], photos: PhotoData[], M: number, CW: number, PW: number, PH: number, startY: number): Promise<number> {
   let y = startY
   if (items.length === 0) return y
   void photos
@@ -487,9 +497,20 @@ async function drawItemsTable(doc: jsPDF, items: ItemData[], photos: PhotoData[]
   doc.text('INCOMING INSP. CHECK (CONDITION AS FOUND)', M, y)
   y += 3
 
+  const firstPage = doc.getNumberOfPages()
   autoTable(doc, {
     startY: y,
-    margin: { left: M, right: M },
+    // top margin reserves room for the repeated JOB INFORMATION +
+    // CONSTRUCTION (AS FOUND) block drawn by willDrawPage below
+    margin: { left: M, right: M, top: M + REPEAT_BLOCK_H, bottom: M },
+    willDrawPage: (data) => {
+      // repeat on any page the table starts on that is not the page the
+      // table began on (covers both real page breaks and a forced break
+      // pushed by a startY near the page bottom)
+      if (data.pageNumber <= 1 && data.doc.getNumberOfPages() === firstPage) return
+      const ry = drawJobInfo(doc, report, M, CW, M)
+      drawConstruction(doc, report, M, CW, ry)
+    },
     head: [
       [
         { content: 'No', rowSpan: 2 },
@@ -615,9 +636,18 @@ function drawVisualDimensionalTable(
   y += 5
   doc.setLineWidth(0.2)
 
+  const firstPage = doc.getNumberOfPages()
   autoTable(doc, {
     startY: y,
-    margin: { left: M, right: M },
+    margin: { left: M, right: M, top: M + REPEAT_BLOCK_H, bottom: M },
+    willDrawPage: (data) => {
+      // repeat on any page the table starts on that is not the page the
+      // table began on (covers both real page breaks and a forced break
+      // pushed by a startY near the page bottom)
+      if (data.pageNumber <= 1 && data.doc.getNumberOfPages() === firstPage) return
+      const ry = drawJobInfo(doc, report, M, CW, M)
+      drawConstruction(doc, report, M, CW, ry)
+    },
     head: [['No', 'ITEM', 'REF. STANDARD/CODE', 'SPEC. (mm)', 'ACTUAL (mm)', 'RESULT']],
     body: dims.map((d, i) => [
       String(i + 1),
@@ -1075,7 +1105,7 @@ export async function exportReportPDF(
       let y = 25
       y = drawJobInfo(doc, report, M, CW, y)
       y = drawConstruction(doc, report, M, CW, y)
-      y = await drawItemsTable(doc, items, photos, M, CW, PW, PH, y)
+      y = await drawItemsTable(doc, report, items, photos, M, CW, PW, PH, y)
       y = drawVisualDimensionalTable(doc, report, M, CW, PW, PH, y)
       drawSignature(doc, report, M, CW, y, PW, PH)
     }
@@ -1150,7 +1180,7 @@ export async function exportReportPDF(
 
     if (tab === 'inspection') {
       y = drawConstruction(doc, report, M, CW, y)
-      y = await drawItemsTable(doc, items, photos, M, CW, PW, PH, y)
+      y = await drawItemsTable(doc, report, items, photos, M, CW, PW, PH, y)
       y = drawVisualDimensionalTable(doc, report, M, CW, PW, PH, y)
     }
     if (tab === 'documentation') {
