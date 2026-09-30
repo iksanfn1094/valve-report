@@ -60,7 +60,6 @@ type PackagingData = {
 
 type PackagingPhotoData = {
   id?: string
-  weight?: string
   photos?: string[]
 }
 
@@ -1037,7 +1036,7 @@ async function drawPackagingSection(doc: jsPDF, report: ReportData, M: number, C
 
   dataRow(y, 'QTY (EA)', qty)
   y += h
-  dataRow(y, 'IN KG WEIGHT / (PER ITEM)', weight)
+  dataRow(y, 'WEIGHT/ITEM (KG)', weight)
   y += h + 6
 
   // ========== PACKAGING PHOTO RECORDS ==========
@@ -1053,7 +1052,6 @@ async function drawPackagingSection(doc: jsPDF, report: ReportData, M: number, C
   const GAP = 2
   const maxPerRow = 4
   const INNER_PAD = 2
-  const LABEL_H = 6
   const innerW = CW - INNER_PAD * 2
   const IMG_SZ = (innerW - (maxPerRow - 1) * GAP) / maxPerRow
 
@@ -1063,39 +1061,28 @@ async function drawPackagingSection(doc: jsPDF, report: ReportData, M: number, C
   doc.text('PACKAGING PHOTO RECORDS', M, y)
   y += 4
 
-  for (const [i, b64s] of rowsB64.entries()) {
+  for (const b64s of rowsB64) {
     const imgs = b64s.filter((b): b is string => !!b)
     const totalRows = Math.max(Math.ceil(imgs.length / maxPerRow), 1)
     const photoAreaH = totalRows * IMG_SZ + (totalRows - 1) * GAP
-    const blockH = LABEL_H + INNER_PAD * 2 + photoAreaH
+    const blockH = INNER_PAD * 2 + photoAreaH
 
     if (y + blockH > PH - M) {
       doc.addPage()
       y = M
     }
 
-    const weightLabel = photoRows[i].weight?.trim() || '-'
-    doc.setDrawColor(...GRID)
-    doc.setLineWidth(0.2)
-    doc.rect(M, y, CW, LABEL_H, 'S')
-    doc.setFontSize(6.5)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(...LABEL_C)
-    doc.text('IN KG WEIGHT / (PER ITEM)', M + 2, y + LABEL_H / 2, { baseline: 'middle' })
-    doc.setFontSize(7)
-    doc.setTextColor(0, 0, 0)
-    doc.text(weightLabel, M + CW - 2, y + LABEL_H / 2, { align: 'right', baseline: 'middle' })
-
-    const photoTop = y + LABEL_H
     imgs.slice(0, totalRows * maxPerRow).forEach((b64, j) => {
       const ci = j % maxPerRow
       const ri = Math.floor(j / maxPerRow)
       const px = M + INNER_PAD + ci * (IMG_SZ + GAP)
-      const py = photoTop + INNER_PAD + ri * (IMG_SZ + GAP)
+      const py = y + INNER_PAD + ri * (IMG_SZ + GAP)
       try { doc.addImage(b64, 'JPEG', px, py, IMG_SZ, IMG_SZ) } catch { /* skip */ }
     })
-    doc.rect(M, photoTop, CW, INNER_PAD * 2 + photoAreaH, 'S')
-    y = photoTop + INNER_PAD * 2 + photoAreaH + GAP
+    doc.setDrawColor(...GRID)
+    doc.setLineWidth(0.2)
+    doc.rect(M, y, CW, INNER_PAD * 2 + photoAreaH, 'S')
+    y += INNER_PAD * 2 + photoAreaH + GAP
   }
 
   return y
