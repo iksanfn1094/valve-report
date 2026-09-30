@@ -800,8 +800,10 @@ async function drawTestSection(doc: jsPDF, report: ReportData, valveTest: ValveT
     y += 5
     const GAP = 3
     const maxPerRow = 4
-    const IMG_SZ = (CW - (maxPerRow - 1) * GAP) / maxPerRow
     const LABEL_H = 6
+    const INNER_PAD = 2
+    const innerW = CW - INNER_PAD * 2
+    const IMG_SZ = (innerW - (maxPerRow - 1) * GAP) / maxPerRow
     for (const row of testPhotos) {
       if (row.photos.length === 0) continue
       const label = TEST_LABELS[row.test_type] || row.test_type || '-'
@@ -811,25 +813,28 @@ async function drawTestSection(doc: jsPDF, report: ReportData, valveTest: ValveT
         if (b64) b64s.push(b64)
       }
       const rowsNeeded = Math.ceil(Math.max(b64s.length, 1) / maxPerRow)
-      const blockH = LABEL_H + rowsNeeded * IMG_SZ + GAP
+      const photoAreaH = rowsNeeded * IMG_SZ + (rowsNeeded - 1) * GAP
+      const blockH = LABEL_H + INNER_PAD * 2 + photoAreaH
       if (y + blockH > PH - M) { doc.addPage(); y = M }
+      const labelTop = y
+      const photoTop = labelTop + LABEL_H
       doc.setDrawColor(...GRID)
       doc.setLineWidth(0.3)
-      doc.rect(M, y, CW, LABEL_H, 'S')
+      doc.rect(M, labelTop, CW, LABEL_H, 'S')
       doc.setFontSize(7)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(0, 0, 0)
-      doc.text(`${label}${row.description ? ' - ' + row.description : ''}`, M + 2, y + LABEL_H / 2 + 0.8)
-      y += LABEL_H
+      doc.text(`${label}${row.description ? ' - ' + row.description : ''}`, M + 2, labelTop + LABEL_H / 2 + 0.8)
       for (let j = 0; j < b64s.length; j += maxPerRow) {
         const chunk = b64s.slice(j, j + maxPerRow)
         chunk.forEach((b64, ci) => {
-          const px = M + ci * (IMG_SZ + GAP)
-          try { doc.addImage(b64, 'JPEG', px, y, IMG_SZ, IMG_SZ) } catch { /* skip */ }
-          doc.rect(px, y, IMG_SZ, IMG_SZ, 'S')
+          const px = M + INNER_PAD + ci * (IMG_SZ + GAP)
+          const py = photoTop + INNER_PAD + Math.floor(j / maxPerRow) * (IMG_SZ + GAP)
+          try { doc.addImage(b64, 'JPEG', px, py, IMG_SZ, IMG_SZ) } catch { /* skip */ }
         })
-        y += IMG_SZ + GAP
       }
+      doc.rect(M, photoTop, CW, INNER_PAD * 2 + photoAreaH, 'S')
+      y = photoTop + INNER_PAD * 2 + photoAreaH + GAP
     }
   }
   return y
