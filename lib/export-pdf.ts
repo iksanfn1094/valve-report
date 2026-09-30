@@ -1016,34 +1016,28 @@ async function drawPackagingSection(doc: jsPDF, report: ReportData, M: number, C
   doc.text('DATA PACKAGE', M, y)
   y += 3
 
-  const h = 6.5
-  const colW = [26, CW - 26]
-  doc.setFillColor(245, 245, 245)
-  doc.setDrawColor(...GRID)
-  doc.setLineWidth(0.2)
+  const h = 7
+  const labelW = 58
+  const valW = CW - labelW
 
-  // QTY (EA)
-  doc.rect(M, y, colW[0], h, 'FD')
-  doc.rect(M + colW[0], y, colW[1], h, 'S')
-  doc.setFontSize(7)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(...LABEL_C)
-  doc.text('QTY (EA)', M + 1.5, y + h - 2)
-  doc.setFontSize(8)
-  doc.setTextColor(0, 0, 0)
-  doc.text(qty || '-', M + colW[0] + 2, y + h - 2)
+  const dataRow = (rowY: number, label: string, value: string) => {
+    doc.setFillColor(245, 245, 245)
+    doc.setDrawColor(...GRID)
+    doc.setLineWidth(0.2)
+    doc.rect(M, rowY, labelW, h, 'FD')
+    doc.rect(M + labelW, rowY, valW, h, 'S')
+    doc.setFontSize(7)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(...LABEL_C)
+    doc.text(label, M + 2, rowY + h / 2, { baseline: 'middle' })
+    doc.setFontSize(8)
+    doc.setTextColor(0, 0, 0)
+    doc.text(value || '-', M + labelW + valW / 2, rowY + h / 2, { align: 'center', baseline: 'middle' })
+  }
+
+  dataRow(y, 'QTY (EA)', qty)
   y += h
-
-  // IN KG WEIGHT / (PER ITEM)
-  doc.rect(M, y, colW[0], h, 'FD')
-  doc.rect(M + colW[0], y, colW[1], h, 'S')
-  doc.setFontSize(7)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(...LABEL_C)
-  doc.text('IN KG WEIGHT / (PER ITEM)', M + 1.5, y + h - 2)
-  doc.setFontSize(8)
-  doc.setTextColor(0, 0, 0)
-  doc.text(weight ? `${weight} KG` : '-', M + colW[0] + 2, y + h - 2)
+  dataRow(y, 'IN KG WEIGHT / (PER ITEM)', weight)
   y += h + 6
 
   // ========== PACKAGING PHOTO RECORDS ==========
@@ -1067,12 +1061,7 @@ async function drawPackagingSection(doc: jsPDF, report: ReportData, M: number, C
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
   doc.text('PACKAGING PHOTO RECORDS', M, y)
-  y += 3
-  doc.setFontSize(6.5)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(...LABEL_C)
-  doc.text('IN KG WEIGHT / (PER ITEM)', M, y)
-  y += 3
+  y += 4
 
   for (const [i, b64s] of rowsB64.entries()) {
     const imgs = b64s.filter((b): b is string => !!b)
@@ -1091,9 +1080,11 @@ async function drawPackagingSection(doc: jsPDF, report: ReportData, M: number, C
     doc.rect(M, y, CW, LABEL_H, 'S')
     doc.setFontSize(6.5)
     doc.setFont('helvetica', 'bold')
-    doc.setTextColor(60, 70, 90)
-    doc.text(`WEIGHT: ${weightLabel} KG / ITEM`, M + 2, y + LABEL_H - 2)
+    doc.setTextColor(...LABEL_C)
+    doc.text('IN KG WEIGHT / (PER ITEM)', M + 2, y + LABEL_H / 2, { baseline: 'middle' })
+    doc.setFontSize(7)
     doc.setTextColor(0, 0, 0)
+    doc.text(weightLabel, M + CW - 2, y + LABEL_H / 2, { align: 'right', baseline: 'middle' })
 
     const photoTop = y + LABEL_H
     imgs.slice(0, totalRows * maxPerRow).forEach((b64, j) => {
