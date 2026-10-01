@@ -163,6 +163,7 @@ const HEADER_H = 20
 const CONTENT_TOP = HEADER_H + 5
 const INSPECTION_TITLE = 'INSPECTION REPORT'
 const RESUME_TITLE = 'RESUME REPORT'
+const PACKAGING_TITLE = 'PACKAGING REPORT'
 // height of one signature box, used to reserve the bottom strip that repeats
 // on every inspection page
 const SIG_BOX_H = 32
@@ -1248,6 +1249,17 @@ async function drawPackagingSection(doc: jsPDF, report: ReportData, M: number, C
   const innerW = CW - INNER_PAD * 2
   const IMG_SZ = (innerW - (maxPerRow - 1) * GAP) / maxPerRow
 
+  // keep the heading with at least its first photo group, otherwise the heading
+  // can end up alone at the bottom of a page with every group overleaf
+  const firstImgs = rowsB64[0] ? rowsB64[0].filter((b): b is string => !!b) : []
+  const firstRows = Math.max(Math.ceil(firstImgs.length / maxPerRow), 1)
+  const firstBlockH = INNER_PAD * 2 + firstRows * IMG_SZ + (firstRows - 1) * GAP
+  if (y + 4 + firstBlockH > PH - (M + SIG_BOX_H)) {
+    doc.addPage()
+    drawSectionContinuationHeader(doc, report, M, CW, PW, PACKAGING_TITLE, false)
+    y = CONTENT_TOP + REPEAT_BLOCK_H
+  }
+
   doc.setTextColor(...BLUE)
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
@@ -1260,9 +1272,10 @@ async function drawPackagingSection(doc: jsPDF, report: ReportData, M: number, C
     const photoAreaH = totalRows * IMG_SZ + (totalRows - 1) * GAP
     const blockH = INNER_PAD * 2 + photoAreaH
 
-    if (y + blockH > PH - M) {
+    if (y + blockH > PH - (M + SIG_BOX_H)) {
       doc.addPage()
-      y = M
+      drawSectionContinuationHeader(doc, report, M, CW, PW, PACKAGING_TITLE, false)
+      y = CONTENT_TOP + REPEAT_BLOCK_H
     }
 
     imgs.slice(0, totalRows * maxPerRow).forEach((b64, j) => {
@@ -1359,11 +1372,13 @@ export async function exportReportPDF(
       const hasPkg = !!(report.packaging?.qty?.trim() || report.packaging?.weight?.trim() || (report.packaging_photos && report.packaging_photos !== '[]'))
       if (hasPkg) {
         doc.addPage()
-        drawHeader(doc, 'PACKAGING REPORT', PW)
-        let y = 25
-        y = drawValveInfo(doc, report, M, CW, y)
+        drawHeader(doc, PACKAGING_TITLE, PW)
+        const sigFrom = doc.getNumberOfPages()
+        let y = CONTENT_TOP
+        y = drawJobInfo(doc, report, M, CW, y)
+        y = drawConstruction(doc, report, M, CW, y, false)
         y = await drawPackagingSection(doc, report, M, CW, PW, PH, y)
-        drawSignature(doc, report, M, CW, y, PW, PH)
+        stampSectionSignatures(doc, report, M, CW, PH, sigFrom, null, y + 6)
       }
     }
 
@@ -1380,17 +1395,20 @@ export async function exportReportPDF(
       stampSectionSignatures(doc, report, M, CW, PH, sigFrom, rs.lastMovedPage, rs.y + 6)
       drawFooter(doc, report, 'Resume', PW, PH)
     } else {
-    drawHeader(doc, tab === 'test' ? 'TEST REPORT' : tab === 'documentation' ? 'DOCUMENTATION REPORT' : tab === 'packaging' ? 'PACKAGING REPORT' : INSPECTION_TITLE, PW)
+    drawHeader(doc, tab === 'test' ? 'TEST REPORT' : tab === 'documentation' ? 'DOCUMENTATION REPORT' : tab === 'packaging' ? PACKAGING_TITLE : INSPECTION_TITLE, PW)
     let y = CONTENT_TOP
+    const sigFrom = doc.getNumberOfPages()
 
-    if (tab === 'test' || tab === 'documentation' || tab === 'packaging') {
+    if (tab === 'packaging') {
+      y = drawJobInfo(doc, report, M, CW, y)
+      y = drawConstruction(doc, report, M, CW, y, false)
+    } else if (tab === 'test' || tab === 'documentation') {
       y = drawValveInfo(doc, report, M, CW, y)
     } else {
       y = drawJobInfo(doc, report, M, CW, y)
     }
 
     if (tab === 'inspection') {
-      const sigFrom = doc.getNumberOfPages()
       y = drawConstruction(doc, report, M, CW, y)
       y = await drawItemsTable(doc, report, items, photos, M, CW, PW, PH, y)
       const vd = drawVisualDimensionalTable(doc, report, M, CW, PW, PH, y)
@@ -1411,7 +1429,10 @@ export async function exportReportPDF(
       y = drawBomTable(doc, bomItems, M, CW, y)
     }
 
-    if (tab !== 'inspection') drawSignature(doc, report, M, CW, y, PW, PH)
+    // inspection and packaging stamp the strip on every page of the section;
+    // the other tabs keep the single strip at the end
+    if (tab === 'packaging') stampSectionSignatures(doc, report, M, CW, PH, sigFrom, null, y + 6)
+    else if (tab !== 'inspection') drawSignature(doc, report, M, CW, y, PW, PH)
     drawFooter(doc, report, tab.charAt(0).toUpperCase() + tab.slice(1), PW, PH)
     }
   }
