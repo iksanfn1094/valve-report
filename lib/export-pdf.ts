@@ -1215,24 +1215,20 @@ async function drawDocumentationSection(doc: jsPDF, report: ReportData, docItems
           doc.setDrawColor(...GRID)
           doc.rect(xBefore, rowTop, halfW * 2, COMMENT_H, 'FD')
 
-          const drawNote = (lines: string[], cap: string, colX: number) => {
+          const drawNote = (lines: string[], colX: number) => {
             if (!lines.length) return
             const colW = halfW
             const textH = lines.length * NOTE_LINE_H
-            const blockTop = rowTop + (COMMENT_H - textH) / 2
-            doc.setTextColor(...LABEL_C)
-            doc.setFontSize(5)
-            doc.setFont('helvetica', 'bold')
-            doc.text(cap, colX + halfW / 2, blockTop - 0.4, { align: 'center', baseline: 'bottom' })
+            const blockTop = rowTop + COMMENT_H / 2
             doc.setFontSize(6)
             doc.setFont('helvetica', 'normal')
             doc.setTextColor(0, 0, 0)
             doc.text(lines, colX + colW / 2, blockTop, {
-              align: 'center', baseline: 'top', lineHeightFactor: NOTE_LINE_H / 6,
+              align: 'center', baseline: 'middle', lineHeightFactor: NOTE_LINE_H / 6,
             })
           }
-          drawNote(bLines, 'COMMENT / NOTES (BEFORE)', xBefore)
-          drawNote(aLines, 'COMMENT / NOTES (AFTER)', xAfter)
+          drawNote(bLines, xBefore)
+          drawNote(aLines, xAfter)
           y += COMMENT_H
         }
       }
