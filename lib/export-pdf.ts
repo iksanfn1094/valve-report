@@ -85,6 +85,8 @@ type DocData = {
   component_name: string
   photo_before: string[]
   photo_after: string[]
+  comment_before: string
+  comment_after: string
 }
 
 export type ValveTestData = {
@@ -1075,6 +1077,11 @@ async function drawDocumentationSection(doc: jsPDF, report: ReportData, docItems
   const IMG_SZ = (halfW - (colsPerHalf - 1) * GAP) / colsPerHalf
   const RH = IMG_SZ + 2
   const headerH = 6
+  // Comment / Notes text sits in its own strip row below the photos of each
+  // half; the strip grows with the longest wrapped note instead of clipping it
+  const NOTE_LINE_H = 2.1
+  const NOTE_PAD = 1.8
+  const NOTE_MIN_H = 5
   const rightEdge = M + CW
   // bottom of the usable area; the signature strip is stamped below it and
   // repeated on every page, so the rows must stop above it
@@ -1115,7 +1122,26 @@ async function drawDocumentationSection(doc: jsPDF, report: ReportData, docItems
   for (const [i, d] of docItems.entries()) {
     const bImgs = allBefore[i].filter((b): b is string => !!b)
     const aImgs = allAfter[i].filter((b): b is string => !!b)
-    const totalRows = Math.max(Math.ceil(bImgs.length / colsPerHalf), Math.ceil(aImgs.length / colsPerHalf), 1)
+    const bodyRows = Math.max(Math.ceil(bImgs.length / colsPerHalf), Math.ceil(aImgs.length / colsPerHalf), 1)
+    const commentB = (d.comment_before || '').trim()
+    const commentA = (d.comment_after || '').trim()
+    const hasComment = !!commentB || !!commentA
+    // wrap both notes up front so the strip height matches the real text
+    const noteLines = (t: string) => (t ? doc.splitTextToSize(t, halfW - 4) as string[] : [])
+    const bLines = noteLines(commentB)
+    const aLines = noteLines(commentA)
+    const noteLinesN = Math.max(bLines.length, aLines.length, 1)
+    const COMMENT_H = hasComment ? Math.max(NOTE_MIN_H, noteLinesN * NOTE_LINE_H + NOTE_PAD) : 0
+    // the Comment / Notes text sits in its own strip row below the photos of
+    // each half, so the block gets one extra row when either note is present
+    const totalRows = bodyRows + (hasComment ? 1 : 0)
+    const rowH = (gi: number) => (gi < bodyRows ? RH : COMMENT_H)
+    const blockH = bodyRows * RH + COMMENT_H
+    const heightBefore = (gi: number) => {
+      let h = 0
+      for (let k = 0; k < gi && k < totalRows; k++) h += rowH(k)
+      return h
+    }
     const hideRowLines = Math.max(bImgs.length, aImgs.length) >= 3
     const keepTogether = hideRowLines
     const name = d.component_name || '-'
@@ -1124,19 +1150,27 @@ async function drawDocumentationSection(doc: jsPDF, report: ReportData, docItems
     while (globalRow < totalRows) {
       // components with 3+ photos move as a whole block to the next page
       // when they cannot fit in remaining space
-      if (keepTogether && (totalRows - globalRow) * RH > limit - y) {
-        const wholeFitsPage = totalRows * RH <= limit - freshTop - headerH
+      if (keepTogether && (blockH - heightBefore(globalRow)) > limit - y) {
+        const wholeFitsPage = blockH <= limit - freshTop - headerH
         if (wholeFitsPage) {
           newPage()
         }
       }
-      const avail = Math.floor((limit - y) / RH)
-      if (avail < 1) {
+      // rows have mixed heights now (photo rows + the comment strip), so fill
+      // the page segment row by row instead of dividing the free space
+      let rowsHere = 0
+      let acc = 0
+      while (globalRow + rowsHere < totalRows) {
+        const rh = rowH(globalRow + rowsHere)
+        if (acc + rh > limit - y) break
+        acc += rh
+        rowsHere++
+      }
+      if (rowsHere < 1) {
         newPage()
         continue
       }
       const segTop = y
-      const rowsHere = Math.min(avail, totalRows - globalRow)
       // horizontal separator between rows: only the segment's first row gets a
       // separator line when continuing (photos 3+ hide their row lines anyway)
       for (let r = 0; r < rowsHere; r++) {
@@ -1146,27 +1180,44 @@ async function drawDocumentationSection(doc: jsPDF, report: ReportData, docItems
           doc.setLineWidth(0.2)
           doc.line(M, rowTop, rightEdge, rowTop)
         }
-        // Photo Before
-        const bStart = (globalRow + r) * colsPerHalf
-        const bChunk = bImgs.slice(bStart, bStart + colsPerHalf)
-        bChunk.forEach((b64, ci) => {
-          const totalInRow = bChunk.length
-          const totalW = totalInRow * IMG_SZ + (totalInRow - 1) * GAP
-          const offsetX = (halfW - totalW) / 2
-          const x = xBefore + offsetX + ci * (IMG_SZ + GAP)
-          try { doc.addImage(b64, 'JPEG', x, rowTop + 1, IMG_SZ, IMG_SZ) } catch { /* skip */ }
-        })
-        // Photo After
-        const aStart = (globalRow + r) * colsPerHalf
-        const aChunk = aImgs.slice(aStart, aStart + colsPerHalf)
-        aChunk.forEach((b64, ci) => {
-          const totalInRow = aChunk.length
-          const totalW = totalInRow * IMG_SZ + (totalInRow - 1) * GAP
-          const offsetX = (halfW - totalW) / 2
-          const x = xAfter + offsetX + ci * (IMG_SZ + GAP)
-          try { doc.addImage(b64, 'JPEG', x, rowTop + 1, IMG_SZ, IMG_SZ) } catch { /* skip */ }
-        })
-        y += RH
+        if (globalRow + r < bodyRows) {
+          // Photo Before
+          const bStart = (globalRow + r) * colsPerHalf
+          const bChunk = bImgs.slice(bStart, bStart + colsPerHalf)
+          bChunk.forEach((b64, ci) => {
+            const totalInRow = bChunk.length
+            const totalW = totalInRow * IMG_SZ + (totalInRow - 1) * GAP
+            const offsetX = (halfW - totalW) / 2
+            const x = xBefore + offsetX + ci * (IMG_SZ + GAP)
+            try { doc.addImage(b64, 'JPEG', x, rowTop + 1, IMG_SZ, IMG_SZ) } catch { /* skip */ }
+          })
+          // Photo After
+          const aStart = (globalRow + r) * colsPerHalf
+          const aChunk = aImgs.slice(aStart, aStart + colsPerHalf)
+          aChunk.forEach((b64, ci) => {
+            const totalInRow = aChunk.length
+            const totalW = totalInRow * IMG_SZ + (totalInRow - 1) * GAP
+            const offsetX = (halfW - totalW) / 2
+            const x = xAfter + offsetX + ci * (IMG_SZ + GAP)
+            try { doc.addImage(b64, 'JPEG', x, rowTop + 1, IMG_SZ, IMG_SZ) } catch { /* skip */ }
+          })
+          y += RH
+        } else {
+          // Comment / Notes strip under each photo column
+          doc.setFillColor(250, 250, 250)
+          doc.setDrawColor(...GRID)
+          doc.rect(M + colNo + colComp, rowTop, CW - colNo - colComp, COMMENT_H, 'FD')
+          doc.setFontSize(5.5)
+          doc.setFont('helvetica', 'normal')
+          doc.setTextColor(...LABEL_C)
+          const textH = bLines.length * NOTE_LINE_H
+          const startY2 = rowTop + (COMMENT_H - textH) / 2
+          const noteOpts = { baseline: 'top' as const, lineHeightFactor: NOTE_LINE_H / 5.5 }
+          if (bLines.length) doc.text(bLines, xBefore + 2, startY2, noteOpts)
+          if (aLines.length) doc.text(aLines, xAfter + 2, startY2, noteOpts)
+          doc.setTextColor(0, 0, 0)
+          y += COMMENT_H
+        }
       }
       globalRow += rowsHere
       // close this page segment: borders + verticals
