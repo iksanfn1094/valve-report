@@ -1079,10 +1079,9 @@ async function drawDocumentationSection(doc: jsPDF, report: ReportData, docItems
   const headerH = 6
   // Comment / Notes text sits in its own strip row below the photos of each
   // half; the strip grows with the longest wrapped note instead of clipping it
-  const NOTE_LINE_H = 2.1
+  const NOTE_LINE_H = 2.2
   const NOTE_PAD = 1.6
-  const NOTE_MIN_H = 6.4
-  const NOTE_CAP_H = 2.6
+  const NOTE_MIN_H = 5
   const rightEdge = M + CW
   // bottom of the usable area; the signature strip is stamped below it and
   // repeated on every page, so the rows must stop above it
@@ -1133,7 +1132,7 @@ async function drawDocumentationSection(doc: jsPDF, report: ReportData, docItems
     const aLines = noteLines(commentA)
     const noteLinesN = Math.max(bLines.length, aLines.length, 1)
     const COMMENT_H = hasComment
-      ? Math.max(NOTE_MIN_H, NOTE_CAP_H + noteLinesN * NOTE_LINE_H + NOTE_PAD)
+      ? Math.max(NOTE_MIN_H, noteLinesN * NOTE_LINE_H + NOTE_PAD)
       : 0
     // the Comment / Notes text sits in its own strip row below the photos of
     // each half, so the block gets one extra row when either note is present
@@ -1215,16 +1214,20 @@ async function drawDocumentationSection(doc: jsPDF, report: ReportData, docItems
           doc.setDrawColor(...GRID)
           doc.rect(xBefore, rowTop, halfW * 2, COMMENT_H, 'FD')
 
+          // each line is drawn on its own so the block can be centred exactly
+          // inside the strip; passing the array to doc.text() anchors the block
+          // from its first baseline and leaves it sitting too low
           const drawNote = (lines: string[], colX: number) => {
             if (!lines.length) return
-            const colW = halfW
-            const textH = lines.length * NOTE_LINE_H
-            const blockTop = rowTop + COMMENT_H / 2
+            const blockH = lines.length * NOTE_LINE_H
+            const firstMid = rowTop + (COMMENT_H - blockH) / 2 + NOTE_LINE_H / 2
             doc.setFontSize(6)
             doc.setFont('helvetica', 'normal')
             doc.setTextColor(0, 0, 0)
-            doc.text(lines, colX + colW / 2, blockTop, {
-              align: 'center', baseline: 'middle', lineHeightFactor: NOTE_LINE_H / 6,
+            lines.forEach((ln, li) => {
+              doc.text(ln, colX + halfW / 2, firstMid + li * NOTE_LINE_H, {
+                align: 'center', baseline: 'middle',
+              })
             })
           }
           drawNote(bLines, xBefore)
