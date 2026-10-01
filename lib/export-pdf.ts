@@ -1175,10 +1175,13 @@ async function drawDocumentationSection(doc: jsPDF, report: ReportData, docItems
       // separator line when continuing (photos 3+ hide their row lines anyway)
       for (let r = 0; r < rowsHere; r++) {
         const rowTop = y
+        // the separator only spans the photo area, so the NO / COMPONENT cells
+        // stay one merged cell per component and are closed by the segment's
+        // bottom line
         if (r > 0 && !hideRowLines) {
           doc.setDrawColor(...GRID)
           doc.setLineWidth(0.2)
-          doc.line(M, rowTop, rightEdge, rowTop)
+          doc.line(xBefore, rowTop, rightEdge, rowTop)
         }
         if (globalRow + r < bodyRows) {
           // Photo Before
@@ -1206,7 +1209,7 @@ async function drawDocumentationSection(doc: jsPDF, report: ReportData, docItems
           // Comment / Notes strip under each photo column
           doc.setFillColor(250, 250, 250)
           doc.setDrawColor(...GRID)
-          doc.rect(M + colNo + colComp, rowTop, CW - colNo - colComp, COMMENT_H, 'FD')
+          doc.rect(xBefore, rowTop, halfW * 2, COMMENT_H, 'FD')
           doc.setFontSize(5.5)
           doc.setFont('helvetica', 'normal')
           doc.setTextColor(...LABEL_C)
