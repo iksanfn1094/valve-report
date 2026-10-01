@@ -85,6 +85,7 @@ create table report_documentation (
   condition_after text,
   photo_before_url text,
   photo_after_url text,
+  comment_notes text,
   notes text,
   description text,
   photos text,

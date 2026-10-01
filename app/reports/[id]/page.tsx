@@ -346,7 +346,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   const [items, setItems] = useState<Item[]>([])
   const [photos, setPhotos] = useState<Photo[]>([])
   const [bomItems, setBomItems] = useState<BomItem[]>([])
-  type DocPhotoRow = { id?: string; component_name: string; photo_before: string[]; photo_after: string[] }
+  type DocPhotoRow = { id?: string; component_name: string; photo_before: string[]; photo_after: string[]; comment_notes: string }
   const [docItems, setDocItems] = useState<DocPhotoRow[]>([])
   const [savingDoc, setSavingDoc] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -503,7 +503,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   }
 
   function addDocItem() {
-    setDocItems([...docItems, { id: undefined, component_name: '', photo_before: [], photo_after: [] }])
+    setDocItems([...docItems, { id: undefined, component_name: '', photo_before: [], photo_after: [], comment_notes: '' }])
   }
   function removeDocItem(idx: number) {
     setDocItems(docItems.filter((_, i) => i !== idx))
@@ -539,6 +539,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         component_name: d.component_name,
         photo_before: JSON.stringify(d.photo_before),
         photo_after: JSON.stringify(d.photo_after),
+        comment_notes: d.comment_notes,
       }).eq('id', d.id)
     }
     if (newItems.length > 0) {
@@ -547,6 +548,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         component_name: d.component_name,
         photo_before: JSON.stringify(d.photo_before),
         photo_after: JSON.stringify(d.photo_after),
+        comment_notes: d.comment_notes,
         sort_order: docItems.indexOf(d),
       }))
       const { data, error } = await supabase.from('report_documentation').insert(rows).select()
@@ -651,6 +653,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           component_name: d.component_name ?? '',
           photo_before: (() => { try { return JSON.parse(d.photo_before || '[]') } catch { return [] as string[] } })(),
           photo_after: (() => { try { return JSON.parse(d.photo_after || '[]') } catch { return [] as string[] } })(),
+          comment_notes: d.comment_notes ?? '',
         })))
       }
       setLoading(false)
@@ -2031,6 +2034,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                 <th className="border px-2 py-2 text-left">Component</th>
                 <th className="border px-2 py-2 text-center">Photo Before</th>
                 <th className="border px-2 py-2 text-center">Photo After</th>
+                <th className="border px-2 py-2 text-left">Comment / Notes</th>
                 <th className="border px-2 py-2 text-center w-8"></th>
               </tr>
             </thead>
@@ -2072,11 +2076,14 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                       </label>
                     </div>
                   </td>
+                  <td className="border px-1 py-1">
+                    <input type="text" value={row.comment_notes} onChange={e => updateDocItem(i, 'comment_notes', e.target.value)} className="w-full border-0 bg-transparent text-xs focus:outline-none" placeholder="Comment / Notes" />
+                  </td>
                   <td className="border px-1 py-1 text-center"><button onClick={() => removeDocItem(i)} className="text-red-400 hover:text-red-600 text-sm font-bold">&#10005;</button></td>
                 </tr>
               ))}
               {docItems.length === 0 && (
-                <tr><td colSpan={5} className="border px-2 py-6 text-center text-gray-400">Belum ada data. Klik &quot;+ Tambah Baris&quot; untuk menambah.</td></tr>
+                <tr><td colSpan={6} className="border px-2 py-6 text-center text-gray-400">Belum ada data. Klik &quot;+ Tambah Baris&quot; untuk menambah.</td></tr>
               )}
             </tbody>
           </table>
