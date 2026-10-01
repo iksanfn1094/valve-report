@@ -1080,8 +1080,9 @@ async function drawDocumentationSection(doc: jsPDF, report: ReportData, docItems
   // Comment / Notes text sits in its own strip row below the photos of each
   // half; the strip grows with the longest wrapped note instead of clipping it
   const NOTE_LINE_H = 2.1
-  const NOTE_PAD = 1.8
-  const NOTE_MIN_H = 5
+  const NOTE_PAD = 1.6
+  const NOTE_MIN_H = 6.4
+  const NOTE_CAP_H = 2.6
   const rightEdge = M + CW
   // bottom of the usable area; the signature strip is stamped below it and
   // repeated on every page, so the rows must stop above it
@@ -1131,7 +1132,9 @@ async function drawDocumentationSection(doc: jsPDF, report: ReportData, docItems
     const bLines = noteLines(commentB)
     const aLines = noteLines(commentA)
     const noteLinesN = Math.max(bLines.length, aLines.length, 1)
-    const COMMENT_H = hasComment ? Math.max(NOTE_MIN_H, noteLinesN * NOTE_LINE_H + NOTE_PAD) : 0
+    const COMMENT_H = hasComment
+      ? Math.max(NOTE_MIN_H, NOTE_CAP_H + noteLinesN * NOTE_LINE_H + NOTE_PAD)
+      : 0
     // the Comment / Notes text sits in its own strip row below the photos of
     // each half, so the block gets one extra row when either note is present
     const totalRows = bodyRows + (hasComment ? 1 : 0)
@@ -1206,19 +1209,30 @@ async function drawDocumentationSection(doc: jsPDF, report: ReportData, docItems
           })
           y += RH
         } else {
-          // Comment / Notes strip under each photo column
+          // Comment / Notes strip under each photo column: caption + note,
+          // centred horizontally and vertically inside its own half column
           doc.setFillColor(250, 250, 250)
           doc.setDrawColor(...GRID)
           doc.rect(xBefore, rowTop, halfW * 2, COMMENT_H, 'FD')
-          doc.setFontSize(5.5)
-          doc.setFont('helvetica', 'normal')
-          doc.setTextColor(...LABEL_C)
-          const textH = bLines.length * NOTE_LINE_H
-          const startY2 = rowTop + (COMMENT_H - textH) / 2
-          const noteOpts = { baseline: 'top' as const, lineHeightFactor: NOTE_LINE_H / 5.5 }
-          if (bLines.length) doc.text(bLines, xBefore + 2, startY2, noteOpts)
-          if (aLines.length) doc.text(aLines, xAfter + 2, startY2, noteOpts)
-          doc.setTextColor(0, 0, 0)
+
+          const drawNote = (lines: string[], cap: string, colX: number) => {
+            if (!lines.length) return
+            const colW = halfW
+            const textH = lines.length * NOTE_LINE_H
+            const blockTop = rowTop + (COMMENT_H - textH) / 2
+            doc.setTextColor(...LABEL_C)
+            doc.setFontSize(5)
+            doc.setFont('helvetica', 'bold')
+            doc.text(cap, colX + halfW / 2, blockTop - 0.4, { align: 'center', baseline: 'bottom' })
+            doc.setFontSize(6)
+            doc.setFont('helvetica', 'normal')
+            doc.setTextColor(0, 0, 0)
+            doc.text(lines, colX + colW / 2, blockTop, {
+              align: 'center', baseline: 'top', lineHeightFactor: NOTE_LINE_H / 6,
+            })
+          }
+          drawNote(bLines, 'COMMENT / NOTES (BEFORE)', xBefore)
+          drawNote(aLines, 'COMMENT / NOTES (AFTER)', xAfter)
           y += COMMENT_H
         }
       }

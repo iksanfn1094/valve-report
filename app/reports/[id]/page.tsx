@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, use, useCallback } from 'react'
+import { useEffect, useState, use, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { exportReportPDF } from '@/lib/export-pdf'
 import { exportReportExcel } from '@/lib/export-excel'
@@ -349,6 +349,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   type DocPhotoRow = { id?: string; component_name: string; photo_before: string[]; photo_after: string[]; comment_before: string; comment_after: string }
   const [docItems, setDocItems] = useState<DocPhotoRow[]>([])
   const [savingDoc, setSavingDoc] = useState(false)
+  const docSaveTimeout = useRef<NodeJS.Timeout | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null)
@@ -512,6 +513,12 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     const copy = [...docItems]
     ;(copy[idx] as Record<string, unknown>)[field] = value
     setDocItems(copy)
+    if (id && (field === 'comment_before' || field === 'comment_after')) {
+      if (docSaveTimeout.current) clearTimeout(docSaveTimeout.current)
+      docSaveTimeout.current = setTimeout(() => {
+        void saveDocItems()
+      }, 800)
+    }
   }
   async function uploadDocPhoto(file: File, idx: number, side: 'before' | 'after') {
     const path = `doc-photos/${id}/${Date.now()}-${file.name}`
@@ -535,13 +542,14 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     const existing = docItems.filter(d => d.id)
     const newItems = docItems.filter(d => !d.id)
     for (const d of existing) {
-      await supabase.from('report_documentation').update({
+      const { error } = await supabase.from('report_documentation').update({
         component_name: d.component_name,
         photo_before: JSON.stringify(d.photo_before),
         photo_after: JSON.stringify(d.photo_after),
         comment_before: d.comment_before,
         comment_after: d.comment_after,
       }).eq('id', d.id)
+      if (error) { setSavingDoc(false); return alert('Error: ' + error.message) }
     }
     if (newItems.length > 0) {
       const rows = newItems.map((d) => ({
@@ -561,7 +569,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       }
     }
     setSavingDoc(false)
-    alert('Tersimpan!')
   }
 
   const fetchPhotos = useCallback(async () => {
