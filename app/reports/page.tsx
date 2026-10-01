@@ -184,7 +184,8 @@ export default function ReportsList() {
         component_name: (d.component_name as string) ?? '',
         photo_before: (() => { try { return JSON.parse((d.photo_before as string) || '[]') } catch { return [] as string[] } })(),
         photo_after: (() => { try { return JSON.parse((d.photo_after as string) || '[]') } catch { return [] as string[] } })(),
-        comment_notes: (d.comment_notes as string) ?? '',
+        comment_before: (d.comment_before as string) ?? '',
+        comment_after: (d.comment_after as string) ?? '',
       }))
 
       const photos = (photoRes.data ?? []).map((p: Record<string, unknown>) => {
