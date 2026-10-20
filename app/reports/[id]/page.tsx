@@ -53,15 +53,11 @@ type DptCondition = {
 }
 type DptMaterialRow = { id: string; material: string; product: string; batch_no: string }
 type DptResultRow = { id: string; part: string; material: string; accepted: boolean; rejected: boolean; discontinuity: string; remark: string }
-type DptPhotoRow = { id: string; group_name: string; tag_id: string; size_class: string; method: string; area: string; stage: string; records: string; photos: string[] }
+type DptPhotoRow = { id: string; photos: string[] }
 type LiquidPenetrant = {
   condition: DptCondition
   materials: DptMaterialRow[]
   results: DptResultRow[]
-  overall_side_a: string
-  overall_side_b: string
-  rejected_indications: string
-  overall_result: string
   photos: DptPhotoRow[]
 }
 
@@ -581,7 +577,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     results: [
       { id: crypto.randomUUID(), part: '', material: '', accepted: false, rejected: false, discontinuity: '', remark: '' },
     ],
-    overall_side_a: '', overall_side_b: '', rejected_indications: '', overall_result: '',
     photos: [],
   })
   const [dpt, setDpt] = useState<LiquidPenetrant>(() => defaultLiquidPenetrant())
@@ -607,13 +602,10 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     updateDpt(p => { const arr = [...p.results]; arr[i] = { ...arr[i], [field]: value }; return { ...p, results: arr } })
   }
   function dptAddPhotoGroup() {
-    updateDpt(p => ({ ...p, photos: [...p.photos, { id: crypto.randomUUID(), group_name: '', tag_id: '', size_class: '', method: '', area: '', stage: '', records: '', photos: [] }] }))
+    updateDpt(p => ({ ...p, photos: [...p.photos, { id: crypto.randomUUID(), photos: [] }] }))
   }
   function dptRemovePhotoGroup(i: number) {
     updateDpt(p => ({ ...p, photos: p.photos.filter((_, x) => x !== i) }))
-  }
-  function dptUpdatePhotoGroup(i: number, field: keyof DptPhotoRow, value: string) {
-    updateDpt(p => { const arr = [...p.photos]; arr[i] = { ...arr[i], [field]: value }; return { ...p, photos: arr } })
   }
   function dptRemovePhotoImg(i: number, j: number) {
     updateDpt(p => { const arr = [...p.photos]; arr[i] = { ...arr[i], photos: arr[i].photos.filter((_, x) => x !== j) }; return { ...p, photos: arr } })
@@ -817,10 +809,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
             condition: { ...def.condition, ...(dptData.condition ?? {}) },
             materials: (dptData.materials ?? []).map((r) => ({ ...r })),
             results: (dptData.results ?? []).map((r) => ({ ...r })),
-            overall_side_a: dptData.overall_side_a ?? '',
-            overall_side_b: dptData.overall_side_b ?? '',
-            rejected_indications: dptData.rejected_indications ?? '',
-            overall_result: dptData.overall_result ?? '',
             photos: (dptData.photos ?? []).map((r) => ({ ...r, photos: r.photos ?? [] })),
           })
         }
@@ -2747,24 +2735,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           </div>
           <button onClick={dptAddResult} className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-300 transition font-medium mt-2">+ Tambah Baris</button>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
-            <label className="text-xs">
-              <span className="block text-gray-500 mb-0.5">Overall Inspection Result &ndash; Side A</span>
-              <input className="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500" value={dpt.overall_side_a} onChange={(e) => updateDpt(p => ({ ...p, overall_side_a: e.target.value }))} />
-            </label>
-            <label className="text-xs">
-              <span className="block text-gray-500 mb-0.5">Overall Inspection Result &ndash; Side B</span>
-              <input className="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500" value={dpt.overall_side_b} onChange={(e) => updateDpt(p => ({ ...p, overall_side_b: e.target.value }))} />
-            </label>
-            <label className="text-xs">
-              <span className="block text-gray-500 mb-0.5">Rejected Indications</span>
-              <input className="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500" value={dpt.rejected_indications} onChange={(e) => updateDpt(p => ({ ...p, rejected_indications: e.target.value }))} />
-            </label>
-            <label className="text-xs">
-              <span className="block text-gray-500 mb-0.5">Overall Result</span>
-              <input className="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500" value={dpt.overall_result} onChange={(e) => updateDpt(p => ({ ...p, overall_result: e.target.value }))} />
-            </label>
-          </div>
         </div>
 
         {/* 3. SKETCH / PHOTO RECORDS */}
@@ -2773,25 +2743,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           <div className="space-y-4">
             {dpt.photos.map((row, i) => (
               <div key={row.id} className="border rounded-lg p-3 bg-gray-50">
-                <input className="w-full border-0 border-b bg-transparent text-sm font-medium mb-2 focus:outline-none focus:border-blue-500" placeholder="Nama Grup Foto" value={row.group_name} onChange={(e) => dptUpdatePhotoGroup(i, 'group_name', e.target.value)} />
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
-                  {([
-                    ['Valve Tag ID', 'tag_id'],
-                    ['Valve Size / Class', 'size_class'],
-                    ['Inspection Method', 'method'],
-                    ['Inspection Area', 'area'],
-                    ['Inspection Stage', 'stage'],
-                  ] as [string, keyof DptPhotoRow][]).map(([label, field]) => (
-                    <label key={field} className="text-xs">
-                      <span className="block text-gray-500 mb-0.5">{label}</span>
-                      <input className="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500" value={row[field] as string} onChange={(e) => dptUpdatePhotoGroup(i, field, e.target.value)} />
-                    </label>
-                  ))}
-                </div>
-                <label className="text-xs block mb-2">
-                  <span className="block text-gray-500 mb-0.5">Photo Records</span>
-                  <input className="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500" value={row.records} onChange={(e) => dptUpdatePhotoGroup(i, 'records', e.target.value)} />
-                </label>
                 <div className="flex flex-wrap items-center gap-2">
                   {row.photos.map((url, j) => (
                     <div key={j} className="relative">

@@ -87,13 +87,11 @@ type DptCondition = {
 }
 type DptMaterialRow = { id?: string; material?: string; product?: string; batch_no?: string }
 type DptResultRow = { id?: string; part?: string; material?: string; accepted?: boolean; rejected?: boolean; discontinuity?: string; remark?: string }
-type DptPhotoRow = { id?: string; group_name?: string; tag_id?: string; size_class?: string; method?: string; area?: string; stage?: string; records?: string; photos?: string[] }
+type DptPhotoRow = { id?: string; photos?: string[] }
 type LiquidPenetrantData = {
   condition?: DptCondition
   materials?: DptMaterialRow[]
   results?: DptResultRow[]
-  overall_side_a?: string; overall_side_b?: string
-  rejected_indications?: string; overall_result?: string
   photos?: DptPhotoRow[]
 }
 
@@ -1565,7 +1563,6 @@ async function drawLiquidPenetrantSection(doc: jsPDF, report: ReportData, M: num
     || c.weld_gaw || c.weld_smaw || c.weld_casting || c.weld_other
     || c.scope_weld || c.scope_repair || c.scope_base)
     || materials.length > 0 || results.length > 0
-    || !!(lp.overall_side_a || lp.overall_side_b || lp.rejected_indications || lp.overall_result)
     || photoRows.length > 0
   if (!hasAny) return y
   const limit = PH - (M + SIG_BOX_H)
@@ -1631,15 +1628,6 @@ async function drawLiquidPenetrantSection(doc: jsPDF, report: ReportData, M: num
       results.map((r) => [sv(r.part), sv(r.material), r.accepted ? '\u2713' : '-', r.rejected ? '\u2713' : '-', sv(r.discontinuity), sv(r.remark)]),
     )
   }
-  const ov: string[][] = []
-  if (lp.overall_side_a || lp.overall_side_b) {
-    ov.push(['Side A', sv(lp.overall_side_a)])
-    ov.push(['Side B', sv(lp.overall_side_b)])
-  }
-  if (lp.rejected_indications) ov.push(['Rejected Indications', lp.rejected_indications])
-  if (lp.overall_result) ov.push(['Overall Result', lp.overall_result])
-  if (ov.length) table(['Overall Inspection Result', 'Value'], ov, [70, CW - 70])
-
   // 3. SKETCH / PHOTO RECORDS
   if (photoRows.length) {
     const rowsB64: (string | null)[][] = []
@@ -1653,39 +1641,22 @@ async function drawLiquidPenetrantSection(doc: jsPDF, report: ReportData, M: num
     const IMG_H = 40
     const firstImgs = rowsB64[0] ? rowsB64[0].filter((b): b is string => !!b) : []
     const firstImgRows = Math.max(Math.ceil(firstImgs.length / maxPerRow), 1)
-    const firstBlockH = 12 + firstImgRows * (IMG_H + GAP)
+    const firstBlockH = firstImgRows * (IMG_H + GAP)
     if (y + 6 + firstBlockH > limit) {
       doc.addPage()
       drawSectionContinuationHeader(doc, report, M, CW, PW, DPT_TITLE, false)
       y = CONTENT_TOP + REPEAT_BLOCK_H
     }
     heading('3. SKETCH / PHOTO RECORDS')
-    for (const [i, r] of photoRows.entries()) {
+    for (const i of photoRows.keys()) {
       const imgs = rowsB64[i].filter((b): b is string => !!b)
-      const infoH = 12
       const imgRows = Math.max(Math.ceil(imgs.length / maxPerRow), 1)
-      const blockH = infoH + imgRows * (IMG_H + GAP)
+      const blockH = imgRows * (IMG_H + GAP)
       if (y + blockH > limit) {
         doc.addPage()
         drawSectionContinuationHeader(doc, report, M, CW, PW, DPT_TITLE, false)
         y = CONTENT_TOP + REPEAT_BLOCK_H
       }
-      if (r.group_name) {
-        doc.setFontSize(7)
-        doc.setFont('helvetica', 'bold')
-        doc.setTextColor(...BLUE)
-        doc.text(r.group_name, M, y + 2, { baseline: 'middle' })
-      }
-      doc.setFontSize(6)
-      doc.setFont('helvetica', 'normal')
-      doc.setTextColor(60, 70, 90)
-      const info = [
-        `Valve Tag ID: ${sv(r.tag_id)}    Valve Size / Class: ${sv(r.size_class)}`,
-        `Inspection Method: ${sv(r.method)}    Inspection Area: ${sv(r.area)}    Inspection Stage: ${sv(r.stage)}`,
-        `Photo Records: ${sv(r.records)}`,
-      ]
-      info.forEach((line, li) => doc.text(line, M, y + 4.5 + li * 3, { baseline: 'middle' }))
-      y += infoH
       const colW = CW / maxPerRow
       imgs.forEach((b64, j) => {
         const ci = j % maxPerRow
@@ -1785,7 +1756,6 @@ export async function exportReportPDF(
       const lp = report.liquid_penetrant
       const hasDpt = !!(lp.condition && Object.values(lp.condition).some(Boolean))
         || (lp.materials?.length ?? 0) > 0 || (lp.results?.length ?? 0) > 0
-        || !!(lp.overall_side_a || lp.overall_side_b || lp.rejected_indications || lp.overall_result)
         || (lp.photos?.length ?? 0) > 0
       if (hasDpt) {
         doc.addPage()
