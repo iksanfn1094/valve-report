@@ -43,6 +43,25 @@ type Report = {
   packaging_photos: string | null
   blasting_painting: BlastingPainting | null
   liquid_penetrant: LiquidPenetrant | null
+  torque_anti_static: TorqueAntiStatic | null
+}
+
+type TorqueStandard = {
+  api6d: boolean; api598: boolean; sop_no: string; others: string
+}
+type TorqueResultRow = {
+  id: string; description: string; acceptance: string; actual: string; result: string; equipment: string; remark: string
+}
+type AntiStaticRow = {
+  id: string; description: string; dc_criteria: string; dc_actual: string; dc_result: string
+  res_criteria: string; res_actual: string; res_result: string; equipment: string; remark: string
+}
+type TorqueAntiStatic = {
+  standard: TorqueStandard
+  results: TorqueResultRow[]
+  photos: DptPhotoRow[]
+  anti_results: AntiStaticRow[]
+  anti_photos: DptPhotoRow[]
 }
 
 type DptCondition = {
@@ -624,6 +643,85 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     alert('Dye Penetrant tersimpan!')
   }
 
+  const defaultTorque = (): TorqueAntiStatic => ({
+    standard: { api6d: false, api598: false, sop_no: '', others: '' },
+    results: [
+      { id: crypto.randomUUID(), description: '', acceptance: '', actual: '', result: '', equipment: '', remark: '' },
+    ],
+    photos: [],
+    anti_results: [
+      { id: crypto.randomUUID(), description: '', dc_criteria: '', dc_actual: '', dc_result: '', res_criteria: '', res_actual: '', res_result: '', equipment: '', remark: '' },
+    ],
+    anti_photos: [],
+  })
+  const [torque, setTorque] = useState<TorqueAntiStatic>(() => defaultTorque())
+  const [savingTorque, setSavingTorque] = useState(false)
+
+  function updateTorque(fn: (p: TorqueAntiStatic) => TorqueAntiStatic) { setTorque(prev => fn(prev)) }
+  function torqueUpdateStd(field: keyof TorqueStandard, value: string | boolean) {
+    updateTorque(p => ({ ...p, standard: { ...p.standard, [field]: value } }))
+  }
+  function torqueAddResult() {
+    updateTorque(p => ({ ...p, results: [...p.results, { id: crypto.randomUUID(), description: '', acceptance: '', actual: '', result: '', equipment: '', remark: '' }] }))
+  }
+  function torqueRemoveResult(i: number) {
+    updateTorque(p => ({ ...p, results: p.results.filter((_, x) => x !== i) }))
+  }
+  function torqueUpdateResult(i: number, field: keyof TorqueResultRow, value: string) {
+    updateTorque(p => { const arr = [...p.results]; arr[i] = { ...arr[i], [field]: value }; return { ...p, results: arr } })
+  }
+  function torqueAddAnti() {
+    updateTorque(p => ({ ...p, anti_results: [...p.anti_results, { id: crypto.randomUUID(), description: '', dc_criteria: '', dc_actual: '', dc_result: '', res_criteria: '', res_actual: '', res_result: '', equipment: '', remark: '' }] }))
+  }
+  function torqueRemoveAnti(i: number) {
+    updateTorque(p => ({ ...p, anti_results: p.anti_results.filter((_, x) => x !== i) }))
+  }
+  function torqueUpdateAnti(i: number, field: keyof AntiStaticRow, value: string) {
+    updateTorque(p => { const arr = [...p.anti_results]; arr[i] = { ...arr[i], [field]: value }; return { ...p, anti_results: arr } })
+  }
+  function torqueAddPhotoGroup() {
+    updateTorque(p => ({ ...p, photos: [...p.photos, { id: crypto.randomUUID(), photos: [] }] }))
+  }
+  function torqueRemovePhotoGroup(i: number) {
+    updateTorque(p => ({ ...p, photos: p.photos.filter((_, x) => x !== i) }))
+  }
+  function torqueRemovePhotoImg(i: number, j: number) {
+    updateTorque(p => { const arr = [...p.photos]; arr[i] = { ...arr[i], photos: arr[i].photos.filter((_, x) => x !== j) }; return { ...p, photos: arr } })
+  }
+  async function torqueUploadPhoto(file: File, i: number) {
+    const path = `torque-photos/${id}/${Date.now()}-${file.name}`
+    const { error } = await supabase.storage.from('report-photos').upload(path, file)
+    if (error) return alert('Upload gagal: ' + error.message)
+    const { data } = supabase.storage.from('report-photos').getPublicUrl(path)
+    updateTorque(p => { const arr = [...p.photos]; arr[i] = { ...arr[i], photos: [...arr[i].photos, data.publicUrl] }; return { ...p, photos: arr } })
+  }
+  function torqueAddAntiPhotoGroup() {
+    updateTorque(p => ({ ...p, anti_photos: [...p.anti_photos, { id: crypto.randomUUID(), photos: [] }] }))
+  }
+  function torqueRemoveAntiPhotoGroup(i: number) {
+    updateTorque(p => ({ ...p, anti_photos: p.anti_photos.filter((_, x) => x !== i) }))
+  }
+  function torqueRemoveAntiPhotoImg(i: number, j: number) {
+    updateTorque(p => { const arr = [...p.anti_photos]; arr[i] = { ...arr[i], photos: arr[i].photos.filter((_, x) => x !== j) }; return { ...p, anti_photos: arr } })
+  }
+  async function torqueUploadAntiPhoto(file: File, i: number) {
+    const path = `torque-photos/${id}/anti-${Date.now()}-${file.name}`
+    const { error } = await supabase.storage.from('report-photos').upload(path, file)
+    if (error) return alert('Upload gagal: ' + error.message)
+    const { data } = supabase.storage.from('report-photos').getPublicUrl(path)
+    updateTorque(p => { const arr = [...p.anti_photos]; arr[i] = { ...arr[i], photos: [...arr[i].photos, data.publicUrl] }; return { ...p, anti_photos: arr } })
+  }
+  async function saveTorque() {
+    if (!id) return
+    setSavingTorque(true)
+    const payload = { torque_anti_static: torque }
+    const { error } = await supabase.from('report_inspection').update(payload as unknown as Record<string, unknown>).eq('id', id)
+    setSavingTorque(false)
+    if (error) return alert('Error: ' + error.message)
+    setReport(prev => prev ? { ...prev, ...payload } : prev)
+    alert('Torque & Anti-static tersimpan!')
+  }
+
   function getTestRows(): string[] {
     try { return JSON.parse(valveTest.test_rows) } catch { return [] }
   }
@@ -820,6 +918,17 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
             paint: (bp.paint ?? []).map((r) => ({ ...blankBlastingRow('paint') as BlastingPaintRow, ...r })),
             dft: (bp.dft ?? []).map((r) => ({ ...blankBlastingRow('dft') as BlastingDftRow, ...r })),
             photos: (bp.photos ?? []).map((r) => ({ ...r, photos: r.photos ?? [] })),
+          })
+        }
+        const tq = reportRes.data.torque_anti_static as unknown as TorqueAntiStatic | null
+        if (tq) {
+          const def = defaultTorque()
+          setTorque({
+            standard: { ...def.standard, ...(tq.standard ?? {}) },
+            results: (tq.results ?? []).map((r) => ({ ...r })),
+            photos: (tq.photos ?? []).map((r) => ({ ...r, photos: r.photos ?? [] })),
+            anti_results: (tq.anti_results ?? []).map((r) => ({ ...r })),
+            anti_photos: (tq.anti_photos ?? []).map((r) => ({ ...r, photos: r.photos ?? [] })),
           })
         }
       }
@@ -2768,8 +2877,158 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       </div>
       )}
 
+      {/* Torque & Anti-static Tab */}
+      {activeTab === 'torque' && (
+      <div className="bg-white rounded-lg shadow border p-4 space-y-6">
+        <h3 className="text-lg font-bold text-gray-800">TORQUE TEST &amp; ANTI-STATIC TEST REPORT</h3>
+
+        {/* 1. TORQUE TEST STANDARD */}
+        <div>
+          <h4 className="text-sm font-bold text-gray-700 mb-2">1. TORQUE TEST STANDARD</h4>
+          <div className="flex flex-wrap items-center gap-4 text-sm">
+            <label className="flex items-center gap-2"><input type="checkbox" className="accent-blue-600" checked={torque.standard.api6d} onChange={e => torqueUpdateStd('api6d', e.target.checked)} /><span className="font-medium">API 6D SPECS</span></label>
+            <label className="flex items-center gap-2"><input type="checkbox" className="accent-blue-600" checked={torque.standard.api598} onChange={e => torqueUpdateStd('api598', e.target.checked)} /><span className="font-medium">API 598</span></label>
+            <label className="flex items-center gap-2"><span className="text-gray-500 text-xs">SOP NO.</span><input type="text" value={torque.standard.sop_no} onChange={e => torqueUpdateStd('sop_no', e.target.value)} className="border border-gray-300 rounded px-2 py-1 text-sm w-32" /></label>
+            <label className="flex items-center gap-2"><span className="text-gray-500 text-xs">OTHERS</span><input type="text" value={torque.standard.others} onChange={e => torqueUpdateStd('others', e.target.value)} className="border border-gray-300 rounded px-2 py-1 text-sm w-40" /></label>
+          </div>
+        </div>
+
+        {/* 2. ACCEPTANCE CRITERIA AND TORQUE TEST REPORT */}
+        <div>
+          <h4 className="text-sm font-bold text-gray-700 mb-2">2. ACCEPTANCE CRITERIA AND TORQUE TEST REPORT</h4>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-blue-900 text-white">
+                  {['Description Test', 'Acceptance Criteria', 'Actual Torque Test', 'Result', 'Torque Equipment', 'Remark', ''].map((h, i) => (
+                    <th key={i} className="border px-1 py-2 text-center">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {torque.results.map((row, i) => (
+                  <tr key={row.id} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
+                    {(['description', 'acceptance', 'actual', 'result', 'equipment', 'remark'] as const).map((f) => (
+                      <td key={f} className="border px-1 py-1">
+                        <input className="w-full border-0 bg-transparent text-xs text-center focus:outline-none" value={row[f]} onChange={(e) => torqueUpdateResult(i, f, e.target.value)} />
+                      </td>
+                    ))}
+                    <td className="border px-1 py-1 text-center"><button onClick={() => torqueRemoveResult(i)} className="text-red-400 hover:text-red-600 text-sm font-bold">&#10005;</button></td>
+                  </tr>
+                ))}
+                {torque.results.length === 0 && (<tr><td colSpan={7} className="border px-2 py-4 text-center text-gray-400">Belum ada data.</td></tr>)}
+              </tbody>
+            </table>
+          </div>
+          <button onClick={torqueAddResult} className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-300 transition font-medium mt-2">+ Tambah Baris</button>
+        </div>
+
+        {/* 3. TORQUE TEST PHOTO RECORD */}
+        <div>
+          <h4 className="text-sm font-bold text-gray-700 mb-2">3. TORQUE TEST PHOTO RECORD</h4>
+          <div className="space-y-4">
+            {torque.photos.map((row, i) => (
+              <div key={row.id} className="border rounded-lg p-3 bg-gray-50">
+                <div className="flex flex-wrap items-center gap-2">
+                  {row.photos.map((url, j) => (
+                    <div key={j} className="relative">
+                      <img src={url} alt="" className="h-20 object-contain rounded border bg-white cursor-pointer" onClick={() => setPreviewPhoto(url)} />
+                      <button onClick={() => torqueRemovePhotoImg(i, j)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-[9px] flex items-center justify-center leading-none">&#10005;</button>
+                    </div>
+                  ))}
+                  <label className="text-blue-600 hover:text-blue-800 cursor-pointer text-xs border border-dashed border-blue-300 rounded px-3 py-2">
+                    + Photo
+                    <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) torqueUploadPhoto(f, i) }} />
+                  </label>
+                </div>
+                <button onClick={() => torqueRemovePhotoGroup(i)} className="text-red-400 hover:text-red-600 text-xs font-bold mt-2">Hapus Grup</button>
+              </div>
+            ))}
+            {torque.photos.length === 0 && (<p className="text-xs text-gray-400">Belum ada foto.</p>)}
+          </div>
+          <button onClick={torqueAddPhotoGroup} className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-300 transition font-medium mt-2">+ Tambah Grup Foto</button>
+        </div>
+
+        <hr className="border-gray-200" />
+        <h3 className="text-lg font-bold text-gray-800">ACCEPTANCE CRITERIA AND ANTI-STATIC TEST REPORT</h3>
+
+        {/* 4. ANTI-STATIC TEST RESULTS */}
+        <div>
+          <h4 className="text-sm font-bold text-gray-700 mb-2">4. ANTI-STATIC TEST RESULTS</h4>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-blue-900 text-white">
+                  <th className="border px-1 py-2 text-center" rowSpan={2}>Description Test</th>
+                  <th className="border px-1 py-1 text-center" colSpan={3}>DC Power Source</th>
+                  <th className="border px-1 py-1 text-center" colSpan={3}>Resistance</th>
+                  <th className="border px-1 py-2 text-center" rowSpan={2}>Measurement Equipment</th>
+                  <th className="border px-1 py-2 text-center" rowSpan={2}>Remark</th>
+                  <th className="border px-1 py-2 text-center" rowSpan={2}></th>
+                </tr>
+                <tr className="bg-blue-900 text-white">
+                  <th className="border px-1 py-1 text-center">Acceptance Criteria</th>
+                  <th className="border px-1 py-1 text-center">Actual</th>
+                  <th className="border px-1 py-1 text-center">Result</th>
+                  <th className="border px-1 py-1 text-center">Acceptance Criteria</th>
+                  <th className="border px-1 py-1 text-center">Actual</th>
+                  <th className="border px-1 py-1 text-center">Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                {torque.anti_results.map((row, i) => (
+                  <tr key={row.id} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
+                    {(['description', 'dc_criteria', 'dc_actual', 'dc_result', 'res_criteria', 'res_actual', 'res_result', 'equipment', 'remark'] as const).map((f) => (
+                      <td key={f} className="border px-1 py-1">
+                        <input className="w-full border-0 bg-transparent text-xs text-center focus:outline-none" value={row[f]} onChange={(e) => torqueUpdateAnti(i, f, e.target.value)} />
+                      </td>
+                    ))}
+                    <td className="border px-1 py-1 text-center"><button onClick={() => torqueRemoveAnti(i)} className="text-red-400 hover:text-red-600 text-sm font-bold">&#10005;</button></td>
+                  </tr>
+                ))}
+                {torque.anti_results.length === 0 && (<tr><td colSpan={10} className="border px-2 py-4 text-center text-gray-400">Belum ada data.</td></tr>)}
+              </tbody>
+            </table>
+          </div>
+          <button onClick={torqueAddAnti} className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-300 transition font-medium mt-2">+ Tambah Baris</button>
+        </div>
+
+        {/* 5. ANTI-STATIC TEST PHOTO RECORD */}
+        <div>
+          <h4 className="text-sm font-bold text-gray-700 mb-2">5. ANTI-STATIC TEST PHOTO RECORD</h4>
+          <div className="space-y-4">
+            {torque.anti_photos.map((row, i) => (
+              <div key={row.id} className="border rounded-lg p-3 bg-gray-50">
+                <div className="flex flex-wrap items-center gap-2">
+                  {row.photos.map((url, j) => (
+                    <div key={j} className="relative">
+                      <img src={url} alt="" className="h-20 object-contain rounded border bg-white cursor-pointer" onClick={() => setPreviewPhoto(url)} />
+                      <button onClick={() => torqueRemoveAntiPhotoImg(i, j)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-[9px] flex items-center justify-center leading-none">&#10005;</button>
+                    </div>
+                  ))}
+                  <label className="text-blue-600 hover:text-blue-800 cursor-pointer text-xs border border-dashed border-blue-300 rounded px-3 py-2">
+                    + Photo
+                    <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) torqueUploadAntiPhoto(f, i) }} />
+                  </label>
+                </div>
+                <button onClick={() => torqueRemoveAntiPhotoGroup(i)} className="text-red-400 hover:text-red-600 text-xs font-bold mt-2">Hapus Grup</button>
+              </div>
+            ))}
+            {torque.anti_photos.length === 0 && (<p className="text-xs text-gray-400">Belum ada foto.</p>)}
+          </div>
+          <button onClick={torqueAddAntiPhotoGroup} className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-300 transition font-medium mt-2">+ Tambah Grup Foto</button>
+        </div>
+
+        <div className="flex gap-2">
+          <button onClick={saveTorque} disabled={savingTorque} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition font-medium disabled:opacity-50">
+            {savingTorque ? 'Menyimpan...' : 'Simpan'}
+          </button>
+        </div>
+      </div>
+      )}
+
       {/* Placeholder for other tabs */}
-      {!['inspection', 'doc_inspection', 'doc_minor', 'doc_major', 'resume', 'test', 'blasting', 'packaging', 'penetrant'].includes(activeTab) && (
+      {!['inspection', 'doc_inspection', 'doc_minor', 'doc_major', 'resume', 'test', 'blasting', 'packaging', 'penetrant', 'torque'].includes(activeTab) && (
         <div className="bg-white rounded-lg shadow border p-8 text-center">
           <p className="text-gray-400 text-sm">This feature will be available soon.</p>
         </div>

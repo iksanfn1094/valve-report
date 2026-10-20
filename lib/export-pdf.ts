@@ -28,6 +28,22 @@ type ReportData = {
   packaging_photos?: string | null
   blasting_painting?: BlastingPaintingData | null
   liquid_penetrant?: LiquidPenetrantData | null
+  torque_anti_static?: TorqueAntiStaticData | null
+}
+
+type TorqueStandardData = { api6d?: boolean; api598?: boolean; sop_no?: string; others?: string }
+type TorqueResultRowData = { id?: string; description?: string; acceptance?: string; actual?: string; result?: string; equipment?: string; remark?: string }
+type AntiStaticRowData = {
+  id?: string; description?: string; dc_criteria?: string; dc_actual?: string; dc_result?: string
+  res_criteria?: string; res_actual?: string; res_result?: string; equipment?: string; remark?: string
+}
+type TorquePhotoRowData = { id?: string; photos?: string[] }
+type TorqueAntiStaticData = {
+  standard?: TorqueStandardData
+  results?: TorqueResultRowData[]
+  photos?: TorquePhotoRowData[]
+  anti_results?: AntiStaticRowData[]
+  anti_photos?: TorquePhotoRowData[]
 }
 
 type ItemData = {
@@ -215,6 +231,7 @@ const PACKAGING_TITLE = 'PACKAGING REPORT'
 const DOCUMENTATION_TITLE = 'DOCUMENTATION REPORT'
 const BLASTING_PAINTING_TITLE = 'BLASTING & PAINTING REPORT'
 const DPT_TITLE = 'DYE PENETRANT TEST (DPT) REPORT'
+const TORQUE_TITLE = 'TORQUE TEST & ANTI-STATIC TEST REPORT'
 const DOC_INSPECTION_TITLE = 'DOCUMENTATION INSPECTION'
 const DOC_MINOR_TITLE = 'DOCUMENTATION MINOR'
 const DOC_MAJOR_TITLE = 'DOCUMENTATION MAJOR'
@@ -1709,6 +1726,136 @@ async function drawLiquidPenetrantSection(doc: jsPDF, report: ReportData, M: num
   return y
 }
 
+async function drawPhotoGallery(
+  doc: jsPDF, report: ReportData, photoRows: TorquePhotoRowData[],
+  M: number, CW: number, PW: number, PH: number, startY: number, title: string,
+): Promise<number> {
+  let y = startY
+  const limit = PH - (M + SIG_BOX_H)
+  const GAP = 2
+  const maxPerRow = 3
+  const IMG_H = 40
+  const rowsB64: (string | null)[][] = []
+  for (const r of photoRows) {
+    const arr: (string | null)[] = []
+    for (const url of (r.photos || [])) arr.push(await fetchImageAsBase64(url))
+    rowsB64.push(arr)
+  }
+  const firstImgs = rowsB64[0] ? rowsB64[0].filter((b): b is string => !!b) : []
+  const firstImgRows = Math.max(Math.ceil(firstImgs.length / maxPerRow), 1)
+  if (y + 6 + firstImgRows * (IMG_H + GAP) > limit) {
+    doc.addPage()
+    drawSectionContinuationHeader(doc, report, M, CW, PW, title, false)
+    y = CONTENT_TOP + REPEAT_BLOCK_H
+  }
+  doc.setTextColor(...BLUE)
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'bold')
+  doc.text(title, M, y)
+  y += 3
+  for (const i of photoRows.keys()) {
+    const imgs = rowsB64[i].filter((b): b is string => !!b)
+    const imgRows = Math.max(Math.ceil(imgs.length / maxPerRow), 1)
+    if (y + imgRows * (IMG_H + GAP) > limit) {
+      doc.addPage()
+      drawSectionContinuationHeader(doc, report, M, CW, PW, title, false)
+      y = CONTENT_TOP + REPEAT_BLOCK_H
+    }
+    const colW = CW / maxPerRow
+    imgs.forEach((b64, j) => {
+      const ci = j % maxPerRow
+      const ri = Math.floor(j / maxPerRow)
+      const maxW = colW - GAP
+      const px = M + ci * colW
+      const py = y + ri * (IMG_H + GAP)
+      doc.setDrawColor(...GRID)
+      doc.setLineWidth(0.2)
+      doc.rect(px, py, maxW, IMG_H, 'S')
+      try { doc.addImage(b64, 'JPEG', px, py, maxW, IMG_H) } catch { /* skip */ }
+    })
+    y += imgRows * (IMG_H + GAP) + 3
+  }
+  return y
+}
+
+async function drawTorqueSection(doc: jsPDF, report: ReportData, M: number, CW: number, PW: number, PH: number, startY: number): Promise<number> {
+  let y = startY
+  const tq = report.torque_anti_static
+  if (!tq) return y
+  const std = tq.standard ?? {}
+  const results = tq.results ?? []
+  const photos = tq.photos ?? []
+  const anti = tq.anti_results ?? []
+  const antiPhotos = tq.anti_photos ?? []
+  const hasAny = !!(std.api6d || std.api598 || std.sop_no || std.others)
+    || results.length > 0 || photos.length > 0 || anti.length > 0 || antiPhotos.length > 0
+  if (!hasAny) return y
+  const limit = PH - (M + SIG_BOX_H)
+
+  const heading = (txt: string) => {
+    if (y + 6 > limit) { doc.addPage(); drawSectionContinuationHeader(doc, report, M, CW, PW, TORQUE_TITLE, false); y = CONTENT_TOP + REPEAT_BLOCK_H }
+    doc.setTextColor(...BLUE)
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.text(txt, M, y)
+    y += 3
+  }
+  const table = (head: string[], body: string[][]) => {
+    const tableStartPage = doc.getNumberOfPages()
+    autoTable(doc, {
+      startY: y,
+      margin: { left: M, right: M, top: CONTENT_TOP + REPEAT_BLOCK_H, bottom: M + SIG_BOX_H },
+      head: [head],
+      body,
+      willDrawPage: (data) => {
+        if (data.pageNumber <= tableStartPage) return
+        drawSectionContinuationHeader(data.doc, report, M, CW, PW, TORQUE_TITLE, false)
+      },
+      styles: { fontSize: 6, cellPadding: 1.2, lineColor: GRID, lineWidth: 0.2, valign: 'middle', halign: 'center' },
+      headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6, fontStyle: 'bold', halign: 'center' },
+      alternateRowStyles: { fillColor: LIGHT_BG },
+    })
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
+  }
+  const sv = (v?: string) => v || '-'
+
+  // 1. TORQUE TEST STANDARD
+  heading('1. TORQUE TEST STANDARD')
+  const tick = (b?: boolean) => (b ? '\u2713' : '-')
+  const stdRows: string[][] = []
+  stdRows.push(['API 6D SPECS', tick(std.api6d)])
+  stdRows.push(['API 598', tick(std.api598)])
+  stdRows.push(['SOP NO.', sv(std.sop_no)])
+  stdRows.push(['OTHERS', sv(std.others)])
+  table(['', ''], stdRows)
+
+  // 2. ACCEPTANCE CRITERIA AND TORQUE TEST REPORT
+  heading('2. ACCEPTANCE CRITERIA AND TORQUE TEST REPORT')
+  if (results.length) {
+    table(
+      ['Description Test', 'Acceptance Criteria', 'Actual Torque Test', 'Result', 'Torque Equipment', 'Remark'],
+      results.map((r) => [sv(r.description), sv(r.acceptance), sv(r.actual), sv(r.result), sv(r.equipment), sv(r.remark)]),
+    )
+  }
+
+  // 3. TORQUE TEST PHOTO RECORD
+  if (photos.length) y = await drawPhotoGallery(doc, report, photos, M, CW, PW, PH, y, '3. TORQUE TEST PHOTO RECORD')
+
+  // 4. ANTI-STATIC TEST RESULTS
+  heading('4. ANTI-STATIC TEST RESULTS')
+  if (anti.length) {
+    table(
+      ['Description Test', 'DC Power Source - Acceptance Criteria', 'DC Power Source - Actual', 'DC Result', 'Resistance - Acceptance Criteria', 'Resistance - Actual', 'Resistance Result', 'Measurement Equipment', 'Remark'],
+      anti.map((r) => [sv(r.description), sv(r.dc_criteria), sv(r.dc_actual), sv(r.dc_result), sv(r.res_criteria), sv(r.res_actual), sv(r.res_result), sv(r.equipment), sv(r.remark)]),
+    )
+  }
+
+  // 5. ANTI-STATIC TEST PHOTO RECORD
+  if (antiPhotos.length) y = await drawPhotoGallery(doc, report, antiPhotos, M, CW, PW, PH, y, '5. ANTI-STATIC TEST PHOTO RECORD')
+
+  return y
+}
+
 export async function exportReportPDF(
   report: ReportData,
   items: ItemData[],
@@ -1802,6 +1949,25 @@ export async function exportReportPDF(
       }
     }
 
+    // ========== 6c. TORQUE & ANTI-STATIC SECTION ==========
+    if (report.torque_anti_static) {
+      const tq = report.torque_anti_static
+      const std = tq.standard ?? {}
+      const hasTq = !!(std.api6d || std.api598 || std.sop_no || std.others)
+        || (tq.results?.length ?? 0) > 0 || (tq.photos?.length ?? 0) > 0
+        || (tq.anti_results?.length ?? 0) > 0 || (tq.anti_photos?.length ?? 0) > 0
+      if (hasTq) {
+        doc.addPage()
+        drawHeader(doc, TORQUE_TITLE, PW)
+        const sigFrom = doc.getNumberOfPages()
+        let y = CONTENT_TOP
+        y = drawJobInfo(doc, report, M, CW, y)
+        y = drawConstruction(doc, report, M, CW, y, false)
+        y = await drawTorqueSection(doc, report, M, CW, PW, PH, y)
+        stampSectionSignatures(doc, report, M, CW, PH, sigFrom, null, y + 6)
+      }
+    }
+
     // ========== 7. TEST SECTION ==========
     if (valveTest) {
       doc.addPage()
@@ -1860,7 +2026,7 @@ export async function exportReportPDF(
     } else {
     const isDocTab = tab === 'doc_inspection' || tab === 'doc_minor' || tab === 'doc_major'
     const docTabGroup = tab === 'doc_inspection' ? 'inspection' : tab === 'doc_major' ? 'major' : 'minor'
-    drawHeader(doc, tab === 'penetrant' ? DPT_TITLE : tab === 'blasting' ? BLASTING_PAINTING_TITLE : tab === 'test' ? 'TEST REPORT'
+    drawHeader(doc, tab === 'torque' ? TORQUE_TITLE : tab === 'penetrant' ? DPT_TITLE : tab === 'blasting' ? BLASTING_PAINTING_TITLE : tab === 'test' ? 'TEST REPORT'
       : tab === 'doc_inspection' ? DOC_INSPECTION_TITLE
       : tab === 'doc_minor' ? DOC_MINOR_TITLE
       : tab === 'doc_major' ? DOC_MAJOR_TITLE
@@ -1870,7 +2036,7 @@ export async function exportReportPDF(
     let y = CONTENT_TOP
     const sigFrom = doc.getNumberOfPages()
 
-    if (tab === 'packaging' || tab === 'blasting' || tab === 'penetrant' || isDocTab || tab === 'documentation') {
+    if (tab === 'packaging' || tab === 'blasting' || tab === 'penetrant' || tab === 'torque' || isDocTab || tab === 'documentation') {
       y = drawJobInfo(doc, report, M, CW, y)
       y = drawConstruction(doc, report, M, CW, y, false)
     } else if (tab === 'test') {
@@ -1909,13 +2075,16 @@ export async function exportReportPDF(
     if (tab === 'penetrant') {
       y = await drawLiquidPenetrantSection(doc, report, M, CW, PW, PH, y)
     }
+    if (tab === 'torque') {
+      y = await drawTorqueSection(doc, report, M, CW, PW, PH, y)
+    }
     if (tab === 'bom') {
       y = drawBomTable(doc, bomItems, M, CW, y)
     }
 
     // inspection and packaging stamp the strip on every page of the section;
     // the other tabs keep the single strip at the end
-    if (tab === 'packaging' || tab === 'blasting' || tab === 'penetrant' || isDocTab || tab === 'documentation') stampSectionSignatures(doc, report, M, CW, PH, sigFrom, null, y + 6)
+    if (tab === 'packaging' || tab === 'blasting' || tab === 'penetrant' || tab === 'torque' || isDocTab || tab === 'documentation') stampSectionSignatures(doc, report, M, CW, PH, sigFrom, null, y + 6)
     else if (tab !== 'inspection') drawSignature(doc, report, M, CW, y, PW, PH)
     drawFooter(doc, report, tab.charAt(0).toUpperCase() + tab.slice(1), PW, PH)
     }
