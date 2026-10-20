@@ -76,7 +76,7 @@ type BlastingDftRow = {
   final_color?: string; result?: string
 }
 type BlastingPhotoRow = {
-  id?: string; equipment?: string; size_class?: string; stage?: string; readings?: string; photos?: string[]
+  id?: string; photos?: string[]
 }
 type BlastingPaintingData = {
   surface?: BlastingSurface
@@ -1490,30 +1490,18 @@ async function drawBlastingPaintingSection(doc: jsPDF, report: ReportData, M: nu
     }
 
     heading('5. DFT MEASUREMENT PHOTO RECORDS')
-    for (const [i, r] of photoRows.entries()) {
+    for (const [i] of rowsB64.entries()) {
       const imgs = rowsB64[i].filter((b): b is string => !!b)
-      const infoH = 12
       const GAP = 2
       const maxPerRow = 3
       const IMG_H = 40
       const imgRows = Math.max(Math.ceil(imgs.length / maxPerRow), 1)
-      const blockH = infoH + imgRows * (IMG_H + GAP)
+      const blockH = imgRows * (IMG_H + GAP)
       if (y + blockH > limit) {
         doc.addPage()
         drawSectionContinuationHeader(doc, report, M, CW, PW, BLASTING_PAINTING_TITLE, false)
         y = CONTENT_TOP + REPEAT_BLOCK_H
       }
-      doc.setFontSize(6.5)
-      doc.setFont('helvetica', 'normal')
-      doc.setTextColor(60, 70, 90)
-      const info = [
-        `Equipment/Tag Identification: ${r.equipment || '-'}`,
-        `Valve Size/Class: ${r.size_class || '-'}`,
-        `Inspection Stage: ${r.stage || '-'}`,
-        `Recorded DFT Readings Visible in Photos: ${r.readings || '-'}`,
-      ]
-      info.forEach((line, li) => doc.text(line, M, y + li * 3 + 2, { baseline: 'middle' }))
-      y += infoH
       const colW = CW / maxPerRow
       imgs.forEach((b64, j) => {
         const ci = j % maxPerRow

@@ -61,7 +61,7 @@ type BlastingDftRow = {
   final_color: string; result: string
 }
 type BlastingPhotoRow = {
-  id: string; equipment: string; size_class: string; stage: string; readings: string; photos: string[]
+  id: string; photos: string[]
 }
 type BlastingPainting = {
   surface: BlastingSurface
@@ -512,17 +512,10 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     })
   }
   function bpAddPhoto() {
-    updateBlasting(b => ({ ...b, photos: [...b.photos, { id: crypto.randomUUID(), equipment: '', size_class: '', stage: '', readings: '', photos: [] }] }))
+    updateBlasting(b => ({ ...b, photos: [...b.photos, { id: crypto.randomUUID(), photos: [] }] }))
   }
   function bpRemovePhoto(idx: number) {
     updateBlasting(b => ({ ...b, photos: b.photos.filter((_, i) => i !== idx) }))
-  }
-  function bpUpdatePhoto(idx: number, field: keyof BlastingPhotoRow, value: string) {
-    updateBlasting(b => {
-      const arr = [...b.photos]
-      arr[idx] = { ...arr[idx], [field]: value }
-      return { ...b, photos: arr }
-    })
   }
   function bpRemovePhotoImg(idx: number, imgIdx: number) {
     updateBlasting(b => {
@@ -2397,24 +2390,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           <div className="space-y-4">
             {blasting.photos.map((row, i) => (
               <div key={row.id} className="border rounded-lg p-3 bg-gray-50">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
-                  <label className="text-xs">
-                    <span className="block text-gray-500 mb-0.5">Equipment/Tag Identification</span>
-                    <input className="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500" value={row.equipment} onChange={(e) => bpUpdatePhoto(i, 'equipment', e.target.value)} />
-                  </label>
-                  <label className="text-xs">
-                    <span className="block text-gray-500 mb-0.5">Valve Size/Class</span>
-                    <input className="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500" value={row.size_class} onChange={(e) => bpUpdatePhoto(i, 'size_class', e.target.value)} />
-                  </label>
-                  <label className="text-xs">
-                    <span className="block text-gray-500 mb-0.5">Inspection Stage</span>
-                    <input className="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500" value={row.stage} onChange={(e) => bpUpdatePhoto(i, 'stage', e.target.value)} />
-                  </label>
-                </div>
-                <label className="text-xs block mb-2">
-                  <span className="block text-gray-500 mb-0.5">Recorded DFT Readings Visible in Photos</span>
-                  <input className="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500" value={row.readings} onChange={(e) => bpUpdatePhoto(i, 'readings', e.target.value)} />
-                </label>
                 <div className="flex flex-wrap items-center gap-2">
                   {row.photos.map((url, j) => (
                     <div key={j} className="relative">
