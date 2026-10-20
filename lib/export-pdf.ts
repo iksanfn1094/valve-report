@@ -1589,36 +1589,74 @@ async function drawLiquidPenetrantSection(doc: jsPDF, report: ReportData, M: num
     y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
   }
   const sv = (v?: string) => v || '-'
-  const mark = (b?: boolean) => (b ? 'Selected' : 'Not Selected')
 
   // 1. CONDITION
   heading('1. CONDITION')
-  table(['Parameter', 'Value'], [
-    ['Type of Joint', sv(c.joint)],
-    ['Base Metal', sv(c.base_metal)],
-    ['Base Metal Specification', sv(c.base_metal_spec)],
-  ], [70, CW - 70])
-  table(['Welding Process', 'Status'], [
-    ['GTAW', mark(c.weld_gaw)],
-    ['SMAW', mark(c.weld_smaw)],
-    ['Other - Casting', mark(c.weld_casting)],
-    ['Other', c.weld_other ? (c.weld_other_text || 'Selected') : 'Not Selected'],
-  ], [70, CW - 70])
-  table(['Scope of Examination', 'Status'], [
-    ['Weld Part', mark(c.scope_weld)],
-    ['Repair Weld', mark(c.scope_repair)],
-    ['Base Metal', mark(c.scope_base)],
-  ], [70, CW - 70])
-  if (materials.length) {
-    table(['Material', 'Product', 'Batch No.'],
-      materials.map((r) => [sv(r.material), sv(r.product), sv(r.batch_no)]),
-      [CW / 3, CW / 3, CW / 3])
+  const lineH = 3.4
+  const ensureRoom = (h = lineH) => {
+    if (y + h > limit) { doc.addPage(); drawSectionContinuationHeader(doc, report, M, CW, PW, DPT_TITLE, false); y = CONTENT_TOP + REPEAT_BLOCK_H }
   }
-  table(['Testing Parameter', 'Value'], [
-    ['Dwell Time', sv(c.dwell_time)],
-    ['Technique', sv(c.technique)],
-    ['Specification / Code Limitation', sv(c.spec)],
-  ], [70, CW - 70])
+  const ruleAbove = () => { doc.setDrawColor(...GRID); doc.setLineWidth(0.2); doc.line(M, y, M + CW, y) }
+  const condText = (text: string) => {
+    ensureRoom()
+    ruleAbove()
+    doc.setFontSize(7)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(30, 40, 60)
+    doc.text(text, M + 0.5, y + lineH * 0.7, { baseline: 'middle' })
+    y += lineH
+  }
+  const checkBox = (x: number, checked: boolean | undefined) => {
+    const s = 2.3
+    const by = y + lineH * 0.5 - s / 2
+    doc.setDrawColor(60, 70, 90)
+    doc.setLineWidth(0.2)
+    doc.rect(x, by, s, s, 'S')
+    if (checked) {
+      doc.setDrawColor(...BLUE)
+      doc.setLineWidth(0.4)
+      doc.line(x + 0.4, by + s / 2, x + s * 0.42, by + s - 0.4)
+      doc.line(x + s * 0.42, by + s - 0.4, x + s - 0.3, by + 0.5)
+    }
+  }
+  const checkItem = (x: number, label: string, checked?: boolean) => {
+    checkBox(x, checked)
+    doc.setFontSize(7)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(30, 40, 60)
+    doc.text(label, x + 3, y + lineH * 0.7, { baseline: 'middle' })
+    return x + 3 + doc.getTextWidth(label) + 4
+  }
+  const checkRow = (prefix: string, items: [string, boolean | undefined][]) => {
+    ensureRoom()
+    ruleAbove()
+    doc.setFontSize(7)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(30, 40, 60)
+    doc.text(prefix, M + 0.5, y + lineH * 0.7, { baseline: 'middle' })
+    let x = M + 0.5 + doc.getTextWidth(prefix) + 2
+    for (const [label, checked] of items) x = checkItem(x, label, checked)
+    y += lineH
+  }
+
+  condText(`Type of Joint : ${sv(c.joint)}`)
+  condText(`Base Metal : ${sv(c.base_metal)}`)
+  condText(`Base Metal Spec. : ${sv(c.base_metal_spec)}`)
+  const weldItems: [string, boolean | undefined][] = [
+    ['GTAW', c.weld_gaw],
+    ['SMAW', c.weld_smaw],
+    ['Other', c.weld_other],
+    ['Casting', c.weld_casting],
+  ]
+  checkRow('Welding Process : ', weldItems)
+  condText('Scope of Examination')
+  checkRow('    ', [['Weld Part', c.scope_weld], ['Repair Weld', c.scope_repair], ['Base Metal', c.scope_base]])
+  for (const r of materials) condText(`${sv(r.material)} : ${sv(r.product)}   Batch No. : ${sv(r.batch_no)}`)
+  condText(`Dwell Time : ${sv(c.dwell_time)}`)
+  condText(`Technique : ${sv(c.technique)}`)
+  condText(`Spec Limitation : ${sv(c.spec)}`)
+  ruleAbove()
+  y += 4
 
   // 2. RESULT / JUDGEMENT
   heading('2. RESULT / JUDGEMENT')
