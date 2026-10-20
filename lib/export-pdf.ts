@@ -1592,18 +1592,16 @@ async function drawLiquidPenetrantSection(doc: jsPDF, report: ReportData, M: num
 
   // 1. CONDITION
   heading('1. CONDITION')
-  const lineH = 3.4
+  const lineH = 5
   const ensureRoom = (h = lineH) => {
     if (y + h > limit) { doc.addPage(); drawSectionContinuationHeader(doc, report, M, CW, PW, DPT_TITLE, false); y = CONTENT_TOP + REPEAT_BLOCK_H }
   }
-  const ruleAbove = () => { doc.setDrawColor(...GRID); doc.setLineWidth(0.2); doc.line(M, y, M + CW, y) }
   const condText = (text: string) => {
     ensureRoom()
-    ruleAbove()
     doc.setFontSize(7)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(30, 40, 60)
-    doc.text(text, M + 0.5, y + lineH * 0.7, { baseline: 'middle' })
+    doc.text(text, M + 0.5, y + lineH * 0.5, { baseline: 'middle' })
     y += lineH
   }
   const checkBox = (x: number, checked: boolean | undefined) => {
@@ -1624,16 +1622,15 @@ async function drawLiquidPenetrantSection(doc: jsPDF, report: ReportData, M: num
     doc.setFontSize(7)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(30, 40, 60)
-    doc.text(label, x + 3, y + lineH * 0.7, { baseline: 'middle' })
+    doc.text(label, x + 3, y + lineH * 0.5, { baseline: 'middle' })
     return x + 3 + doc.getTextWidth(label) + 4
   }
   const checkRow = (prefix: string, items: [string, boolean | undefined][]) => {
     ensureRoom()
-    ruleAbove()
     doc.setFontSize(7)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(30, 40, 60)
-    doc.text(prefix, M + 0.5, y + lineH * 0.7, { baseline: 'middle' })
+    doc.text(prefix, M + 0.5, y + lineH * 0.5, { baseline: 'middle' })
     let x = M + 0.5 + doc.getTextWidth(prefix) + 2
     for (const [label, checked] of items) x = checkItem(x, label, checked)
     y += lineH
@@ -1649,13 +1646,11 @@ async function drawLiquidPenetrantSection(doc: jsPDF, report: ReportData, M: num
     ['Casting', c.weld_casting],
   ]
   checkRow('Welding Process : ', weldItems)
-  condText('Scope of Examination')
-  checkRow('    ', [['Weld Part', c.scope_weld], ['Repair Weld', c.scope_repair], ['Base Metal', c.scope_base]])
+  checkRow('Scope of Examination : ', [['Weld Part', c.scope_weld], ['Repair Weld', c.scope_repair], ['Base Metal', c.scope_base]])
   for (const r of materials) condText(`${sv(r.material)} : ${sv(r.product)}   Batch No. : ${sv(r.batch_no)}`)
   condText(`Dwell Time : ${sv(c.dwell_time)}`)
   condText(`Technique : ${sv(c.technique)}`)
   condText(`Spec Limitation : ${sv(c.spec)}`)
-  ruleAbove()
   y += 4
 
   // 2. RESULT / JUDGEMENT
