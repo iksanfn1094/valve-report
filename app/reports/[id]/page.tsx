@@ -572,7 +572,9 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       dwell_time: '', technique: '', spec: '',
     },
     materials: [
-      { id: crypto.randomUUID(), material: '', product: '', batch_no: '' },
+      { id: 'red-dye-penetrant', material: 'Red Dye Penetrant', product: '', batch_no: '' },
+      { id: 'developer', material: 'Developer', product: '', batch_no: '' },
+      { id: 'cleaner-remover', material: 'Cleaner / Remover', product: '', batch_no: '' },
     ],
     results: [
       { id: crypto.randomUUID(), part: '', material: '', accepted: false, rejected: false, discontinuity: '', remark: '' },
@@ -583,12 +585,6 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   const [savingDpt, setSavingDpt] = useState(false)
 
   function updateDpt(fn: (p: LiquidPenetrant) => LiquidPenetrant) { setDpt(prev => fn(prev)) }
-  function dptAddMaterial() {
-    updateDpt(p => ({ ...p, materials: [...p.materials, { id: crypto.randomUUID(), material: '', product: '', batch_no: '' }] }))
-  }
-  function dptRemoveMaterial(i: number) {
-    updateDpt(p => ({ ...p, materials: p.materials.filter((_, x) => x !== i) }))
-  }
   function dptUpdateMaterial(i: number, field: keyof DptMaterialRow, value: string) {
     updateDpt(p => { const arr = [...p.materials]; arr[i] = { ...arr[i], [field]: value }; return { ...p, materials: arr } })
   }
@@ -807,7 +803,10 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           const def = defaultLiquidPenetrant()
           setDpt({
             condition: { ...def.condition, ...(dptData.condition ?? {}) },
-            materials: (dptData.materials ?? []).map((r) => ({ ...r })),
+            materials: def.materials.map((base) => {
+              const saved = (dptData.materials ?? []).find((r) => r.id === base.id)
+              return saved ? { ...base, product: saved.product ?? '', batch_no: saved.batch_no ?? '' } : base
+            }),
             results: (dptData.results ?? []).map((r) => ({ ...r })),
             photos: (dptData.photos ?? []).map((r) => ({ ...r, photos: r.photos ?? [] })),
           })
@@ -2664,25 +2663,23 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                   <th className="border px-1 py-2 text-left">Material</th>
                   <th className="border px-1 py-2 text-left">Product</th>
                   <th className="border px-1 py-2 text-left">Batch No.</th>
-                  <th className="border px-1 py-2 w-8"></th>
                 </tr>
               </thead>
               <tbody>
                 {dpt.materials.map((row, i) => (
                   <tr key={row.id} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
-                    {(['material', 'product', 'batch_no'] as const).map((f) => (
-                      <td key={f} className="border px-1 py-1">
-                        <input className="w-full border-0 bg-transparent text-xs focus:outline-none" value={row[f]} onChange={(e) => dptUpdateMaterial(i, f, e.target.value)} />
-                      </td>
-                    ))}
-                    <td className="border px-1 py-1 text-center"><button onClick={() => dptRemoveMaterial(i)} className="text-red-400 hover:text-red-600 text-sm font-bold">&#10005;</button></td>
+                    <td className="border px-1 py-1 text-gray-700 font-medium">{row.material}</td>
+                    <td className="border px-1 py-1">
+                      <input className="w-full border-0 bg-transparent text-xs focus:outline-none" value={row.product} onChange={(e) => dptUpdateMaterial(i, 'product', e.target.value)} />
+                    </td>
+                    <td className="border px-1 py-1">
+                      <input className="w-full border-0 bg-transparent text-xs focus:outline-none" value={row.batch_no} onChange={(e) => dptUpdateMaterial(i, 'batch_no', e.target.value)} />
+                    </td>
                   </tr>
                 ))}
-                {dpt.materials.length === 0 && (<tr><td colSpan={4} className="border px-2 py-4 text-center text-gray-400">Belum ada data.</td></tr>)}
               </tbody>
             </table>
           </div>
-          <button onClick={dptAddMaterial} className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-300 transition font-medium">+ Tambah Material</button>
 
           <h5 className="text-xs font-semibold text-gray-500 mt-4 mb-1">Testing Parameters</h5>
           <div className="overflow-x-auto">
