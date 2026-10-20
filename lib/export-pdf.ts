@@ -168,6 +168,7 @@ const INSPECTION_TITLE = 'INSPECTION REPORT'
 const RESUME_TITLE = 'RESUME REPORT'
 const PACKAGING_TITLE = 'PACKAGING REPORT'
 const DOCUMENTATION_TITLE = 'DOCUMENTATION REPORT'
+const DOC_INSPECTION_TITLE = 'DOCUMENTATION INSPECTION'
 const DOC_MINOR_TITLE = 'DOCUMENTATION MINOR'
 const DOC_MAJOR_TITLE = 'DOCUMENTATION MAJOR'
 // height of one signature box, used to reserve the bottom strip that repeats
@@ -1422,12 +1423,14 @@ export async function exportReportPDF(
 
     // ========== 4. DOCUMENTATION SECTIONS (minor then major) ==========
     {
+      const norm = (t?: string) => (t === 'major' ? 'major' : t === 'inspection' ? 'inspection' : 'minor')
       const groups: { type: string; title: string; heading: string }[] = [
+        { type: 'inspection', title: DOC_INSPECTION_TITLE, heading: 'DOCUMENTATION INSPECTION' },
         { type: 'minor', title: DOC_MINOR_TITLE, heading: 'DOCUMENTATION MINOR' },
         { type: 'major', title: DOC_MAJOR_TITLE, heading: 'DOCUMENTATION MAJOR' },
       ]
       for (const g of groups) {
-        const groupItems = docItems.filter((d) => (d.doc_type === 'major' ? 'major' : 'minor') === g.type)
+        const groupItems = docItems.filter((d) => norm(d.doc_type) === g.type)
         if (groupItems.length === 0) continue
         doc.addPage()
         drawHeader(doc, g.title, PW)
@@ -1482,8 +1485,10 @@ export async function exportReportPDF(
       stampSectionSignatures(doc, report, M, CW, PH, sigFrom, rs.lastMovedPage, rs.y + 6)
       drawFooter(doc, report, 'Resume', PW, PH)
     } else {
-    const isDocTab = tab === 'doc_minor' || tab === 'doc_major'
+    const isDocTab = tab === 'doc_inspection' || tab === 'doc_minor' || tab === 'doc_major'
+    const docTabGroup = tab === 'doc_inspection' ? 'inspection' : tab === 'doc_major' ? 'major' : 'minor'
     drawHeader(doc, tab === 'test' ? 'TEST REPORT'
+      : tab === 'doc_inspection' ? DOC_INSPECTION_TITLE
       : tab === 'doc_minor' ? DOC_MINOR_TITLE
       : tab === 'doc_major' ? DOC_MAJOR_TITLE
       : tab === 'documentation' ? DOCUMENTATION_TITLE
@@ -1513,13 +1518,11 @@ export async function exportReportPDF(
       y = await drawDocumentationSection(doc, report, docItems, M, CW, PW, PH, y)
     }
     if (isDocTab) {
-      const g = tab === 'doc_major' ? 'major' : 'minor'
-      const groupItems = docItems.filter((d) => (d.doc_type === 'major' ? 'major' : 'minor') === g)
-      y = await drawDocumentationSection(
-        doc, report, groupItems, M, CW, PW, PH, y,
-        g === 'major' ? 'DOCUMENTATION MAJOR' : 'DOCUMENTATION MINOR',
-        g === 'major' ? DOC_MAJOR_TITLE : DOC_MINOR_TITLE,
-      )
+      const g = docTabGroup
+      const groupItems = docItems.filter((d) => (d.doc_type === 'major' ? 'major' : d.doc_type === 'inspection' ? 'inspection' : 'minor') === g)
+      const heading = g === 'inspection' ? 'DOCUMENTATION INSPECTION' : g === 'major' ? 'DOCUMENTATION MAJOR' : 'DOCUMENTATION MINOR'
+      const title = g === 'inspection' ? DOC_INSPECTION_TITLE : g === 'major' ? DOC_MAJOR_TITLE : DOC_MINOR_TITLE
+      y = await drawDocumentationSection(doc, report, groupItems, M, CW, PW, PH, y, heading, title)
     }
     if (tab === 'test' && valveTest) {
       y = await drawTestSection(doc, report, valveTest, M, CW, PW, PH, y)

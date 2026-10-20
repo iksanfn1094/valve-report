@@ -346,7 +346,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   const [items, setItems] = useState<Item[]>([])
   const [photos, setPhotos] = useState<Photo[]>([])
   const [bomItems, setBomItems] = useState<BomItem[]>([])
-  type DocGroup = 'minor' | 'major'
+  type DocGroup = 'inspection' | 'minor' | 'major'
   type DocPhotoRow = { id?: string; component_name: string; photo_before: string[]; photo_after: string[]; comment_before: string; comment_after: string; doc_type: DocGroup }
   const [docItems, setDocItems] = useState<DocPhotoRow[]>([])
   const [savingDoc, setSavingDoc] = useState(false)
@@ -666,7 +666,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           photo_before: (() => { try { return JSON.parse(d.photo_before || '[]') } catch { return [] as string[] } })(),
           photo_after: (() => { try { return JSON.parse(d.photo_after || '[]') } catch { return [] as string[] } })(),
           comment_before: d.comment_before ?? '', comment_after: d.comment_after ?? '',
-          doc_type: d.doc_type === 'major' ? 'major' : 'minor',
+          doc_type: d.doc_type === 'major' ? 'major' : d.doc_type === 'inspection' ? 'inspection' : 'minor',
         })))
       }
       setLoading(false)
@@ -1195,6 +1195,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           {[
             { key: 'resume', label: 'Resume', active: 'bg-teal-600 text-white' },
             { key: 'inspection', label: 'Inspection', active: 'bg-blue-600 text-white' },
+            { key: 'doc_inspection', label: 'Doc Inspection', active: 'bg-cyan-600 text-white' },
             { key: 'doc_minor', label: 'Doc Minor', active: 'bg-yellow-600 text-white' },
             { key: 'doc_major', label: 'Doc Major', active: 'bg-amber-700 text-white' },
             { key: 'penetrant', label: 'Liquid Penetrant', active: 'bg-orange-600 text-white' },
@@ -2036,15 +2037,17 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       </div>
       )}
 
-      {/* Documentation Tabs (Minor / Major) */}
-      {(activeTab === 'doc_minor' || activeTab === 'doc_major') && (() => {
-        const group: DocGroup = activeTab === 'doc_major' ? 'major' : 'minor'
+      {/* Documentation Tabs (Inspection / Minor / Major) */}
+      {(activeTab === 'doc_inspection' || activeTab === 'doc_minor' || activeTab === 'doc_major') && (() => {
+        const group: DocGroup = activeTab === 'doc_major' ? 'major' : activeTab === 'doc_inspection' ? 'inspection' : 'minor'
         // handlers keep their original index into docItems; only the visible
-        // rows are filtered by group, so a row can move between the two tabs
+        // rows are filtered by group, so a row can move between the tabs
         const visible = docItems
           .map((row, idx) => ({ row, idx }))
           .filter(({ row }) => row.doc_type === group)
-        const label = group === 'major' ? 'DOCUMENTATION MAJOR' : 'DOCUMENTATION MINOR'
+        const label = group === 'major' ? 'DOCUMENTATION MAJOR' : group === 'inspection' ? 'DOCUMENTATION INSPECTION' : 'DOCUMENTATION MINOR'
+        // cycle order used by the move button: Inspection -> Minor -> Major -> Inspection
+        const nextGroup: DocGroup = group === 'inspection' ? 'minor' : group === 'minor' ? 'major' : 'inspection'
         return (
       <div className="bg-white rounded-lg shadow border p-4">
         <h3 className="text-lg font-bold text-gray-800 mb-3">{label}</h3>
@@ -2107,8 +2110,8 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                   </td>
                   <td className="border px-1 py-1 text-center whitespace-nowrap">
                     <button
-                      onClick={() => updateDocItem(i, 'doc_type', group === 'major' ? 'minor' : 'major')}
-                      title={group === 'major' ? 'Pindah ke Doc Minor' : 'Pindah ke Doc Major'}
+                      onClick={() => updateDocItem(i, 'doc_type', nextGroup)}
+                      title={`Pindah ke ${{ inspection: 'Doc Inspection', minor: 'Doc Minor', major: 'Doc Major' }[nextGroup]}`}
                       className="text-blue-500 hover:text-blue-700 text-sm font-bold mr-1"
                     >&#8646;</button>
                     <button onClick={() => removeDocItem(i)} className="text-red-400 hover:text-red-600 text-sm font-bold">&#10005;</button>
@@ -2226,7 +2229,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       )}
 
       {/* Placeholder for other tabs */}
-      {!['inspection', 'doc_minor', 'doc_major', 'resume', 'test', 'packaging'].includes(activeTab) && (
+      {!['inspection', 'doc_inspection', 'doc_minor', 'doc_major', 'resume', 'test', 'packaging'].includes(activeTab) && (
         <div className="bg-white rounded-lg shadow border p-8 text-center">
           <p className="text-gray-400 text-sm">This feature will be available soon.</p>
         </div>
