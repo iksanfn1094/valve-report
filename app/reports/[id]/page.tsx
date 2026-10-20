@@ -41,6 +41,34 @@ type Report = {
   sub_datasheet: SubDatasheet | null
   packaging: Packaging | null
   packaging_photos: string | null
+  blasting_painting: BlastingPainting | null
+}
+
+type BlastingSurface = {
+  grade: string; abrasive: string; cleaning_fluid: string; cleaning_method: string
+  profile_required: string; profile_actual: string; rust_grade: string; dust_level: string
+}
+type BlastingEnvRow = {
+  id: string; activity: string; date: string; time: string
+  surface_temp: string; air_temp: string; dewpoint: string; humidity: string
+}
+type BlastingPaintRow = {
+  id: string; system: string; type: string; product: string; batch_no: string
+  thinner: string; date: string; application: string; dft_required: string; final_color: string
+}
+type BlastingDftRow = {
+  id: string; serial: string; dft_primer: string; dft_intermediate: string; dft_top: string
+  final_color: string; result: string
+}
+type BlastingPhotoRow = {
+  id: string; equipment: string; size_class: string; stage: string; readings: string; photos: string[]
+}
+type BlastingPainting = {
+  surface: BlastingSurface
+  environment: BlastingEnvRow[]
+  paint: BlastingPaintRow[]
+  dft: BlastingDftRow[]
+  photos: BlastingPhotoRow[]
 }
 
 type Item = {
@@ -442,6 +470,90 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     alert('Packaging tersimpan!')
   }
 
+  const defaultBlastingPainting = (): BlastingPainting => ({
+    surface: {
+      grade: 'SP10', abrasive: '', cleaning_fluid: '', cleaning_method: '',
+      profile_required: '', profile_actual: '', rust_grade: '', dust_level: '',
+    },
+    environment: [
+      { id: crypto.randomUUID(), activity: '', date: '', time: '', surface_temp: '', air_temp: '', dewpoint: '', humidity: '' },
+    ],
+    paint: [
+      { id: crypto.randomUUID(), system: '', type: '', product: '', batch_no: '', thinner: '', date: '', application: '', dft_required: '', final_color: '' },
+    ],
+    dft: [
+      { id: crypto.randomUUID(), serial: '', dft_primer: '', dft_intermediate: '', dft_top: '', final_color: '', result: '' },
+    ],
+    photos: [],
+  })
+  function blankBlastingRow(key: 'environment' | 'paint' | 'dft'): BlastingEnvRow | BlastingPaintRow | BlastingDftRow {
+    const rid = () => crypto.randomUUID()
+    if (key === 'environment') return { id: rid(), activity: '', date: '', time: '', surface_temp: '', air_temp: '', dewpoint: '', humidity: '' }
+    if (key === 'paint') return { id: rid(), system: '', type: '', product: '', batch_no: '', thinner: '', date: '', application: '', dft_required: '', final_color: '' }
+    return { id: rid(), serial: '', dft_primer: '', dft_intermediate: '', dft_top: '', final_color: '', result: '' }
+  }
+  const [blasting, setBlasting] = useState<BlastingPainting>(() => defaultBlastingPainting())
+  const [savingBlasting, setSavingBlasting] = useState(false)
+
+  function updateBlasting(fn: (b: BlastingPainting) => BlastingPainting) {
+    setBlasting(prev => fn(prev))
+  }
+  function bpAdd<K extends 'environment' | 'paint' | 'dft'>(key: K) {
+    updateBlasting(b => ({ ...b, [key]: [...b[key], blankBlastingRow(key)] } as BlastingPainting))
+  }
+  function bpRemove(key: 'environment' | 'paint' | 'dft', idx: number) {
+    updateBlasting(b => ({ ...b, [key]: b[key].filter((_, i) => i !== idx) } as BlastingPainting))
+  }
+  function bpUpdate(key: 'environment' | 'paint' | 'dft', idx: number, field: string, value: string) {
+    updateBlasting(b => {
+      const arr = [...b[key]]
+      arr[idx] = { ...arr[idx], [field]: value }
+      return { ...b, [key]: arr } as BlastingPainting
+    })
+  }
+  function bpAddPhoto() {
+    updateBlasting(b => ({ ...b, photos: [...b.photos, { id: crypto.randomUUID(), equipment: '', size_class: '', stage: '', readings: '', photos: [] }] }))
+  }
+  function bpRemovePhoto(idx: number) {
+    updateBlasting(b => ({ ...b, photos: b.photos.filter((_, i) => i !== idx) }))
+  }
+  function bpUpdatePhoto(idx: number, field: keyof BlastingPhotoRow, value: string) {
+    updateBlasting(b => {
+      const arr = [...b.photos]
+      arr[idx] = { ...arr[idx], [field]: value }
+      return { ...b, photos: arr }
+    })
+  }
+  function bpRemovePhotoImg(idx: number, imgIdx: number) {
+    updateBlasting(b => {
+      const arr = [...b.photos]
+      arr[idx] = { ...arr[idx], photos: arr[idx].photos.filter((_, j) => j !== imgIdx) }
+      return { ...b, photos: arr }
+    })
+  }
+  async function bpUploadPhoto(file: File, idx: number) {
+    const path = `blasting-photos/${id}/${Date.now()}-${file.name}`
+    const { error } = await supabase.storage.from('report-photos').upload(path, file)
+    if (error) return alert('Upload gagal: ' + error.message)
+    const { data } = supabase.storage.from('report-photos').getPublicUrl(path)
+    updateBlasting(b => {
+      const arr = [...b.photos]
+      arr[idx] = { ...arr[idx], photos: [...arr[idx].photos, data.publicUrl] }
+      return { ...b, photos: arr }
+    })
+  }
+  async function saveBlasting() {
+    if (!id) return
+    setSavingBlasting(true)
+    const payload = { blasting_painting: blasting }
+    const { error } = await supabase.from('report_inspection')
+      .update(payload as unknown as Record<string, unknown>).eq('id', id)
+    setSavingBlasting(false)
+    if (error) return alert('Error: ' + error.message)
+    setReport(prev => prev ? { ...prev, ...payload } : prev)
+    alert('Blasting & Painting tersimpan!')
+  }
+
   function getTestRows(): string[] {
     try { return JSON.parse(valveTest.test_rows) } catch { return [] }
   }
@@ -615,6 +727,17 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         const pk = reportRes.data.packaging as unknown as Packaging | null
         if (pk) {
           setPackaging({ qty: pk.qty ?? '', weight: pk.weight ?? '' })
+        }
+        const bp = reportRes.data.blasting_painting as unknown as BlastingPainting | null
+        if (bp) {
+          const def = defaultBlastingPainting()
+          setBlasting({
+            surface: { ...def.surface, ...(bp.surface ?? {}) },
+            environment: (bp.environment ?? []).map((r) => ({ ...blankBlastingRow('environment'), ...r })) as BlastingEnvRow[],
+            paint: (bp.paint ?? []).map((r) => ({ ...blankBlastingRow('paint') as BlastingPaintRow, ...r })),
+            dft: (bp.dft ?? []).map((r) => ({ ...blankBlastingRow('dft') as BlastingDftRow, ...r })),
+            photos: (bp.photos ?? []).map((r) => ({ ...r, photos: r.photos ?? [] })),
+          })
         }
       }
       if (itemsRes.data) {
@@ -1201,6 +1324,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
             { key: 'penetrant', label: 'Liquid Penetrant', active: 'bg-orange-600 text-white' },
             { key: 'torque', label: 'Torque & Anti-static', active: 'bg-purple-600 text-white' },
             { key: 'test', label: 'Test', active: 'bg-red-600 text-white' },
+            { key: 'blasting', label: 'Blasting & Painting', active: 'bg-slate-700 text-white' },
             { key: 'packaging', label: 'Packaging', active: 'bg-green-600 text-white' },
           ].map((t) => (
               <button
@@ -2134,6 +2258,193 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         )
       })()}
 
+      {/* Blasting & Painting Tab */}
+      {activeTab === 'blasting' && (
+      <div className="bg-white rounded-lg shadow border p-4 space-y-6">
+        {/* 1. SURFACE PREPARATION */}
+        <div>
+          <h3 className="text-lg font-bold text-gray-800 mb-3">BLASTING & PAINTING REPORT</h3>
+          <h4 className="text-sm font-bold text-gray-700 mb-2">1. SURFACE PREPARATION</h4>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <tbody>
+                {([
+                  ['Sandblasting Grade', 'grade'],
+                  ['Size/Type Abrasive Material', 'abrasive'],
+                  ['Cleaning Fluid', 'cleaning_fluid'],
+                  ['Cleaning Method', 'cleaning_method'],
+                  ['Surface Profile Required', 'profile_required'],
+                  ['Surface Profile Actual', 'profile_actual'],
+                  ['Rust Grade', 'rust_grade'],
+                  ['Dust Level', 'dust_level'],
+                ] as [string, keyof BlastingSurface][]).map(([label, field]) => (
+                  <tr key={field}>
+                    <td className="border px-2 py-1 bg-gray-50 text-xs font-medium w-1/2">{label}</td>
+                    <td className="border px-1 py-1">
+                      <input
+                        className="w-full border-0 bg-transparent text-sm focus:outline-none"
+                        value={blasting.surface[field]}
+                        onChange={(e) => updateBlasting(b => ({ ...b, surface: { ...b.surface, [field]: e.target.value } }))}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* 2. ENVIRONMENTAL CONDITION */}
+        <div>
+          <h4 className="text-sm font-bold text-gray-700 mb-2">2. ENVIRONMENTAL CONDITION</h4>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-blue-900 text-white">
+                  {['Activity', 'Date', 'Time', 'Surface Temp (°C)', 'Air Temp (°C)', 'Dewpoint Temp (°C)', 'Relative Humidity (%)', ''].map((h, i) => (
+                    <th key={i} className="border px-1 py-2 text-center">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {blasting.environment.map((row, i) => (
+                  <tr key={row.id} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
+                    {(['activity', 'date', 'time', 'surface_temp', 'air_temp', 'dewpoint', 'humidity'] as const).map((f) => (
+                      <td key={f} className="border px-1 py-1">
+                        <input className="w-full border-0 bg-transparent text-xs text-center focus:outline-none" value={row[f]} onChange={(e) => bpUpdate('environment', i, f, e.target.value)} />
+                      </td>
+                    ))}
+                    <td className="border px-1 py-1 text-center"><button onClick={() => bpRemove('environment', i)} className="text-red-400 hover:text-red-600 text-sm font-bold">&#10005;</button></td>
+                  </tr>
+                ))}
+                {blasting.environment.length === 0 && (
+                  <tr><td colSpan={8} className="border px-2 py-4 text-center text-gray-400">Belum ada data.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <button onClick={() => bpAdd('environment')} className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-300 transition font-medium mt-2">+ Tambah Baris</button>
+        </div>
+
+        {/* 3. PAINT APPLICATION */}
+        <div>
+          <h4 className="text-sm font-bold text-gray-700 mb-2">3. PAINT APPLICATION</h4>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-blue-900 text-white">
+                  {['Paint System', 'Type of Paint', 'Product', 'Batch No.', 'Thinner', 'Date', 'Paint Application', 'DFT Required (µm)', 'Final Color', ''].map((h, i) => (
+                    <th key={i} className="border px-1 py-2 text-center">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {blasting.paint.map((row, i) => (
+                  <tr key={row.id} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
+                    {(['system', 'type', 'product', 'batch_no', 'thinner', 'date', 'application', 'dft_required', 'final_color'] as const).map((f) => (
+                      <td key={f} className="border px-1 py-1">
+                        <input className="w-full border-0 bg-transparent text-xs text-center focus:outline-none" value={row[f]} onChange={(e) => bpUpdate('paint', i, f, e.target.value)} />
+                      </td>
+                    ))}
+                    <td className="border px-1 py-1 text-center"><button onClick={() => bpRemove('paint', i)} className="text-red-400 hover:text-red-600 text-sm font-bold">&#10005;</button></td>
+                  </tr>
+                ))}
+                {blasting.paint.length === 0 && (
+                  <tr><td colSpan={10} className="border px-2 py-4 text-center text-gray-400">Belum ada data.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <button onClick={() => bpAdd('paint')} className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-300 transition font-medium mt-2">+ Tambah Baris</button>
+        </div>
+
+        {/* 4. DFT INSPECTION RESULT */}
+        <div>
+          <h4 className="text-sm font-bold text-gray-700 mb-2">4. DFT INSPECTION RESULT</h4>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-blue-900 text-white">
+                  {['No', 'Serial Number', 'Avg DFT Actual (µm)', 'Avg DFT Intermediate Coat (µm)', 'Avg DFT Top Coat (µm)', 'Final Colour', 'Result', ''].map((h, i) => (
+                    <th key={i} className="border px-1 py-2 text-center">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {blasting.dft.map((row, i) => (
+                  <tr key={row.id} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
+                    <td className="border px-1 py-1 text-center text-gray-500">{i + 1}</td>
+                    {(['serial', 'dft_primer', 'dft_intermediate', 'dft_top', 'final_color', 'result'] as const).map((f) => (
+                      <td key={f} className="border px-1 py-1">
+                        <input className="w-full border-0 bg-transparent text-xs text-center focus:outline-none" value={row[f]} onChange={(e) => bpUpdate('dft', i, f, e.target.value)} />
+                      </td>
+                    ))}
+                    <td className="border px-1 py-1 text-center"><button onClick={() => bpRemove('dft', i)} className="text-red-400 hover:text-red-600 text-sm font-bold">&#10005;</button></td>
+                  </tr>
+                ))}
+                {blasting.dft.length === 0 && (
+                  <tr><td colSpan={8} className="border px-2 py-4 text-center text-gray-400">Belum ada data.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <button onClick={() => bpAdd('dft')} className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-300 transition font-medium mt-2">+ Tambah Baris</button>
+        </div>
+
+        {/* 5. DFT MEASUREMENT PHOTO RECORDS */}
+        <div>
+          <h4 className="text-sm font-bold text-gray-700 mb-2">5. DFT MEASUREMENT PHOTO RECORDS</h4>
+          <div className="space-y-4">
+            {blasting.photos.map((row, i) => (
+              <div key={row.id} className="border rounded-lg p-3 bg-gray-50">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+                  <label className="text-xs">
+                    <span className="block text-gray-500 mb-0.5">Equipment/Tag Identification</span>
+                    <input className="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500" value={row.equipment} onChange={(e) => bpUpdatePhoto(i, 'equipment', e.target.value)} />
+                  </label>
+                  <label className="text-xs">
+                    <span className="block text-gray-500 mb-0.5">Valve Size/Class</span>
+                    <input className="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500" value={row.size_class} onChange={(e) => bpUpdatePhoto(i, 'size_class', e.target.value)} />
+                  </label>
+                  <label className="text-xs">
+                    <span className="block text-gray-500 mb-0.5">Inspection Stage</span>
+                    <input className="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500" value={row.stage} onChange={(e) => bpUpdatePhoto(i, 'stage', e.target.value)} />
+                  </label>
+                </div>
+                <label className="text-xs block mb-2">
+                  <span className="block text-gray-500 mb-0.5">Recorded DFT Readings Visible in Photos</span>
+                  <input className="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500" value={row.readings} onChange={(e) => bpUpdatePhoto(i, 'readings', e.target.value)} />
+                </label>
+                <div className="flex flex-wrap items-center gap-2">
+                  {row.photos.map((url, j) => (
+                    <div key={j} className="relative">
+                      <img src={url} alt="" className="h-20 object-contain rounded border bg-white cursor-pointer" onClick={() => setPreviewPhoto(url)} />
+                      <button onClick={() => bpRemovePhotoImg(i, j)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-[9px] flex items-center justify-center leading-none">&#10005;</button>
+                    </div>
+                  ))}
+                  <label className="text-blue-600 hover:text-blue-800 cursor-pointer text-xs border border-dashed border-blue-300 rounded px-3 py-2">
+                    + Photo
+                    <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) bpUploadPhoto(f, i) }} />
+                  </label>
+                </div>
+                <button onClick={() => bpRemovePhoto(i)} className="text-red-400 hover:text-red-600 text-xs font-bold mt-2">Hapus Blok</button>
+              </div>
+            ))}
+            {blasting.photos.length === 0 && (
+              <p className="text-xs text-gray-400">Belum ada foto.</p>
+            )}
+          </div>
+          <button onClick={bpAddPhoto} className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-300 transition font-medium mt-2">+ Tambah Blok Foto</button>
+        </div>
+
+        <div className="flex gap-2">
+          <button onClick={saveBlasting} disabled={savingBlasting} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition font-medium disabled:opacity-50">
+            {savingBlasting ? 'Menyimpan...' : 'Simpan'}
+          </button>
+        </div>
+      </div>
+      )}
+
       {/* Packaging Tab */}
       {activeTab === 'packaging' && (
       <div className="bg-white rounded-lg shadow border p-4 space-y-6">
@@ -2229,7 +2540,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       )}
 
       {/* Placeholder for other tabs */}
-      {!['inspection', 'doc_inspection', 'doc_minor', 'doc_major', 'resume', 'test', 'packaging'].includes(activeTab) && (
+      {!['inspection', 'doc_inspection', 'doc_minor', 'doc_major', 'resume', 'test', 'blasting', 'packaging'].includes(activeTab) && (
         <div className="bg-white rounded-lg shadow border p-8 text-center">
           <p className="text-gray-400 text-sm">This feature will be available soon.</p>
         </div>

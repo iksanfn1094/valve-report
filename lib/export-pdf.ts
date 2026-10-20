@@ -26,6 +26,7 @@ type ReportData = {
   visual_dimensional?: VisualDimensionalData | null
   packaging?: PackagingData | null
   packaging_photos?: string | null
+  blasting_painting?: BlastingPaintingData | null
 }
 
 type ItemData = {
@@ -56,6 +57,33 @@ type VisualDimensionalData = {
 type PackagingData = {
   qty?: string | null
   weight?: string | null
+}
+
+type BlastingSurface = {
+  grade?: string; abrasive?: string; cleaning_fluid?: string; cleaning_method?: string
+  profile_required?: string; profile_actual?: string; rust_grade?: string; dust_level?: string
+}
+type BlastingEnvRow = {
+  id?: string; activity?: string; date?: string; time?: string
+  surface_temp?: string; air_temp?: string; dewpoint?: string; humidity?: string
+}
+type BlastingPaintRow = {
+  id?: string; system?: string; type?: string; product?: string; batch_no?: string
+  thinner?: string; date?: string; application?: string; dft_required?: string; final_color?: string
+}
+type BlastingDftRow = {
+  id?: string; serial?: string; dft_primer?: string; dft_intermediate?: string; dft_top?: string
+  final_color?: string; result?: string
+}
+type BlastingPhotoRow = {
+  id?: string; equipment?: string; size_class?: string; stage?: string; readings?: string; photos?: string[]
+}
+type BlastingPaintingData = {
+  surface?: BlastingSurface
+  environment?: BlastingEnvRow[]
+  paint?: BlastingPaintRow[]
+  dft?: BlastingDftRow[]
+  photos?: BlastingPhotoRow[]
 }
 
 type PackagingPhotoData = {
@@ -168,6 +196,7 @@ const INSPECTION_TITLE = 'INSPECTION REPORT'
 const RESUME_TITLE = 'RESUME REPORT'
 const PACKAGING_TITLE = 'PACKAGING REPORT'
 const DOCUMENTATION_TITLE = 'DOCUMENTATION REPORT'
+const BLASTING_PAINTING_TITLE = 'BLASTING & PAINTING REPORT'
 const DOC_INSPECTION_TITLE = 'DOCUMENTATION INSPECTION'
 const DOC_MINOR_TITLE = 'DOCUMENTATION MINOR'
 const DOC_MAJOR_TITLE = 'DOCUMENTATION MAJOR'
@@ -1372,6 +1401,138 @@ async function drawPackagingSection(doc: jsPDF, report: ReportData, M: number, C
   return y
 }
 
+async function drawBlastingPaintingSection(doc: jsPDF, report: ReportData, M: number, CW: number, PW: number, PH: number, startY: number): Promise<number> {
+  let y = startY
+  const bp = report.blasting_painting
+  if (!bp) return y
+  const surface = bp.surface ?? {}
+  const envRows = bp.environment ?? []
+  const paintRows = bp.paint ?? []
+  const dftRows = bp.dft ?? []
+  const photoRows = bp.photos ?? []
+  const hasAny = !!(surface.grade || surface.abrasive || surface.cleaning_fluid || surface.cleaning_method
+    || surface.profile_required || surface.profile_actual || surface.rust_grade || surface.dust_level)
+    || envRows.length > 0 || paintRows.length > 0 || dftRows.length > 0 || photoRows.length > 0
+  if (!hasAny) return y
+  const limit = PH - (M + SIG_BOX_H)
+
+  const heading = (txt: string) => {
+    if (y + 6 > limit) { doc.addPage(); drawSectionContinuationHeader(doc, report, M, CW, PW, BLASTING_PAINTING_TITLE, false); y = CONTENT_TOP + REPEAT_BLOCK_H }
+    doc.setTextColor(...BLUE)
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.text(txt, M, y)
+    y += 3
+  }
+
+  const table = (head: string[], body: string[][], colW?: number[]) => {
+    autoTable(doc, {
+      startY: y,
+      margin: { left: M, right: M },
+      head: [head],
+      body,
+      styles: { fontSize: 6, cellPadding: 1.2, lineColor: GRID, lineWidth: 0.2, valign: 'middle' },
+      headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6, fontStyle: 'bold', halign: 'center' },
+      alternateRowStyles: { fillColor: LIGHT_BG },
+      columnStyles: colW ? colW.reduce((acc, w, i) => { acc[i] = { cellWidth: w, halign: 'center' }; return acc }, {} as Record<number, { cellWidth: number; halign: 'center' }>) : undefined,
+    })
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
+  }
+
+  // 1. SURFACE PREPARATION
+  heading('1. SURFACE PREPARATION')
+  const sv = (v?: string) => v || '-'
+  table(['Parameter', 'Value'], [
+    ['Sandblasting Grade', sv(surface.grade)],
+    ['Size/Type Abrasive Material', sv(surface.abrasive)],
+    ['Cleaning Fluid', sv(surface.cleaning_fluid)],
+    ['Cleaning Method', sv(surface.cleaning_method)],
+    ['Surface Profile Required', sv(surface.profile_required)],
+    ['Surface Profile Actual', sv(surface.profile_actual)],
+    ['Rust Grade', sv(surface.rust_grade)],
+    ['Dust Level', sv(surface.dust_level)],
+  ], [70, CW - 70])
+
+  // 2. ENVIRONMENTAL CONDITION
+  if (envRows.length) {
+    heading('2. ENVIRONMENTAL CONDITION')
+    table(
+      ['Activity', 'Date', 'Time', 'Surface Temp (°C)', 'Air Temp (°C)', 'Dewpoint Temp (°C)', 'Relative Humidity (%)'],
+      envRows.map((r) => [r.activity || '-', r.date || '-', r.time || '-', r.surface_temp || '-', r.air_temp || '-', r.dewpoint || '-', r.humidity || '-']),
+    )
+  }
+
+  // 3. PAINT APPLICATION
+  if (paintRows.length) {
+    heading('3. PAINT APPLICATION')
+    table(
+      ['Paint System', 'Type of Paint', 'Product', 'Batch No.', 'Thinner', 'Date', 'Paint Application', 'DFT Required (µm)', 'Final Color'],
+      paintRows.map((r) => [r.system || '-', r.type || '-', r.product || '-', r.batch_no || '-', r.thinner || '-', r.date || '-', r.application || '-', r.dft_required || '-', r.final_color || '-']),
+    )
+  }
+
+  // 4. DFT INSPECTION RESULT
+  if (dftRows.length) {
+    heading('4. DFT INSPECTION RESULT')
+    table(
+      ['No', 'Serial Number', 'Avg DFT Actual (µm)', 'Avg DFT Intermediate Coat (µm)', 'Avg DFT Top Coat (µm)', 'Final Colour', 'Result'],
+      dftRows.map((r, i) => [String(i + 1), r.serial || '-', r.dft_primer || '-', r.dft_intermediate || '-', r.dft_top || '-', r.final_color || '-', r.result || '-']),
+    )
+  }
+
+  // 5. DFT MEASUREMENT PHOTO RECORDS
+  if (photoRows.length) {
+    const rowsB64: (string | null)[][] = []
+    for (const r of photoRows) {
+      const arr: (string | null)[] = []
+      for (const url of (r.photos || [])) arr.push(await fetchImageAsBase64(url))
+      rowsB64.push(arr)
+    }
+
+    heading('5. DFT MEASUREMENT PHOTO RECORDS')
+    for (const [i, r] of photoRows.entries()) {
+      const imgs = rowsB64[i].filter((b): b is string => !!b)
+      const infoH = 12
+      const GAP = 2
+      const maxPerRow = 3
+      const IMG_H = 40
+      const imgRows = Math.max(Math.ceil(imgs.length / maxPerRow), 1)
+      const blockH = infoH + imgRows * (IMG_H + GAP)
+      if (y + blockH > limit) {
+        doc.addPage()
+        drawSectionContinuationHeader(doc, report, M, CW, PW, BLASTING_PAINTING_TITLE, false)
+        y = CONTENT_TOP + REPEAT_BLOCK_H
+      }
+      doc.setFontSize(6.5)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(60, 70, 90)
+      const info = [
+        `Equipment/Tag Identification: ${r.equipment || '-'}`,
+        `Valve Size/Class: ${r.size_class || '-'}`,
+        `Inspection Stage: ${r.stage || '-'}`,
+        `Recorded DFT Readings Visible in Photos: ${r.readings || '-'}`,
+      ]
+      info.forEach((line, li) => doc.text(line, M, y + li * 3 + 2, { baseline: 'middle' }))
+      y += infoH
+      const colW = CW / maxPerRow
+      imgs.forEach((b64, j) => {
+        const ci = j % maxPerRow
+        const ri = Math.floor(j / maxPerRow)
+        const maxW = colW - GAP
+        const px = M + ci * colW
+        const py = y + ri * (IMG_H + GAP)
+        doc.setDrawColor(...GRID)
+        doc.setLineWidth(0.2)
+        doc.rect(px, py, maxW, IMG_H, 'S')
+        try { doc.addImage(b64, 'JPEG', px, py, maxW, IMG_H) } catch { /* skip */ }
+      })
+      y += imgRows * (IMG_H + GAP) + 3
+    }
+  }
+
+  return y
+}
+
 export async function exportReportPDF(
   report: ReportData,
   items: ItemData[],
@@ -1457,6 +1618,24 @@ export async function exportReportPDF(
       drawSignature(doc, report, M, CW, y, PW, PH)
     }
 
+    // ========== 7b. BLASTING & PAINTING SECTION ==========
+    if (report.blasting_painting) {
+      const bp = report.blasting_painting
+      const hasBp = !!(bp.surface && Object.values(bp.surface).some(Boolean))
+        || (bp.environment?.length ?? 0) > 0 || (bp.paint?.length ?? 0) > 0
+        || (bp.dft?.length ?? 0) > 0 || (bp.photos?.length ?? 0) > 0
+      if (hasBp) {
+        doc.addPage()
+        drawHeader(doc, BLASTING_PAINTING_TITLE, PW)
+        const sigFrom = doc.getNumberOfPages()
+        let y = CONTENT_TOP
+        y = drawJobInfo(doc, report, M, CW, y)
+        y = drawConstruction(doc, report, M, CW, y, false)
+        y = await drawBlastingPaintingSection(doc, report, M, CW, PW, PH, y)
+        stampSectionSignatures(doc, report, M, CW, PH, sigFrom, null, y + 6)
+      }
+    }
+
     // ========== 8. PACKAGING SECTION ==========
     if (report.packaging || report.packaging_photos) {
       const hasPkg = !!(report.packaging?.qty?.trim() || report.packaging?.weight?.trim() || (report.packaging_photos && report.packaging_photos !== '[]'))
@@ -1487,7 +1666,7 @@ export async function exportReportPDF(
     } else {
     const isDocTab = tab === 'doc_inspection' || tab === 'doc_minor' || tab === 'doc_major'
     const docTabGroup = tab === 'doc_inspection' ? 'inspection' : tab === 'doc_major' ? 'major' : 'minor'
-    drawHeader(doc, tab === 'test' ? 'TEST REPORT'
+    drawHeader(doc, tab === 'blasting' ? BLASTING_PAINTING_TITLE : tab === 'test' ? 'TEST REPORT'
       : tab === 'doc_inspection' ? DOC_INSPECTION_TITLE
       : tab === 'doc_minor' ? DOC_MINOR_TITLE
       : tab === 'doc_major' ? DOC_MAJOR_TITLE
@@ -1497,7 +1676,7 @@ export async function exportReportPDF(
     let y = CONTENT_TOP
     const sigFrom = doc.getNumberOfPages()
 
-    if (tab === 'packaging' || isDocTab || tab === 'documentation') {
+    if (tab === 'packaging' || tab === 'blasting' || isDocTab || tab === 'documentation') {
       y = drawJobInfo(doc, report, M, CW, y)
       y = drawConstruction(doc, report, M, CW, y, false)
     } else if (tab === 'test') {
@@ -1530,13 +1709,16 @@ export async function exportReportPDF(
     if (tab === 'packaging') {
       y = await drawPackagingSection(doc, report, M, CW, PW, PH, y)
     }
+    if (tab === 'blasting') {
+      y = await drawBlastingPaintingSection(doc, report, M, CW, PW, PH, y)
+    }
     if (tab === 'bom') {
       y = drawBomTable(doc, bomItems, M, CW, y)
     }
 
     // inspection and packaging stamp the strip on every page of the section;
     // the other tabs keep the single strip at the end
-    if (tab === 'packaging' || isDocTab || tab === 'documentation') stampSectionSignatures(doc, report, M, CW, PH, sigFrom, null, y + 6)
+    if (tab === 'packaging' || tab === 'blasting' || isDocTab || tab === 'documentation') stampSectionSignatures(doc, report, M, CW, PH, sigFrom, null, y + 6)
     else if (tab !== 'inspection') drawSignature(doc, report, M, CW, y, PW, PH)
     drawFooter(doc, report, tab.charAt(0).toUpperCase() + tab.slice(1), PW, PH)
     }

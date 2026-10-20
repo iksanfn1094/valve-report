@@ -35,6 +35,9 @@ create table report_inspection (
   recommendations text,
   conclusion text,
   sub_datasheet jsonb,
+  packaging jsonb,
+  packaging_photos text,
+  blasting_painting jsonb,
   status text default 'draft' check (status in ('draft','submitted','approved')),
   created_at timestamptz default now(),
   updated_at timestamptz default now()
