@@ -186,6 +186,7 @@ export default function ReportsList() {
         photo_after: (() => { try { return JSON.parse((d.photo_after as string) || '[]') } catch { return [] as string[] } })(),
         comment_before: (d.comment_before as string) ?? '',
         comment_after: (d.comment_after as string) ?? '',
+        doc_type: d.doc_type === 'major' ? 'major' : 'minor',
       }))
 
       const photos = (photoRes.data ?? []).map((p: Record<string, unknown>) => {

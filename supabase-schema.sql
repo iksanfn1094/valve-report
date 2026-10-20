@@ -87,6 +87,7 @@ create table report_documentation (
   photo_after_url text,
   comment_before text,
   comment_after text,
+  doc_type text not null default 'minor',
   notes text,
   description text,
   photos text,

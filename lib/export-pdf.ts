@@ -87,6 +87,7 @@ type DocData = {
   photo_after: string[]
   comment_before: string
   comment_after: string
+  doc_type?: string
 }
 
 export type ValveTestData = {
@@ -167,6 +168,8 @@ const INSPECTION_TITLE = 'INSPECTION REPORT'
 const RESUME_TITLE = 'RESUME REPORT'
 const PACKAGING_TITLE = 'PACKAGING REPORT'
 const DOCUMENTATION_TITLE = 'DOCUMENTATION REPORT'
+const DOC_MINOR_TITLE = 'DOCUMENTATION MINOR'
+const DOC_MAJOR_TITLE = 'DOCUMENTATION MAJOR'
 // height of one signature box, used to reserve the bottom strip that repeats
 // on every inspection page
 const SIG_BOX_H = 32
@@ -1049,13 +1052,13 @@ async function drawTestSection(doc: jsPDF, report: ReportData, valveTest: ValveT
   return y
 }
 
-async function drawDocumentationSection(doc: jsPDF, report: ReportData, docItems: DocData[], M: number, CW: number, PW: number, PH: number, startY: number): Promise<number> {
+async function drawDocumentationSection(doc: jsPDF, report: ReportData, docItems: DocData[], M: number, CW: number, PW: number, PH: number, startY: number, heading = 'DOCUMENTATION', contTitle = DOCUMENTATION_TITLE): Promise<number> {
   let y = startY
   if (docItems.length === 0) return y
   doc.setTextColor(...BLUE)
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
-  doc.text('DOCUMENTATION', M, y)
+  doc.text(heading, M, y)
   y += 4
 
   const allBefore: (string | null)[][] = []
@@ -1113,7 +1116,7 @@ async function drawDocumentationSection(doc: jsPDF, report: ReportData, docItems
 
   const newPage = () => {
     doc.addPage()
-    drawSectionContinuationHeader(doc, report, M, CW, PW, DOCUMENTATION_TITLE, false)
+    drawSectionContinuationHeader(doc, report, M, CW, PW, contTitle, false)
     y = freshTop
     drawHeader()
   }
@@ -1417,16 +1420,24 @@ export async function exportReportPDF(
       drawSignature(doc, report, M, CW, y, PW, PH)
     }
 
-    // ========== 4. DOCUMENTATION SECTION ==========
-    if (docItems.length > 0) {
-      doc.addPage()
-      drawHeader(doc, DOCUMENTATION_TITLE, PW)
-      const sigFrom = doc.getNumberOfPages()
-      let y = CONTENT_TOP
-      y = drawJobInfo(doc, report, M, CW, y)
-      y = drawConstruction(doc, report, M, CW, y, false)
-      y = await drawDocumentationSection(doc, report, docItems, M, CW, PW, PH, y)
-      stampSectionSignatures(doc, report, M, CW, PH, sigFrom, null, y + 6)
+    // ========== 4. DOCUMENTATION SECTIONS (minor then major) ==========
+    {
+      const groups: { type: string; title: string; heading: string }[] = [
+        { type: 'minor', title: DOC_MINOR_TITLE, heading: 'DOCUMENTATION MINOR' },
+        { type: 'major', title: DOC_MAJOR_TITLE, heading: 'DOCUMENTATION MAJOR' },
+      ]
+      for (const g of groups) {
+        const groupItems = docItems.filter((d) => (d.doc_type === 'major' ? 'major' : 'minor') === g.type)
+        if (groupItems.length === 0) continue
+        doc.addPage()
+        drawHeader(doc, g.title, PW)
+        const sigFrom = doc.getNumberOfPages()
+        let y = CONTENT_TOP
+        y = drawJobInfo(doc, report, M, CW, y)
+        y = drawConstruction(doc, report, M, CW, y, false)
+        y = await drawDocumentationSection(doc, report, groupItems, M, CW, PW, PH, y, g.heading, g.title)
+        stampSectionSignatures(doc, report, M, CW, PH, sigFrom, null, y + 6)
+      }
     }
 
     // ========== 5. LIQUID PENETRANT (placeholder) ==========
@@ -1471,11 +1482,17 @@ export async function exportReportPDF(
       stampSectionSignatures(doc, report, M, CW, PH, sigFrom, rs.lastMovedPage, rs.y + 6)
       drawFooter(doc, report, 'Resume', PW, PH)
     } else {
-    drawHeader(doc, tab === 'test' ? 'TEST REPORT' : tab === 'documentation' ? 'DOCUMENTATION REPORT' : tab === 'packaging' ? PACKAGING_TITLE : tab === 'documentation' ? DOCUMENTATION_TITLE : INSPECTION_TITLE, PW)
+    const isDocTab = tab === 'doc_minor' || tab === 'doc_major'
+    drawHeader(doc, tab === 'test' ? 'TEST REPORT'
+      : tab === 'doc_minor' ? DOC_MINOR_TITLE
+      : tab === 'doc_major' ? DOC_MAJOR_TITLE
+      : tab === 'documentation' ? DOCUMENTATION_TITLE
+      : tab === 'packaging' ? PACKAGING_TITLE
+      : INSPECTION_TITLE, PW)
     let y = CONTENT_TOP
     const sigFrom = doc.getNumberOfPages()
 
-    if (tab === 'packaging' || tab === 'documentation') {
+    if (tab === 'packaging' || isDocTab || tab === 'documentation') {
       y = drawJobInfo(doc, report, M, CW, y)
       y = drawConstruction(doc, report, M, CW, y, false)
     } else if (tab === 'test') {
@@ -1495,6 +1512,15 @@ export async function exportReportPDF(
     if (tab === 'documentation') {
       y = await drawDocumentationSection(doc, report, docItems, M, CW, PW, PH, y)
     }
+    if (isDocTab) {
+      const g = tab === 'doc_major' ? 'major' : 'minor'
+      const groupItems = docItems.filter((d) => (d.doc_type === 'major' ? 'major' : 'minor') === g)
+      y = await drawDocumentationSection(
+        doc, report, groupItems, M, CW, PW, PH, y,
+        g === 'major' ? 'DOCUMENTATION MAJOR' : 'DOCUMENTATION MINOR',
+        g === 'major' ? DOC_MAJOR_TITLE : DOC_MINOR_TITLE,
+      )
+    }
     if (tab === 'test' && valveTest) {
       y = await drawTestSection(doc, report, valveTest, M, CW, PW, PH, y)
     }
@@ -1507,7 +1533,7 @@ export async function exportReportPDF(
 
     // inspection and packaging stamp the strip on every page of the section;
     // the other tabs keep the single strip at the end
-    if (tab === 'packaging' || tab === 'documentation') stampSectionSignatures(doc, report, M, CW, PH, sigFrom, null, y + 6)
+    if (tab === 'packaging' || isDocTab || tab === 'documentation') stampSectionSignatures(doc, report, M, CW, PH, sigFrom, null, y + 6)
     else if (tab !== 'inspection') drawSignature(doc, report, M, CW, y, PW, PH)
     drawFooter(doc, report, tab.charAt(0).toUpperCase() + tab.slice(1), PW, PH)
     }

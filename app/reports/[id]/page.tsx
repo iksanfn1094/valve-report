@@ -346,7 +346,8 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
   const [items, setItems] = useState<Item[]>([])
   const [photos, setPhotos] = useState<Photo[]>([])
   const [bomItems, setBomItems] = useState<BomItem[]>([])
-  type DocPhotoRow = { id?: string; component_name: string; photo_before: string[]; photo_after: string[]; comment_before: string; comment_after: string }
+  type DocGroup = 'minor' | 'major'
+  type DocPhotoRow = { id?: string; component_name: string; photo_before: string[]; photo_after: string[]; comment_before: string; comment_after: string; doc_type: DocGroup }
   const [docItems, setDocItems] = useState<DocPhotoRow[]>([])
   const [savingDoc, setSavingDoc] = useState(false)
   const docSaveTimeout = useRef<NodeJS.Timeout | null>(null)
@@ -503,8 +504,8 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     setValveTest(prev => ({ ...prev, test_photos: JSON.stringify(p) }))
   }
 
-  function addDocItem() {
-    setDocItems([...docItems, { id: undefined, component_name: '', photo_before: [], photo_after: [], comment_before: '', comment_after: '' }])
+  function addDocItem(group: DocGroup) {
+    setDocItems([...docItems, { id: undefined, component_name: '', photo_before: [], photo_after: [], comment_before: '', comment_after: '', doc_type: group }])
   }
   function removeDocItem(idx: number) {
     setDocItems(docItems.filter((_, i) => i !== idx))
@@ -548,6 +549,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         photo_after: JSON.stringify(d.photo_after),
         comment_before: d.comment_before,
         comment_after: d.comment_after,
+        doc_type: d.doc_type,
       }).eq('id', d.id)
       if (error) { setSavingDoc(false); return alert('Error: ' + error.message) }
     }
@@ -559,6 +561,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         photo_after: JSON.stringify(d.photo_after),
         comment_before: d.comment_before,
         comment_after: d.comment_after,
+        doc_type: d.doc_type,
         sort_order: docItems.indexOf(d),
       }))
       const { data, error } = await supabase.from('report_documentation').insert(rows).select()
@@ -663,6 +666,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           photo_before: (() => { try { return JSON.parse(d.photo_before || '[]') } catch { return [] as string[] } })(),
           photo_after: (() => { try { return JSON.parse(d.photo_after || '[]') } catch { return [] as string[] } })(),
           comment_before: d.comment_before ?? '', comment_after: d.comment_after ?? '',
+          doc_type: d.doc_type === 'major' ? 'major' : 'minor',
         })))
       }
       setLoading(false)
@@ -1191,7 +1195,8 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           {[
             { key: 'resume', label: 'Resume', active: 'bg-teal-600 text-white' },
             { key: 'inspection', label: 'Inspection', active: 'bg-blue-600 text-white' },
-            { key: 'documentation', label: 'Documentation', active: 'bg-yellow-600 text-white' },
+            { key: 'doc_minor', label: 'Doc Minor', active: 'bg-yellow-600 text-white' },
+            { key: 'doc_major', label: 'Doc Major', active: 'bg-amber-700 text-white' },
             { key: 'penetrant', label: 'Liquid Penetrant', active: 'bg-orange-600 text-white' },
             { key: 'torque', label: 'Torque & Anti-static', active: 'bg-purple-600 text-white' },
             { key: 'test', label: 'Test', active: 'bg-red-600 text-white' },
@@ -2031,10 +2036,18 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       </div>
       )}
 
-      {/* Documentation Tab */}
-      {activeTab === 'documentation' && (
+      {/* Documentation Tabs (Minor / Major) */}
+      {(activeTab === 'doc_minor' || activeTab === 'doc_major') && (() => {
+        const group: DocGroup = activeTab === 'doc_major' ? 'major' : 'minor'
+        // handlers keep their original index into docItems; only the visible
+        // rows are filtered by group, so a row can move between the two tabs
+        const visible = docItems
+          .map((row, idx) => ({ row, idx }))
+          .filter(({ row }) => row.doc_type === group)
+        const label = group === 'major' ? 'DOCUMENTATION MAJOR' : 'DOCUMENTATION MINOR'
+        return (
       <div className="bg-white rounded-lg shadow border p-4">
-        <h3 className="text-lg font-bold text-gray-800 mb-3">DOCUMENTATION</h3>
+        <h3 className="text-lg font-bold text-gray-800 mb-3">{label}</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-xs border-collapse">
             <thead>
@@ -2049,9 +2062,9 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
               </tr>
             </thead>
             <tbody>
-              {docItems.map((row, i) => (
-                <tr key={row.id || i} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
-                  <td className="border px-2 py-1 text-center text-gray-500">{i + 1}</td>
+              {visible.map(({ row, idx: i }, vi) => (
+                <tr key={row.id || vi} className={vi % 2 === 0 ? 'bg-gray-50' : ''}>
+                  <td className="border px-2 py-1 text-center text-gray-500">{vi + 1}</td>
                   <td className="border px-1 py-1">
                     <select value={row.component_name} onChange={e => updateDocItem(i, 'component_name', e.target.value)} className="w-full border-0 bg-transparent text-xs focus:outline-none">
                       <option value="">-- Pilih Komponen --</option>
@@ -2092,23 +2105,31 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                   <td className="border px-1 py-1">
                     <input type="text" value={row.comment_after} onChange={e => updateDocItem(i, 'comment_after', e.target.value)} className="w-full border-0 bg-transparent text-xs focus:outline-none" placeholder="Comment / Notes" />
                   </td>
-                  <td className="border px-1 py-1 text-center"><button onClick={() => removeDocItem(i)} className="text-red-400 hover:text-red-600 text-sm font-bold">&#10005;</button></td>
+                  <td className="border px-1 py-1 text-center whitespace-nowrap">
+                    <button
+                      onClick={() => updateDocItem(i, 'doc_type', group === 'major' ? 'minor' : 'major')}
+                      title={group === 'major' ? 'Pindah ke Doc Minor' : 'Pindah ke Doc Major'}
+                      className="text-blue-500 hover:text-blue-700 text-sm font-bold mr-1"
+                    >&#8646;</button>
+                    <button onClick={() => removeDocItem(i)} className="text-red-400 hover:text-red-600 text-sm font-bold">&#10005;</button>
+                  </td>
                 </tr>
               ))}
-              {docItems.length === 0 && (
+              {visible.length === 0 && (
                 <tr><td colSpan={7} className="border px-2 py-6 text-center text-gray-400">Belum ada data. Klik &quot;+ Tambah Baris&quot; untuk menambah.</td></tr>
               )}
             </tbody>
           </table>
         </div>
         <div className="flex gap-2 mt-3">
-          <button onClick={addDocItem} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-300 transition font-medium">+ Tambah Baris</button>
+          <button onClick={() => addDocItem(group)} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-300 transition font-medium">+ Tambah Baris</button>
           <button onClick={saveDocItems} disabled={savingDoc} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition font-medium disabled:opacity-50">
             {savingDoc ? 'Menyimpan...' : 'Simpan'}
           </button>
         </div>
       </div>
-      )}
+        )
+      })()}
 
       {/* Packaging Tab */}
       {activeTab === 'packaging' && (
@@ -2205,7 +2226,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       )}
 
       {/* Placeholder for other tabs */}
-      {activeTab !== 'inspection' && activeTab !== 'documentation' && activeTab !== 'resume' && activeTab !== 'test' && activeTab !== 'packaging' && (
+      {!['inspection', 'doc_minor', 'doc_major', 'resume', 'test', 'packaging'].includes(activeTab) && (
         <div className="bg-white rounded-lg shadow border p-8 text-center">
           <p className="text-gray-400 text-sm">This feature will be available soon.</p>
         </div>
