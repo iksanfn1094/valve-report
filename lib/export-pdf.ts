@@ -27,6 +27,7 @@ type ReportData = {
   packaging?: PackagingData | null
   packaging_photos?: string | null
   blasting_painting?: BlastingPaintingData | null
+  liquid_penetrant?: LiquidPenetrantData | null
 }
 
 type ItemData = {
@@ -78,6 +79,24 @@ type BlastingDftRow = {
 type BlastingPhotoRow = {
   id?: string; photos?: string[]
 }
+type DptCondition = {
+  joint?: string; base_metal?: string; base_metal_spec?: string
+  weld_gaw?: boolean; weld_smaw?: boolean; weld_casting?: boolean; weld_other?: boolean; weld_other_text?: string
+  scope_weld?: boolean; scope_repair?: boolean; scope_base?: boolean
+  dwell_time?: string; technique?: string; spec?: string
+}
+type DptMaterialRow = { id?: string; material?: string; product?: string; batch_no?: string }
+type DptResultRow = { id?: string; part?: string; material?: string; accepted?: boolean; rejected?: boolean; discontinuity?: string; remark?: string }
+type DptPhotoRow = { id?: string; group_name?: string; tag_id?: string; size_class?: string; method?: string; area?: string; stage?: string; records?: string; photos?: string[] }
+type LiquidPenetrantData = {
+  condition?: DptCondition
+  materials?: DptMaterialRow[]
+  results?: DptResultRow[]
+  overall_side_a?: string; overall_side_b?: string
+  rejected_indications?: string; overall_result?: string
+  photos?: DptPhotoRow[]
+}
+
 type BlastingPaintingData = {
   surface?: BlastingSurface
   environment?: BlastingEnvRow[]
@@ -197,6 +216,7 @@ const RESUME_TITLE = 'RESUME REPORT'
 const PACKAGING_TITLE = 'PACKAGING REPORT'
 const DOCUMENTATION_TITLE = 'DOCUMENTATION REPORT'
 const BLASTING_PAINTING_TITLE = 'BLASTING & PAINTING REPORT'
+const DPT_TITLE = 'DYE PENETRANT TEST (DPT) REPORT'
 const DOC_INSPECTION_TITLE = 'DOCUMENTATION INSPECTION'
 const DOC_MINOR_TITLE = 'DOCUMENTATION MINOR'
 const DOC_MAJOR_TITLE = 'DOCUMENTATION MAJOR'
@@ -1533,6 +1553,158 @@ async function drawBlastingPaintingSection(doc: jsPDF, report: ReportData, M: nu
   return y
 }
 
+async function drawLiquidPenetrantSection(doc: jsPDF, report: ReportData, M: number, CW: number, PW: number, PH: number, startY: number): Promise<number> {
+  let y = startY
+  const lp = report.liquid_penetrant
+  if (!lp) return y
+  const c = lp.condition ?? {}
+  const materials = lp.materials ?? []
+  const results = lp.results ?? []
+  const photoRows = lp.photos ?? []
+  const hasAny = !!(c.joint || c.base_metal || c.base_metal_spec || c.dwell_time || c.technique || c.spec
+    || c.weld_gaw || c.weld_smaw || c.weld_casting || c.weld_other
+    || c.scope_weld || c.scope_repair || c.scope_base)
+    || materials.length > 0 || results.length > 0
+    || !!(lp.overall_side_a || lp.overall_side_b || lp.rejected_indications || lp.overall_result)
+    || photoRows.length > 0
+  if (!hasAny) return y
+  const limit = PH - (M + SIG_BOX_H)
+
+  const heading = (txt: string) => {
+    if (y + 6 > limit) { doc.addPage(); drawSectionContinuationHeader(doc, report, M, CW, PW, DPT_TITLE, false); y = CONTENT_TOP + REPEAT_BLOCK_H }
+    doc.setTextColor(...BLUE)
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.text(txt, M, y)
+    y += 3
+  }
+  const table = (head: string[], body: string[][], colW?: number[]) => {
+    autoTable(doc, {
+      startY: y,
+      margin: { left: M, right: M },
+      head: [head],
+      body,
+      styles: { fontSize: 6, cellPadding: 1.2, lineColor: GRID, lineWidth: 0.2, valign: 'middle' },
+      headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6, fontStyle: 'bold', halign: 'center' },
+      alternateRowStyles: { fillColor: LIGHT_BG },
+      columnStyles: colW ? colW.reduce((acc, w, i) => { acc[i] = { cellWidth: w, halign: 'center' }; return acc }, {} as Record<number, { cellWidth: number; halign: 'center' }>) : undefined,
+    })
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
+  }
+  const sv = (v?: string) => v || '-'
+  const mark = (b?: boolean) => (b ? 'Selected' : 'Not Selected')
+
+  // 1. CONDITION
+  heading('1. CONDITION')
+  table(['Parameter', 'Value'], [
+    ['Type of Joint', sv(c.joint)],
+    ['Base Metal', sv(c.base_metal)],
+    ['Base Metal Specification', sv(c.base_metal_spec)],
+  ], [70, CW - 70])
+  table(['Welding Process', 'Status'], [
+    ['GTAW', mark(c.weld_gaw)],
+    ['SMAW', mark(c.weld_smaw)],
+    ['Other - Casting', mark(c.weld_casting)],
+    ['Other', c.weld_other ? (c.weld_other_text || 'Selected') : 'Not Selected'],
+  ], [70, CW - 70])
+  table(['Scope of Examination', 'Status'], [
+    ['Weld Part', mark(c.scope_weld)],
+    ['Repair Weld', mark(c.scope_repair)],
+    ['Base Metal', mark(c.scope_base)],
+  ], [70, CW - 70])
+  if (materials.length) {
+    table(['Material', 'Product', 'Batch No.'],
+      materials.map((r) => [sv(r.material), sv(r.product), sv(r.batch_no)]),
+      [CW / 3, CW / 3, CW / 3])
+  }
+  table(['Testing Parameter', 'Value'], [
+    ['Dwell Time', sv(c.dwell_time)],
+    ['Technique', sv(c.technique)],
+    ['Specification / Code Limitation', sv(c.spec)],
+  ], [70, CW - 70])
+
+  // 2. RESULT / JUDGEMENT
+  heading('2. RESULT / JUDGEMENT')
+  if (results.length) {
+    table(
+      ['Part / Welding / Weld Overlay Identification', 'Material', 'Accepted', 'Rejected', 'Type of Discontinuity', 'Remark'],
+      results.map((r) => [sv(r.part), sv(r.material), r.accepted ? '\u2713' : '-', r.rejected ? '\u2713' : '-', sv(r.discontinuity), sv(r.remark)]),
+    )
+  }
+  const ov: string[][] = []
+  if (lp.overall_side_a || lp.overall_side_b) {
+    ov.push(['Side A', sv(lp.overall_side_a)])
+    ov.push(['Side B', sv(lp.overall_side_b)])
+  }
+  if (lp.rejected_indications) ov.push(['Rejected Indications', lp.rejected_indications])
+  if (lp.overall_result) ov.push(['Overall Result', lp.overall_result])
+  if (ov.length) table(['Overall Inspection Result', 'Value'], ov, [70, CW - 70])
+
+  // 3. SKETCH / PHOTO RECORDS
+  if (photoRows.length) {
+    const rowsB64: (string | null)[][] = []
+    for (const r of photoRows) {
+      const arr: (string | null)[] = []
+      for (const url of (r.photos || [])) arr.push(await fetchImageAsBase64(url))
+      rowsB64.push(arr)
+    }
+    const GAP = 2
+    const maxPerRow = 3
+    const IMG_H = 40
+    const firstImgs = rowsB64[0] ? rowsB64[0].filter((b): b is string => !!b) : []
+    const firstImgRows = Math.max(Math.ceil(firstImgs.length / maxPerRow), 1)
+    const firstBlockH = 12 + firstImgRows * (IMG_H + GAP)
+    if (y + 6 + firstBlockH > limit) {
+      doc.addPage()
+      drawSectionContinuationHeader(doc, report, M, CW, PW, DPT_TITLE, false)
+      y = CONTENT_TOP + REPEAT_BLOCK_H
+    }
+    heading('3. SKETCH / PHOTO RECORDS')
+    for (const [i, r] of photoRows.entries()) {
+      const imgs = rowsB64[i].filter((b): b is string => !!b)
+      const infoH = 12
+      const imgRows = Math.max(Math.ceil(imgs.length / maxPerRow), 1)
+      const blockH = infoH + imgRows * (IMG_H + GAP)
+      if (y + blockH > limit) {
+        doc.addPage()
+        drawSectionContinuationHeader(doc, report, M, CW, PW, DPT_TITLE, false)
+        y = CONTENT_TOP + REPEAT_BLOCK_H
+      }
+      if (r.group_name) {
+        doc.setFontSize(7)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(...BLUE)
+        doc.text(r.group_name, M, y + 2, { baseline: 'middle' })
+      }
+      doc.setFontSize(6)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(60, 70, 90)
+      const info = [
+        `Valve Tag ID: ${sv(r.tag_id)}    Valve Size / Class: ${sv(r.size_class)}`,
+        `Inspection Method: ${sv(r.method)}    Inspection Area: ${sv(r.area)}    Inspection Stage: ${sv(r.stage)}`,
+        `Photo Records: ${sv(r.records)}`,
+      ]
+      info.forEach((line, li) => doc.text(line, M, y + 4.5 + li * 3, { baseline: 'middle' }))
+      y += infoH
+      const colW = CW / maxPerRow
+      imgs.forEach((b64, j) => {
+        const ci = j % maxPerRow
+        const ri = Math.floor(j / maxPerRow)
+        const maxW = colW - GAP
+        const px = M + ci * colW
+        const py = y + ri * (IMG_H + GAP)
+        doc.setDrawColor(...GRID)
+        doc.setLineWidth(0.2)
+        doc.rect(px, py, maxW, IMG_H, 'S')
+        try { doc.addImage(b64, 'JPEG', px, py, maxW, IMG_H) } catch { /* skip */ }
+      })
+      y += imgRows * (IMG_H + GAP) + 3
+    }
+  }
+
+  return y
+}
+
 export async function exportReportPDF(
   report: ReportData,
   items: ItemData[],
@@ -1608,6 +1780,25 @@ export async function exportReportPDF(
 
     // ========== 6. TORQUE & ANTI-STATIC (placeholder) ==========
 
+    // ========== 6b. LIQUID PENETRANT SECTION ==========
+    if (report.liquid_penetrant) {
+      const lp = report.liquid_penetrant
+      const hasDpt = !!(lp.condition && Object.values(lp.condition).some(Boolean))
+        || (lp.materials?.length ?? 0) > 0 || (lp.results?.length ?? 0) > 0
+        || !!(lp.overall_side_a || lp.overall_side_b || lp.rejected_indications || lp.overall_result)
+        || (lp.photos?.length ?? 0) > 0
+      if (hasDpt) {
+        doc.addPage()
+        drawHeader(doc, DPT_TITLE, PW)
+        const sigFrom = doc.getNumberOfPages()
+        let y = CONTENT_TOP
+        y = drawJobInfo(doc, report, M, CW, y)
+        y = drawConstruction(doc, report, M, CW, y, false)
+        y = await drawLiquidPenetrantSection(doc, report, M, CW, PW, PH, y)
+        stampSectionSignatures(doc, report, M, CW, PH, sigFrom, null, y + 6)
+      }
+    }
+
     // ========== 7. TEST SECTION ==========
     if (valveTest) {
       doc.addPage()
@@ -1666,7 +1857,7 @@ export async function exportReportPDF(
     } else {
     const isDocTab = tab === 'doc_inspection' || tab === 'doc_minor' || tab === 'doc_major'
     const docTabGroup = tab === 'doc_inspection' ? 'inspection' : tab === 'doc_major' ? 'major' : 'minor'
-    drawHeader(doc, tab === 'blasting' ? BLASTING_PAINTING_TITLE : tab === 'test' ? 'TEST REPORT'
+    drawHeader(doc, tab === 'penetrant' ? DPT_TITLE : tab === 'blasting' ? BLASTING_PAINTING_TITLE : tab === 'test' ? 'TEST REPORT'
       : tab === 'doc_inspection' ? DOC_INSPECTION_TITLE
       : tab === 'doc_minor' ? DOC_MINOR_TITLE
       : tab === 'doc_major' ? DOC_MAJOR_TITLE
@@ -1676,7 +1867,7 @@ export async function exportReportPDF(
     let y = CONTENT_TOP
     const sigFrom = doc.getNumberOfPages()
 
-    if (tab === 'packaging' || tab === 'blasting' || isDocTab || tab === 'documentation') {
+    if (tab === 'packaging' || tab === 'blasting' || tab === 'penetrant' || isDocTab || tab === 'documentation') {
       y = drawJobInfo(doc, report, M, CW, y)
       y = drawConstruction(doc, report, M, CW, y, false)
     } else if (tab === 'test') {
@@ -1712,13 +1903,16 @@ export async function exportReportPDF(
     if (tab === 'blasting') {
       y = await drawBlastingPaintingSection(doc, report, M, CW, PW, PH, y)
     }
+    if (tab === 'penetrant') {
+      y = await drawLiquidPenetrantSection(doc, report, M, CW, PW, PH, y)
+    }
     if (tab === 'bom') {
       y = drawBomTable(doc, bomItems, M, CW, y)
     }
 
     // inspection and packaging stamp the strip on every page of the section;
     // the other tabs keep the single strip at the end
-    if (tab === 'packaging' || tab === 'blasting' || isDocTab || tab === 'documentation') stampSectionSignatures(doc, report, M, CW, PH, sigFrom, null, y + 6)
+    if (tab === 'packaging' || tab === 'blasting' || tab === 'penetrant' || isDocTab || tab === 'documentation') stampSectionSignatures(doc, report, M, CW, PH, sigFrom, null, y + 6)
     else if (tab !== 'inspection') drawSignature(doc, report, M, CW, y, PW, PH)
     drawFooter(doc, report, tab.charAt(0).toUpperCase() + tab.slice(1), PW, PH)
     }

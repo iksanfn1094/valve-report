@@ -42,6 +42,27 @@ type Report = {
   packaging: Packaging | null
   packaging_photos: string | null
   blasting_painting: BlastingPainting | null
+  liquid_penetrant: LiquidPenetrant | null
+}
+
+type DptCondition = {
+  joint: string; base_metal: string; base_metal_spec: string
+  weld_gaw: boolean; weld_smaw: boolean; weld_casting: boolean; weld_other: boolean; weld_other_text: string
+  scope_weld: boolean; scope_repair: boolean; scope_base: boolean
+  dwell_time: string; technique: string; spec: string
+}
+type DptMaterialRow = { id: string; material: string; product: string; batch_no: string }
+type DptResultRow = { id: string; part: string; material: string; accepted: boolean; rejected: boolean; discontinuity: string; remark: string }
+type DptPhotoRow = { id: string; group_name: string; tag_id: string; size_class: string; method: string; area: string; stage: string; records: string; photos: string[] }
+type LiquidPenetrant = {
+  condition: DptCondition
+  materials: DptMaterialRow[]
+  results: DptResultRow[]
+  overall_side_a: string
+  overall_side_b: string
+  rejected_indications: string
+  overall_result: string
+  photos: DptPhotoRow[]
 }
 
 type BlastingSurface = {
@@ -547,6 +568,74 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     alert('Blasting & Painting tersimpan!')
   }
 
+  const defaultLiquidPenetrant = (): LiquidPenetrant => ({
+    condition: {
+      joint: '', base_metal: '', base_metal_spec: '',
+      weld_gaw: false, weld_smaw: false, weld_casting: false, weld_other: false, weld_other_text: '',
+      scope_weld: false, scope_repair: false, scope_base: false,
+      dwell_time: '', technique: '', spec: '',
+    },
+    materials: [
+      { id: crypto.randomUUID(), material: '', product: '', batch_no: '' },
+    ],
+    results: [
+      { id: crypto.randomUUID(), part: '', material: '', accepted: false, rejected: false, discontinuity: '', remark: '' },
+    ],
+    overall_side_a: '', overall_side_b: '', rejected_indications: '', overall_result: '',
+    photos: [],
+  })
+  const [dpt, setDpt] = useState<LiquidPenetrant>(() => defaultLiquidPenetrant())
+  const [savingDpt, setSavingDpt] = useState(false)
+
+  function updateDpt(fn: (p: LiquidPenetrant) => LiquidPenetrant) { setDpt(prev => fn(prev)) }
+  function dptAddMaterial() {
+    updateDpt(p => ({ ...p, materials: [...p.materials, { id: crypto.randomUUID(), material: '', product: '', batch_no: '' }] }))
+  }
+  function dptRemoveMaterial(i: number) {
+    updateDpt(p => ({ ...p, materials: p.materials.filter((_, x) => x !== i) }))
+  }
+  function dptUpdateMaterial(i: number, field: keyof DptMaterialRow, value: string) {
+    updateDpt(p => { const arr = [...p.materials]; arr[i] = { ...arr[i], [field]: value }; return { ...p, materials: arr } })
+  }
+  function dptAddResult() {
+    updateDpt(p => ({ ...p, results: [...p.results, { id: crypto.randomUUID(), part: '', material: '', accepted: false, rejected: false, discontinuity: '', remark: '' }] }))
+  }
+  function dptRemoveResult(i: number) {
+    updateDpt(p => ({ ...p, results: p.results.filter((_, x) => x !== i) }))
+  }
+  function dptUpdateResult(i: number, field: keyof DptResultRow, value: string | boolean) {
+    updateDpt(p => { const arr = [...p.results]; arr[i] = { ...arr[i], [field]: value }; return { ...p, results: arr } })
+  }
+  function dptAddPhotoGroup() {
+    updateDpt(p => ({ ...p, photos: [...p.photos, { id: crypto.randomUUID(), group_name: '', tag_id: '', size_class: '', method: '', area: '', stage: '', records: '', photos: [] }] }))
+  }
+  function dptRemovePhotoGroup(i: number) {
+    updateDpt(p => ({ ...p, photos: p.photos.filter((_, x) => x !== i) }))
+  }
+  function dptUpdatePhotoGroup(i: number, field: keyof DptPhotoRow, value: string) {
+    updateDpt(p => { const arr = [...p.photos]; arr[i] = { ...arr[i], [field]: value }; return { ...p, photos: arr } })
+  }
+  function dptRemovePhotoImg(i: number, j: number) {
+    updateDpt(p => { const arr = [...p.photos]; arr[i] = { ...arr[i], photos: arr[i].photos.filter((_, x) => x !== j) }; return { ...p, photos: arr } })
+  }
+  async function dptUploadPhoto(file: File, i: number) {
+    const path = `dpt-photos/${id}/${Date.now()}-${file.name}`
+    const { error } = await supabase.storage.from('report-photos').upload(path, file)
+    if (error) return alert('Upload gagal: ' + error.message)
+    const { data } = supabase.storage.from('report-photos').getPublicUrl(path)
+    updateDpt(p => { const arr = [...p.photos]; arr[i] = { ...arr[i], photos: [...arr[i].photos, data.publicUrl] }; return { ...p, photos: arr } })
+  }
+  async function saveDpt() {
+    if (!id) return
+    setSavingDpt(true)
+    const payload = { liquid_penetrant: dpt }
+    const { error } = await supabase.from('report_inspection').update(payload as unknown as Record<string, unknown>).eq('id', id)
+    setSavingDpt(false)
+    if (error) return alert('Error: ' + error.message)
+    setReport(prev => prev ? { ...prev, ...payload } : prev)
+    alert('Dye Penetrant tersimpan!')
+  }
+
   function getTestRows(): string[] {
     try { return JSON.parse(valveTest.test_rows) } catch { return [] }
   }
@@ -720,6 +809,20 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
         const pk = reportRes.data.packaging as unknown as Packaging | null
         if (pk) {
           setPackaging({ qty: pk.qty ?? '', weight: pk.weight ?? '' })
+        }
+        const dptData = reportRes.data.liquid_penetrant as unknown as LiquidPenetrant | null
+        if (dptData) {
+          const def = defaultLiquidPenetrant()
+          setDpt({
+            condition: { ...def.condition, ...(dptData.condition ?? {}) },
+            materials: (dptData.materials ?? []).map((r) => ({ ...r })),
+            results: (dptData.results ?? []).map((r) => ({ ...r })),
+            overall_side_a: dptData.overall_side_a ?? '',
+            overall_side_b: dptData.overall_side_b ?? '',
+            rejected_indications: dptData.rejected_indications ?? '',
+            overall_result: dptData.overall_result ?? '',
+            photos: (dptData.photos ?? []).map((r) => ({ ...r, photos: r.photos ?? [] })),
+          })
         }
         const bp = reportRes.data.blasting_painting as unknown as BlastingPainting | null
         if (bp) {
@@ -2514,8 +2617,211 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       </div>
       )}
 
+      {/* Liquid Penetrant (Dye Penetrant Test) Tab */}
+      {activeTab === 'penetrant' && (
+      <div className="bg-white rounded-lg shadow border p-4 space-y-6">
+        <h3 className="text-lg font-bold text-gray-800">DYE PENETRANT TEST (DPT) REPORT</h3>
+
+        {/* 1. CONDITION */}
+        <div>
+          <h4 className="text-sm font-bold text-gray-700 mb-2">1. CONDITION</h4>
+          <h5 className="text-xs font-semibold text-gray-500 mb-1">DYE PENETRANT TEST (DPT) DATA</h5>
+          <div className="overflow-x-auto mb-3">
+            <table className="w-full text-sm border-collapse">
+              <tbody>
+                {([
+                  ['Type of Joint', 'joint'],
+                  ['Base Metal', 'base_metal'],
+                  ['Base Metal Specification', 'base_metal_spec'],
+                ] as [string, keyof DptCondition][]).map(([label, field]) => (
+                  <tr key={field}>
+                    <td className="border px-2 py-1 bg-gray-50 text-xs font-medium w-1/2">{label}</td>
+                    <td className="border px-1 py-1">
+                      <input className="w-full border-0 bg-transparent text-sm focus:outline-none" value={dpt.condition[field] as string} onChange={(e) => updateDpt(p => ({ ...p, condition: { ...p.condition, [field]: e.target.value } }))} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+            <div className="border rounded p-2">
+              <p className="text-xs font-semibold text-gray-600 mb-1">Welding Process</p>
+              <div className="space-y-1 text-xs">
+                <label className="flex items-center gap-2"><input type="checkbox" checked={dpt.condition.weld_gaw} onChange={e => updateDpt(p => ({ ...p, condition: { ...p.condition, weld_gaw: e.target.checked } }))} /> GTAW</label>
+                <label className="flex items-center gap-2"><input type="checkbox" checked={dpt.condition.weld_smaw} onChange={e => updateDpt(p => ({ ...p, condition: { ...p.condition, weld_smaw: e.target.checked } }))} /> SMAW</label>
+                <label className="flex items-center gap-2"><input type="checkbox" checked={dpt.condition.weld_casting} onChange={e => updateDpt(p => ({ ...p, condition: { ...p.condition, weld_casting: e.target.checked } }))} /> Other &ndash; Casting</label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={dpt.condition.weld_other} onChange={e => updateDpt(p => ({ ...p, condition: { ...p.condition, weld_other: e.target.checked } }))} /> Other
+                  <input className="border-0 border-b bg-transparent text-xs focus:outline-none flex-1" value={dpt.condition.weld_other_text} onChange={e => updateDpt(p => ({ ...p, condition: { ...p.condition, weld_other_text: e.target.value } }))} />
+                </label>
+              </div>
+            </div>
+            <div className="border rounded p-2">
+              <p className="text-xs font-semibold text-gray-600 mb-1">Scope of Examination</p>
+              <div className="space-y-1 text-xs">
+                <label className="flex items-center gap-2"><input type="checkbox" checked={dpt.condition.scope_weld} onChange={e => updateDpt(p => ({ ...p, condition: { ...p.condition, scope_weld: e.target.checked } }))} /> Weld Part</label>
+                <label className="flex items-center gap-2"><input type="checkbox" checked={dpt.condition.scope_repair} onChange={e => updateDpt(p => ({ ...p, condition: { ...p.condition, scope_repair: e.target.checked } }))} /> Repair Weld</label>
+                <label className="flex items-center gap-2"><input type="checkbox" checked={dpt.condition.scope_base} onChange={e => updateDpt(p => ({ ...p, condition: { ...p.condition, scope_base: e.target.checked } }))} /> Base Metal</label>
+              </div>
+            </div>
+          </div>
+
+          <h5 className="text-xs font-semibold text-gray-500 mb-1">Penetrant Testing Materials</h5>
+          <div className="overflow-x-auto mb-2">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-blue-900 text-white">
+                  <th className="border px-1 py-2 text-left">Material</th>
+                  <th className="border px-1 py-2 text-left">Product</th>
+                  <th className="border px-1 py-2 text-left">Batch No.</th>
+                  <th className="border px-1 py-2 w-8"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {dpt.materials.map((row, i) => (
+                  <tr key={row.id} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
+                    {(['material', 'product', 'batch_no'] as const).map((f) => (
+                      <td key={f} className="border px-1 py-1">
+                        <input className="w-full border-0 bg-transparent text-xs focus:outline-none" value={row[f]} onChange={(e) => dptUpdateMaterial(i, f, e.target.value)} />
+                      </td>
+                    ))}
+                    <td className="border px-1 py-1 text-center"><button onClick={() => dptRemoveMaterial(i)} className="text-red-400 hover:text-red-600 text-sm font-bold">&#10005;</button></td>
+                  </tr>
+                ))}
+                {dpt.materials.length === 0 && (<tr><td colSpan={4} className="border px-2 py-4 text-center text-gray-400">Belum ada data.</td></tr>)}
+              </tbody>
+            </table>
+          </div>
+          <button onClick={dptAddMaterial} className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-300 transition font-medium">+ Tambah Material</button>
+
+          <h5 className="text-xs font-semibold text-gray-500 mt-4 mb-1">Testing Parameters</h5>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <tbody>
+                {([
+                  ['Dwell Time', 'dwell_time'],
+                  ['Technique', 'technique'],
+                  ['Specification / Code Limitation', 'spec'],
+                ] as [string, keyof DptCondition][]).map(([label, field]) => (
+                  <tr key={field}>
+                    <td className="border px-2 py-1 bg-gray-50 text-xs font-medium w-1/2">{label}</td>
+                    <td className="border px-1 py-1">
+                      <input className="w-full border-0 bg-transparent text-sm focus:outline-none" value={dpt.condition[field] as string} onChange={(e) => updateDpt(p => ({ ...p, condition: { ...p.condition, [field]: e.target.value } }))} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* 2. RESULT / JUDGEMENT */}
+        <div>
+          <h4 className="text-sm font-bold text-gray-700 mb-2">2. RESULT / JUDGEMENT</h4>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-blue-900 text-white">
+                  {['Part / Welding / Weld Overlay Identification', 'Material', 'Accepted', 'Rejected', 'Type of Discontinuity', 'Remark', ''].map((h, i) => (
+                    <th key={i} className="border px-1 py-2 text-center">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {dpt.results.map((row, i) => (
+                  <tr key={row.id} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
+                    <td className="border px-1 py-1"><input className="w-full border-0 bg-transparent text-xs focus:outline-none" value={row.part} onChange={(e) => dptUpdateResult(i, 'part', e.target.value)} /></td>
+                    <td className="border px-1 py-1"><input className="w-full border-0 bg-transparent text-xs text-center focus:outline-none" value={row.material} onChange={(e) => dptUpdateResult(i, 'material', e.target.value)} /></td>
+                    <td className="border px-1 py-1 text-center"><input type="checkbox" checked={row.accepted} onChange={(e) => { dptUpdateResult(i, 'accepted', e.target.checked); if (e.target.checked) dptUpdateResult(i, 'rejected', false) }} /></td>
+                    <td className="border px-1 py-1 text-center"><input type="checkbox" checked={row.rejected} onChange={(e) => { dptUpdateResult(i, 'rejected', e.target.checked); if (e.target.checked) dptUpdateResult(i, 'accepted', false) }} /></td>
+                    <td className="border px-1 py-1"><input className="w-full border-0 bg-transparent text-xs text-center focus:outline-none" value={row.discontinuity} onChange={(e) => dptUpdateResult(i, 'discontinuity', e.target.value)} /></td>
+                    <td className="border px-1 py-1"><input className="w-full border-0 bg-transparent text-xs text-center focus:outline-none" value={row.remark} onChange={(e) => dptUpdateResult(i, 'remark', e.target.value)} /></td>
+                    <td className="border px-1 py-1 text-center"><button onClick={() => dptRemoveResult(i)} className="text-red-400 hover:text-red-600 text-sm font-bold">&#10005;</button></td>
+                  </tr>
+                ))}
+                {dpt.results.length === 0 && (<tr><td colSpan={7} className="border px-2 py-4 text-center text-gray-400">Belum ada data.</td></tr>)}
+              </tbody>
+            </table>
+          </div>
+          <button onClick={dptAddResult} className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-300 transition font-medium mt-2">+ Tambah Baris</button>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
+            <label className="text-xs">
+              <span className="block text-gray-500 mb-0.5">Overall Inspection Result &ndash; Side A</span>
+              <input className="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500" value={dpt.overall_side_a} onChange={(e) => updateDpt(p => ({ ...p, overall_side_a: e.target.value }))} />
+            </label>
+            <label className="text-xs">
+              <span className="block text-gray-500 mb-0.5">Overall Inspection Result &ndash; Side B</span>
+              <input className="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500" value={dpt.overall_side_b} onChange={(e) => updateDpt(p => ({ ...p, overall_side_b: e.target.value }))} />
+            </label>
+            <label className="text-xs">
+              <span className="block text-gray-500 mb-0.5">Rejected Indications</span>
+              <input className="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500" value={dpt.rejected_indications} onChange={(e) => updateDpt(p => ({ ...p, rejected_indications: e.target.value }))} />
+            </label>
+            <label className="text-xs">
+              <span className="block text-gray-500 mb-0.5">Overall Result</span>
+              <input className="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500" value={dpt.overall_result} onChange={(e) => updateDpt(p => ({ ...p, overall_result: e.target.value }))} />
+            </label>
+          </div>
+        </div>
+
+        {/* 3. SKETCH / PHOTO RECORDS */}
+        <div>
+          <h4 className="text-sm font-bold text-gray-700 mb-2">3. SKETCH / PHOTO RECORDS</h4>
+          <div className="space-y-4">
+            {dpt.photos.map((row, i) => (
+              <div key={row.id} className="border rounded-lg p-3 bg-gray-50">
+                <input className="w-full border-0 border-b bg-transparent text-sm font-medium mb-2 focus:outline-none focus:border-blue-500" placeholder="Nama Grup Foto" value={row.group_name} onChange={(e) => dptUpdatePhotoGroup(i, 'group_name', e.target.value)} />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+                  {([
+                    ['Valve Tag ID', 'tag_id'],
+                    ['Valve Size / Class', 'size_class'],
+                    ['Inspection Method', 'method'],
+                    ['Inspection Area', 'area'],
+                    ['Inspection Stage', 'stage'],
+                  ] as [string, keyof DptPhotoRow][]).map(([label, field]) => (
+                    <label key={field} className="text-xs">
+                      <span className="block text-gray-500 mb-0.5">{label}</span>
+                      <input className="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500" value={row[field] as string} onChange={(e) => dptUpdatePhotoGroup(i, field, e.target.value)} />
+                    </label>
+                  ))}
+                </div>
+                <label className="text-xs block mb-2">
+                  <span className="block text-gray-500 mb-0.5">Photo Records</span>
+                  <input className="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500" value={row.records} onChange={(e) => dptUpdatePhotoGroup(i, 'records', e.target.value)} />
+                </label>
+                <div className="flex flex-wrap items-center gap-2">
+                  {row.photos.map((url, j) => (
+                    <div key={j} className="relative">
+                      <img src={url} alt="" className="h-20 object-contain rounded border bg-white cursor-pointer" onClick={() => setPreviewPhoto(url)} />
+                      <button onClick={() => dptRemovePhotoImg(i, j)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-[9px] flex items-center justify-center leading-none">&#10005;</button>
+                    </div>
+                  ))}
+                  <label className="text-blue-600 hover:text-blue-800 cursor-pointer text-xs border border-dashed border-blue-300 rounded px-3 py-2">
+                    + Photo
+                    <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) dptUploadPhoto(f, i) }} />
+                  </label>
+                </div>
+                <button onClick={() => dptRemovePhotoGroup(i)} className="text-red-400 hover:text-red-600 text-xs font-bold mt-2">Hapus Grup</button>
+              </div>
+            ))}
+            {dpt.photos.length === 0 && (<p className="text-xs text-gray-400">Belum ada foto.</p>)}
+          </div>
+          <button onClick={dptAddPhotoGroup} className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-300 transition font-medium mt-2">+ Tambah Grup Foto</button>
+        </div>
+
+        <div className="flex gap-2">
+          <button onClick={saveDpt} disabled={savingDpt} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition font-medium disabled:opacity-50">
+            {savingDpt ? 'Menyimpan...' : 'Simpan'}
+          </button>
+        </div>
+      </div>
+      )}
+
       {/* Placeholder for other tabs */}
-      {!['inspection', 'doc_inspection', 'doc_minor', 'doc_major', 'resume', 'test', 'blasting', 'packaging'].includes(activeTab) && (
+      {!['inspection', 'doc_inspection', 'doc_minor', 'doc_major', 'resume', 'test', 'blasting', 'packaging', 'penetrant'].includes(activeTab) && (
         <div className="bg-white rounded-lg shadow border p-8 text-center">
           <p className="text-gray-400 text-sm">This feature will be available soon.</p>
         </div>
