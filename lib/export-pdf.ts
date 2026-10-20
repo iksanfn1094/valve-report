@@ -1489,6 +1489,18 @@ async function drawBlastingPaintingSection(doc: jsPDF, report: ReportData, M: nu
       rowsB64.push(arr)
     }
 
+    // the heading must travel with the first photo block instead of being left
+    // stranded at the bottom of a page, so reserve room for it before drawing
+    const FIRST_GAP = 2
+    const FIRST_IMG_H = 40
+    const firstImgs = rowsB64[0] ? rowsB64[0].filter((b): b is string => !!b) : []
+    const firstImgRows = Math.max(Math.ceil(firstImgs.length / 3), 1)
+    const firstBlockH = firstImgRows * (FIRST_IMG_H + FIRST_GAP)
+    if (y + 6 + firstBlockH > limit) {
+      doc.addPage()
+      drawSectionContinuationHeader(doc, report, M, CW, PW, BLASTING_PAINTING_TITLE, false)
+      y = CONTENT_TOP + REPEAT_BLOCK_H
+    }
     heading('5. DFT MEASUREMENT PHOTO RECORDS')
     for (const [i] of rowsB64.entries()) {
       const imgs = rowsB64[i].filter((b): b is string => !!b)
