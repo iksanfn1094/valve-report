@@ -1821,13 +1821,41 @@ async function drawTorqueSection(doc: jsPDF, report: ReportData, M: number, CW: 
 
   // 1. TORQUE TEST STANDARD
   heading('1. TORQUE TEST STANDARD')
-  const tick = (b?: boolean) => (b ? '\u2713' : '-')
-  const stdRows: string[][] = []
-  stdRows.push(['API 6D SPECS', tick(std.api6d)])
-  stdRows.push(['API 598', tick(std.api598)])
-  stdRows.push(['SOP NO.', sv(std.sop_no)])
-  stdRows.push(['OTHERS', sv(std.others)])
-  table(['', ''], stdRows)
+  {
+    const rowH = 5
+    if (y + rowH > limit) { doc.addPage(); drawSectionContinuationHeader(doc, report, M, CW, PW, TORQUE_TITLE, false); y = CONTENT_TOP + REPEAT_BLOCK_H }
+    const drawCheck = (x: number, label: string, checked?: boolean) => {
+      doc.setFontSize(7)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(30, 40, 60)
+      doc.text(label, x, y + rowH * 0.5, { baseline: 'middle' })
+      const bw = doc.getTextWidth(label) + 2
+      const s = 2.3
+      const bx = x + bw
+      const by = y + rowH * 0.5 - s / 2
+      doc.setDrawColor(60, 70, 90)
+      doc.setLineWidth(0.2)
+      doc.rect(bx, by, s, s, 'S')
+      if (checked) {
+        doc.setDrawColor(...BLUE)
+        doc.setLineWidth(0.4)
+        doc.line(bx + 0.4, by + s / 2, bx + s * 0.42, by + s - 0.4)
+        doc.line(bx + s * 0.42, by + s - 0.4, bx + s - 0.3, by + 0.5)
+      }
+      return bx + s + 6
+    }
+    let x = M + 0.5
+    x = drawCheck(x, 'API 6D SPECS', std.api6d)
+    x = drawCheck(x, 'API 598', std.api598)
+    doc.setFontSize(7)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(30, 40, 60)
+    const sopLabel = `SOP NO. : ${sv(std.sop_no)}`
+    doc.text(sopLabel, x, y + rowH * 0.5, { baseline: 'middle' })
+    x += doc.getTextWidth(sopLabel) + 8
+    doc.text(`OTHERS : ${sv(std.others)}`, x, y + rowH * 0.5, { baseline: 'middle' })
+    y += rowH + 3
+  }
 
   // 2. ACCEPTANCE CRITERIA AND TORQUE TEST REPORT
   heading('2. ACCEPTANCE CRITERIA AND TORQUE TEST REPORT')
