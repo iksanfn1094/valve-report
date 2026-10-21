@@ -1800,12 +1800,14 @@ async function drawTorqueSection(doc: jsPDF, report: ReportData, M: number, CW: 
     doc.text(txt, M, y)
     y += 3
   }
-  const table = (head: string[], body: string[][]) => {
+  type HeadCell = string | { content: string; colSpan?: number; rowSpan?: number }
+  const table = (head: HeadCell[] | HeadCell[][], body: string[][]) => {
     const tableStartPage = doc.getNumberOfPages()
+    const headRows = Array.isArray(head[0]) ? (head as HeadCell[][]) : [head as HeadCell[]]
     autoTable(doc, {
       startY: y,
       margin: { left: M, right: M, top: CONTENT_TOP + REPEAT_BLOCK_H, bottom: M + SIG_BOX_H },
-      head: [head],
+      head: headRows as never,
       body,
       willDrawPage: (data) => {
         if (data.pageNumber <= tableStartPage) return
@@ -1873,7 +1875,16 @@ async function drawTorqueSection(doc: jsPDF, report: ReportData, M: number, CW: 
   heading('4. ANTI-STATIC TEST RESULTS')
   if (anti.length) {
     table(
-      ['Description Test', 'DC Power Source - Acceptance Criteria', 'DC Power Source - Actual', 'DC Result', 'Resistance - Acceptance Criteria', 'Resistance - Actual', 'Resistance Result', 'Measurement Equipment', 'Remark'],
+      [
+        [
+          { content: 'Description Test', rowSpan: 2 },
+          { content: 'DC Power Source', colSpan: 3 },
+          { content: 'Resistance', colSpan: 3 },
+          { content: 'Measurement Equipment', rowSpan: 2 },
+          { content: 'Remark', rowSpan: 2 },
+        ],
+        ['Acceptance Criteria', 'Actual', 'Result', 'Acceptance Criteria', 'Actual', 'Result'],
+      ],
       anti.map((r) => [sv(r.description), sv(r.dc_criteria), sv(r.dc_actual), sv(r.dc_result), sv(r.res_criteria), sv(r.res_actual), sv(r.res_result), sv(r.equipment), sv(r.remark)]),
     )
   }
