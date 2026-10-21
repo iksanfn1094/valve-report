@@ -223,6 +223,13 @@ type ValveTest = {
   seat_leak_finish_test: string
   seat_leak_result: string
   seat_leak_remark: string
+  seat_leak_bb_pressure_psi: string
+  seat_leak_bb_duration_min: string
+  seat_leak_bb_acceptance: string
+  seat_leak_bb_start_test: string
+  seat_leak_bb_finish_test: string
+  seat_leak_bb_result: string
+  seat_leak_bb_remark: string
   dpe_seat_pressure_psi: string
   dpe_seat_duration_min: string
   dpe_seat_acceptance: string
@@ -369,6 +376,7 @@ const TEST_OPTIONS = [
   { key: 'lp_seat', label: 'LOW PRESSURE SEAT TEST', criteria: 'NO VISIBLE LEAKAGE & PRESSURE DROP' },
   { key: 'seat', label: 'LOW-PRESSURE SEAT LEAK TEST', criteria: '' },
   { key: 'seat_leak', label: 'SEAT LEAK TEST', criteria: '' },
+  { key: 'seat_leak_bb', label: 'SEAT LEAK TEST (BB/MENIT)', criteria: '' },
   { key: 'spe_seat', label: 'SPE SEAT TEST', criteria: '' },
 ]
 
@@ -429,6 +437,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
     lp_closure_b_pressure_psi: '', lp_closure_b_duration_min: '', lp_closure_b_acceptance: '', lp_closure_b_start_test: '', lp_closure_b_finish_test: '', lp_closure_b_result: '', lp_closure_b_remark: '',
     lp_seat_pressure_psi: '', lp_seat_duration_min: '', lp_seat_acceptance: '', lp_seat_start_test: '', lp_seat_finish_test: '', lp_seat_result: '', lp_seat_remark: '',
     seat_leak_pressure_psi: '', seat_leak_duration_min: '', seat_leak_acceptance: '', seat_leak_start_test: '', seat_leak_finish_test: '', seat_leak_result: '', seat_leak_remark: '',
+    seat_leak_bb_pressure_psi: '', seat_leak_bb_duration_min: '', seat_leak_bb_acceptance: 'ALLOWABLE LEAK 0.000 BB/Menit', seat_leak_bb_start_test: '', seat_leak_bb_finish_test: '', seat_leak_bb_result: '', seat_leak_bb_remark: '',
     dpe_seat_pressure_psi: '', dpe_seat_duration_min: '', dpe_seat_acceptance: '', dpe_seat_start_test: '', dpe_seat_finish_test: '', dpe_seat_result: '', dpe_seat_remark: '',
     spe_seat_pressure_psi: '', spe_seat_duration_min: '', spe_seat_acceptance: '', spe_seat_start_test: '', spe_seat_finish_test: '', spe_seat_result: '', spe_seat_remark: '',
     hp_closure_pressure_psi: '', hp_closure_duration_min: '', hp_closure_acceptance: '', hp_closure_start_test: '', hp_closure_finish_test: '', hp_closure_result: '', hp_closure_remark: '',
@@ -740,6 +749,9 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       if ((key === 'shell_test_i' || key === 'shell_test_ii') && !prev[`${key}_remark`]) {
         patch[`${key}_remark`] = 'NO VISIBLE LEAKAGE'
       }
+      if (key === 'seat_leak_bb' && !prev[`${key}_acceptance`]) {
+        patch[`${key}_acceptance`] = 'ALLOWABLE LEAK 0.000 BB/Menit'
+      }
       return { ...prev, ...patch }
     })
   }
@@ -953,6 +965,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           lp_closure_b_pressure_psi: t.lp_closure_b_pressure_psi?.toString() ?? '', lp_closure_b_duration_min: t.lp_closure_b_duration_min?.toString() ?? '', lp_closure_b_acceptance: t.lp_closure_b_acceptance ?? '', lp_closure_b_start_test: t.lp_closure_b_start_test ?? '', lp_closure_b_finish_test: t.lp_closure_b_finish_test ?? '', lp_closure_b_result: t.lp_closure_b_result ?? '', lp_closure_b_remark: t.lp_closure_b_remark ?? '',
           lp_seat_pressure_psi: t.lp_seat_pressure_psi?.toString() ?? '', lp_seat_duration_min: t.lp_seat_duration_min?.toString() ?? '', lp_seat_acceptance: t.lp_seat_acceptance ?? '', lp_seat_start_test: t.lp_seat_start_test ?? '', lp_seat_finish_test: t.lp_seat_finish_test ?? '', lp_seat_result: t.lp_seat_result ?? '', lp_seat_remark: t.lp_seat_remark ?? '',
           seat_leak_pressure_psi: t.seat_leak_pressure_psi?.toString() ?? '', seat_leak_duration_min: t.seat_leak_duration_min?.toString() ?? '', seat_leak_acceptance: t.seat_leak_acceptance ?? '', seat_leak_start_test: t.seat_leak_start_test ?? '', seat_leak_finish_test: t.seat_leak_finish_test ?? '', seat_leak_result: t.seat_leak_result ?? '', seat_leak_remark: t.seat_leak_remark ?? '',
+          seat_leak_bb_pressure_psi: t.seat_leak_bb_pressure_psi?.toString() ?? '', seat_leak_bb_duration_min: t.seat_leak_bb_duration_min?.toString() ?? '', seat_leak_bb_acceptance: t.seat_leak_bb_acceptance ?? 'ALLOWABLE LEAK 0.000 BB/Menit', seat_leak_bb_start_test: t.seat_leak_bb_start_test ?? '', seat_leak_bb_finish_test: t.seat_leak_bb_finish_test ?? '', seat_leak_bb_result: t.seat_leak_bb_result ?? '', seat_leak_bb_remark: t.seat_leak_bb_remark ?? '',
           dpe_seat_pressure_psi: t.dpe_seat_pressure_psi?.toString() ?? '', dpe_seat_duration_min: t.dpe_seat_duration_min?.toString() ?? '', dpe_seat_acceptance: t.dpe_seat_acceptance ?? '', dpe_seat_start_test: t.dpe_seat_start_test ?? '', dpe_seat_finish_test: t.dpe_seat_finish_test ?? '', dpe_seat_result: t.dpe_seat_result ?? '', dpe_seat_remark: t.dpe_seat_remark ?? '',
           spe_seat_pressure_psi: t.spe_seat_pressure_psi?.toString() ?? '', spe_seat_duration_min: t.spe_seat_duration_min?.toString() ?? '', spe_seat_acceptance: t.spe_seat_acceptance ?? '', spe_seat_start_test: t.spe_seat_start_test ?? '', spe_seat_finish_test: t.spe_seat_finish_test ?? '', spe_seat_result: t.spe_seat_result ?? '', spe_seat_remark: t.spe_seat_remark ?? '',
           hp_closure_pressure_psi: t.hp_closure_pressure_psi?.toString() ?? '', hp_closure_duration_min: t.hp_closure_duration_min?.toString() ?? '', hp_closure_acceptance: t.hp_closure_acceptance ?? '', hp_closure_start_test: t.hp_closure_start_test ?? '', hp_closure_finish_test: t.hp_closure_finish_test ?? '', hp_closure_result: t.hp_closure_result ?? '', hp_closure_remark: t.hp_closure_remark ?? '',
@@ -1357,6 +1370,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       lp_closure_b_pressure_psi: toNum(valveTest.lp_closure_b_pressure_psi), lp_closure_b_duration_min: toNum(valveTest.lp_closure_b_duration_min), lp_closure_b_acceptance: valveTest.lp_closure_b_acceptance, lp_closure_b_start_test: valveTest.lp_closure_b_start_test, lp_closure_b_finish_test: valveTest.lp_closure_b_finish_test, lp_closure_b_result: valveTest.lp_closure_b_result, lp_closure_b_remark: valveTest.lp_closure_b_remark,
       lp_seat_pressure_psi: toNum(valveTest.lp_seat_pressure_psi), lp_seat_duration_min: toNum(valveTest.lp_seat_duration_min), lp_seat_acceptance: valveTest.lp_seat_acceptance, lp_seat_start_test: valveTest.lp_seat_start_test, lp_seat_finish_test: valveTest.lp_seat_finish_test, lp_seat_result: valveTest.lp_seat_result, lp_seat_remark: valveTest.lp_seat_remark,
       seat_leak_pressure_psi: toNum(valveTest.seat_leak_pressure_psi), seat_leak_duration_min: toNum(valveTest.seat_leak_duration_min), seat_leak_acceptance: valveTest.seat_leak_acceptance, seat_leak_start_test: valveTest.seat_leak_start_test, seat_leak_finish_test: valveTest.seat_leak_finish_test, seat_leak_result: valveTest.seat_leak_result, seat_leak_remark: valveTest.seat_leak_remark,
+      seat_leak_bb_pressure_psi: toNum(valveTest.seat_leak_bb_pressure_psi), seat_leak_bb_duration_min: toNum(valveTest.seat_leak_bb_duration_min), seat_leak_bb_acceptance: valveTest.seat_leak_bb_acceptance, seat_leak_bb_start_test: valveTest.seat_leak_bb_start_test, seat_leak_bb_finish_test: valveTest.seat_leak_bb_finish_test, seat_leak_bb_result: valveTest.seat_leak_bb_result, seat_leak_bb_remark: valveTest.seat_leak_bb_remark,
       dpe_seat_pressure_psi: toNum(valveTest.dpe_seat_pressure_psi), dpe_seat_duration_min: toNum(valveTest.dpe_seat_duration_min), dpe_seat_acceptance: valveTest.dpe_seat_acceptance, dpe_seat_start_test: valveTest.dpe_seat_start_test, dpe_seat_finish_test: valveTest.dpe_seat_finish_test, dpe_seat_result: valveTest.dpe_seat_result, dpe_seat_remark: valveTest.dpe_seat_remark,
       spe_seat_pressure_psi: toNum(valveTest.spe_seat_pressure_psi), spe_seat_duration_min: toNum(valveTest.spe_seat_duration_min), spe_seat_acceptance: valveTest.spe_seat_acceptance, spe_seat_start_test: valveTest.spe_seat_start_test, spe_seat_finish_test: valveTest.spe_seat_finish_test, spe_seat_result: valveTest.spe_seat_result, spe_seat_remark: valveTest.spe_seat_remark,
       hp_closure_pressure_psi: toNum(valveTest.hp_closure_pressure_psi), hp_closure_duration_min: toNum(valveTest.hp_closure_duration_min), hp_closure_acceptance: valveTest.hp_closure_acceptance, hp_closure_start_test: valveTest.hp_closure_start_test, hp_closure_finish_test: valveTest.hp_closure_finish_test, hp_closure_result: valveTest.hp_closure_result, hp_closure_remark: valveTest.hp_closure_remark,
@@ -2273,7 +2287,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
                     </td>
                     <td className="border px-1 py-1"><input type="number" value={(valveTest as any)[`${key}_pressure_psi`] ?? ''} onChange={e => updateTestField(`${key}_pressure_psi` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" placeholder="Psi" disabled={!key} /></td>
                     <td className="border px-1 py-1"><input type="number" value={(valveTest as any)[`${key}_duration_min`] ?? ''} onChange={e => updateTestField(`${key}_duration_min` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" placeholder="min" disabled={!key} /></td>
-                    <td className="border px-2 py-1 text-center text-gray-600 text-xs">{key === 'dpe_seat' || key === 'spe_seat' ? <input type="text" value={(valveTest as any)[`${key}_acceptance`] ?? ''} onChange={e => updateTestField(`${key}_acceptance` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" disabled={!key} /> : criteria}</td>
+                    <td className="border px-2 py-1 text-center text-gray-600 text-xs">{key === 'dpe_seat' || key === 'spe_seat' || key === 'seat_leak_bb' ? <input type="text" value={(valveTest as any)[`${key}_acceptance`] ?? ''} onChange={e => updateTestField(`${key}_acceptance` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" disabled={!key} /> : criteria}</td>
                     <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${key}_start_test`] ?? ''} onChange={e => updateTestField(`${key}_start_test` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" disabled={!key} /></td>
                     <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${key}_finish_test`] ?? ''} onChange={e => updateTestField(`${key}_finish_test` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" disabled={!key} /></td>
                     <td className="border px-1 py-1"><input type="text" value={(valveTest as any)[`${key}_result`] ?? ''} onChange={e => updateTestField(`${key}_result` as keyof ValveTest, e.target.value)} className="w-full border-0 bg-transparent text-center text-xs focus:outline-none" placeholder="PASS/FAIL" disabled={!key} /></td>

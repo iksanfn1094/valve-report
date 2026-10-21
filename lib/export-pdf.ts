@@ -158,7 +158,7 @@ export type ValveTestData = {
 
 const TEST_LABELS: Record<string, string> = {
   actuator: 'ACTUATOR LEAK TEST', backseat: 'BACKSEAT TEST', shell: 'HYDROSTATIC SHELL TEST', shell_test_i: 'SHELL TEST I', shell_test_ii: 'SHELL TEST II', hp_seat: 'HIGH-PRESSURE SEAT TEST',
-  seat_leak: 'SEAT LEAK TEST', hp_closure: 'HIGH PRESSURE CLOSURE TEST', lp_closure: 'LOW PRESSURE CLOSURE TEST',
+  seat_leak: 'SEAT LEAK TEST', seat_leak_bb: 'SEAT LEAK TEST (BB/MENIT)', hp_closure: 'HIGH PRESSURE CLOSURE TEST', lp_closure: 'LOW PRESSURE CLOSURE TEST',
   hp_closure_b: 'HIGH PRESSURE CLOSURE TEST B', lp_closure_a: 'LOW PRESSURE CLOSURE TEST A',
   hp_closure_a: 'HIGH PRESSURE CLOSURE TEST A', lp_closure_b: 'LOW PRESSURE CLOSURE TEST B',
   hp_closure_seat_test_i: 'HIGH PRESSURE CLOSURE SEAT TEST I', hp_closure_seat_test_ii: 'HIGH PRESSURE CLOSURE SEAT TEST II',
@@ -176,6 +176,7 @@ const TEST_CRITERIA: Record<string, string> = {
   shell_test_ii: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
   hp_seat: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
   seat_leak: '',
+  seat_leak_bb: '',
   hp_closure: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
   hp_closure_seat_test_i: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
   hp_closure_seat_test_ii: 'NO VISIBLE LEAKAGE & PRESSURE DROP',
@@ -1036,7 +1037,7 @@ async function drawTestSection(doc: jsPDF, report: ReportData, valveTest: ValveT
     if (key === 'seat' || key === 'seat_leak') {
       acceptance = cv ? `ALLOWABLE LEAK ${(cv * 0.186).toFixed(3)} SCFH` : 'ALLOWABLE LEAK 0.000 SCFH'
     }
-    if (key === 'dpe_seat' || key === 'spe_seat') {
+    if (key === 'dpe_seat' || key === 'spe_seat' || key === 'seat_leak_bb') {
       acceptance = p('acceptance') || '-'
     }
     return [
