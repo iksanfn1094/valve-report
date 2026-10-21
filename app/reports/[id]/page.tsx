@@ -385,19 +385,19 @@ function formatDateEN(val: string | null): string {
 }
 
 const COMPONENTS = [
-  'Actuator', 'Adaptor cylinder', 'Backseat', 'Ball', 'Bearing', 'Body', 'Body gasket',
-  'Bolt', 'Bolt and nut', 'Bonnet', 'Brace rod', 'Cage', 'Center bar', 'Centralizing',
+  'Actuator', 'Adaptor cylinder', 'Adjusting bolt', 'Backseat', 'Ball', 'Bearing', 'Body', 'Body gasket',
+  'Bolt', 'Bolt and nut', 'Bonnet', 'Brace rod', 'Cage', 'Cap', 'Center bar', 'Centralizing',
   'Clapper disc arm', 'Coupling box', 'Cover housing', 'Cylinder', 'Diaphragm',
   'Diaphragm actuator', 'Diaphragm case', 'Diaphragm plate', 'Disc', 'Drain fitting',
   'Drain plug', 'End cap', 'Flange', 'Flange And RF', 'Frame', 'Gasket', 'Gate',
   'Gate Spring', 'Gear operator', 'Gland packing', 'Graphite Packing Body Bonnet',
   'Grease fitting', 'Guide', 'Guide block', 'Handle', 'Handwheel', 'Hex bolt', 'Hex socket screw', 'Hinge',
-  'Holder Valve', 'Housing', 'Indicator ring', 'Instrumen', 'Internal cylinder',
+  'Holder plate spring', 'Holder Valve', 'Housing', 'Indicator ring', 'Instrumen', 'Internal cylinder',
   'Key', 'Lever Arm', 'Lever lock arm', 'Lever/handwheel', 'Lock disc', 'Lock nut',
   'Mounting actuator', 'Mounting bracket', 'Nut', 'O-ring', 'O-Ring Body Bonnet',
   'O-Ring Stem', 'Other', 'Packing', 'Piston', 'Piston rod', 'Plug', 'Plug fitting',
   'Retainer', 'Sealant fitting', 'Seat', 'Seat insert', 'Seat Pocket', 'Seat ring',
-  'Segment', 'Shaft', 'Spring', 'Spring actuator', 'Spring washer', 'Spring Washer', 'Stem', 'Stem actuator',
+  'Segment', 'Shaft', 'Spring', 'Spring actuator', 'Spring guide', 'Spring washer', 'Spring Washer', 'Stem', 'Stem actuator',
   'Stem Connector', 'Stem holder', 'Stopper', 'Stud and nut', 'Stud Bolt Body Bonnet',
   'Stud Bolt Mounting Adaptor', 'Stuffing box', 'Thrust Bearing', 'Top plate',
   'Torque shaft', 'Travel indicator', 'Trunnion', 'Trunnion plate', 'Valve Unit',
