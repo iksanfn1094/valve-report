@@ -401,7 +401,7 @@ const COMPONENTS = [
   'Gate Spring', 'Gear operator', 'Gland packing', 'Graphite Packing Body Bonnet',
   'Grease fitting', 'Guide', 'Guide block', 'Handle', 'Handwheel', 'Hex bolt', 'Hex socket screw', 'Hinge',
   'Holder plate spring', 'Holder Valve', 'Housing', 'Indicator ring', 'Instrumen', 'Internal cylinder',
-  'Key', 'Lever Arm', 'Lever lock arm', 'Lever/handwheel', 'Lock disc', 'Lock nut',
+  'Key', 'Lever Arm', 'Lever lock arm', 'Lever/handwheel', 'Lift lever Nozzle', 'Lock disc', 'Lock nut',
   'Mounting actuator', 'Mounting bracket', 'Nut', 'O-ring', 'O-Ring Body Bonnet',
   'O-Ring Stem', 'Other', 'Packing', 'Piston', 'Piston rod', 'Plug', 'Plug fitting',
   'Retainer', 'Sealant fitting', 'Seat', 'Seat insert', 'Seat Pocket', 'Seat ring',
