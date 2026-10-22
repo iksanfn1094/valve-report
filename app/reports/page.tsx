@@ -139,6 +139,7 @@ export default function ReportsList() {
         recommendation: (it.recommendation as string[]) || [],
         comment: (it.comment as string) || '',
         spec_material: (it.spec_material as string) || '',
+        repair_category: (it.repair_category as string) || '',
       }))
       const bomItems = (bomRes.data ?? []).map((b: Record<string, unknown>) => ({
         section: (b.section as string) || '',
