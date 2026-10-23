@@ -29,16 +29,16 @@ export async function GET() {
       if (!newId || newId === 'NEW VALVE ID' || newId === 'NEW ID VALVE' || newId === 'OLD ID') continue
 
       valves[newId] = {
-        valve_type: (row[8] || '').trim(),
-        size: (row[9] || '').trim(),
-        class: (row[10] || '').trim(),
-        end_connection: (row[11] || '').trim(),
-        manufacture: (row[12] || '').trim(),
-        serial_no: (row[14] || '').trim(),
-        location: (row[17] || '').trim(),
-        ex_station: (row[23] || '').trim(),
-        project: (row[25] || '').trim(),
-        ro_no: (row[32] || '').trim(),
+        valve_type: (row[7] || '').trim(),
+        size: (row[8] || '').trim(),
+        class: (row[9] || '').trim(),
+        end_connection: (row[10] || '').trim(),
+        manufacture: (row[11] || '').trim(),
+        serial_no: (row[13] || '').trim(),
+        location: (row[16] || '').trim(),
+        ex_station: (row[22] || '').trim(),
+        project: (row[24] || '').trim(),
+        ro_no: (row[31] || '').trim(),
       }
     }
 
