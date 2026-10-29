@@ -99,8 +99,14 @@ type BlastingDftRow = {
 type BlastingPhotoRow = {
   id: string; photos: string[]
 }
+type BlastingPheonwjRow = {
+  id: string; layer_coat: string; spec: string; type: string; brand: string; colour: string; dft: string
+  object_painted: string; object_checked: boolean
+  direction: string; direction_checked: boolean
+}
 type BlastingPainting = {
   surface: BlastingSurface
+  pheonwj: BlastingPheonwjRow[]
   environment: BlastingEnvRow[]
   paint: BlastingPaintRow[]
   dft: BlastingDftRow[]
@@ -538,6 +544,12 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       grade: 'SP10', abrasive: '', cleaning_fluid: '', cleaning_method: '',
       profile_required: '', profile_actual: '', rust_grade: '', dust_level: '',
     },
+    pheonwj: [
+      { id: crypto.randomUUID(), layer_coat: 'Primer Coat', spec: 'Inorganic Zinc Silicate', type: 'Interzinc 22', brand: 'International Paint', colour: 'Green Grey', dft: '75', object_painted: 'Flat', object_checked: true, direction: 'Vertical-Down', direction_checked: true },
+      { id: crypto.randomUUID(), layer_coat: 'Intermediate Coat', spec: 'Mio 2 Pack Epoxy', type: 'Intergard 475 HS', brand: 'International Paint', colour: 'Light Grey Mio', dft: '125', object_painted: 'Convex', object_checked: true, direction: 'Vertical-Up', direction_checked: true },
+      { id: crypto.randomUUID(), layer_coat: 'Intermediate Coat', spec: 'Mio 2 Pack Epoxy', type: 'Intergard 475 HS', brand: 'International Paint', colour: 'Light Grey Mio', dft: '125', object_painted: 'Concave', object_checked: true, direction: 'Horizontal', direction_checked: true },
+      { id: crypto.randomUUID(), layer_coat: 'Top Coat', spec: 'Polyurethane', type: 'Interthane 990', brand: 'International Paint', colour: 'Signal Grey RAL 7004', dft: '50', object_painted: '', object_checked: false, direction: '', direction_checked: false },
+    ],
     environment: [
       { id: crypto.randomUUID(), activity: '', date: '', time: '', surface_temp: '', air_temp: '', dewpoint: '', humidity: '' },
     ],
@@ -573,6 +585,12 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       arr[idx] = { ...arr[idx], [field]: value }
       return { ...b, [key]: arr } as BlastingPainting
     })
+  }
+  function bpHUpdate(idx: number, patch: Partial<BlastingPheonwjRow>) {
+    updateBlasting(b => ({ ...b, pheonwj: b.pheonwj.map((r, i) => (i === idx ? { ...r, ...patch } : r)) }))
+  }
+  function bpHTotal(): number {
+    return blasting.pheonwj.reduce((sum, r) => sum + (parseFloat(r.dft) || 0), 0)
   }
   function bpAddPhoto() {
     updateBlasting(b => ({ ...b, photos: [...b.photos, { id: crypto.randomUUID(), photos: [] }] }))
@@ -944,6 +962,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           const def = defaultBlastingPainting()
           setBlasting({
             surface: { ...def.surface, ...(bp.surface ?? {}) },
+            pheonwj: def.pheonwj.map((d, i) => ({ ...d, ...((bp.pheonwj ?? [])[i] ?? {}) })),
             environment: (bp.environment ?? []).map((r) => ({ ...blankBlastingRow('environment'), ...r })) as BlastingEnvRow[],
             paint: (bp.paint ?? []).map((r) => ({ ...blankBlastingRow('paint') as BlastingPaintRow, ...r })),
             dft: (bp.dft ?? []).map((r) => ({ ...blankBlastingRow('dft') as BlastingDftRow, ...r })),
@@ -2522,9 +2541,53 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           </div>
         </div>
 
-        {/* 2. ENVIRONMENTAL CONDITION */}
+        {/* 2. PHEONWJ PAINTING SYSTEM */}
         <div>
-          <h4 className="text-sm font-bold text-gray-700 mb-2">2. ENVIRONMENTAL CONDITION</h4>
+          <h4 className="text-sm font-bold text-gray-700 mb-2">2. PHEONWJ PAINTING SYSTEM (Atmospheric Zone System B3-1)</h4>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-blue-900 text-white">
+                  {['Layer Coat', 'Spec.', 'Type', 'Brand', 'Colour', 'DFT', 'Object Painted', 'Direction'].map((h) => (
+                    <th key={h} className="border px-1 py-2 text-center">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {blasting.pheonwj.map((row, i) => (
+                  <tr key={row.id} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
+                    {(['layer_coat', 'spec', 'type', 'brand', 'colour', 'dft'] as const).map((f) => (
+                      <td key={f} className="border px-1 py-1">
+                        <input className="w-full border-0 bg-transparent text-xs text-center focus:outline-none" value={row[f]} onChange={(e) => bpHUpdate(i, { [f]: e.target.value })} />
+                      </td>
+                    ))}
+                    <td className="border px-1 py-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <input className="min-w-0 flex-1 border-0 bg-transparent text-xs focus:outline-none" value={row.object_painted} onChange={(e) => bpHUpdate(i, { object_painted: e.target.value })} />
+                        {i < 3 && <input type="checkbox" checked={row.object_checked} onChange={(e) => bpHUpdate(i, { object_checked: e.target.checked })} className="accent-blue-600" />}
+                      </div>
+                    </td>
+                    <td className="border px-1 py-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <input className="min-w-0 flex-1 border-0 bg-transparent text-xs focus:outline-none" value={row.direction} onChange={(e) => bpHUpdate(i, { direction: e.target.value })} />
+                        {i < 3 && <input type="checkbox" checked={row.direction_checked} onChange={(e) => bpHUpdate(i, { direction_checked: e.target.checked })} className="accent-blue-600" />}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                <tr className="bg-gray-100">
+                  <td colSpan={5} className="border px-2 py-1 text-xs font-bold text-right">Total DFT (µm)</td>
+                  <td className="border px-1 py-1 text-center text-xs font-bold">{Number(bpHTotal().toFixed(2))}</td>
+                  <td colSpan={2} className="border px-2 py-1"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* 3. ENVIRONMENTAL CONDITION */}
+        <div>
+          <h4 className="text-sm font-bold text-gray-700 mb-2">3. ENVIRONMENTAL CONDITION</h4>
           <div className="overflow-x-auto">
             <table className="w-full text-xs border-collapse">
               <thead>
@@ -2554,9 +2617,9 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           <button onClick={() => bpAdd('environment')} className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-300 transition font-medium mt-2">+ Tambah Baris</button>
         </div>
 
-        {/* 3. PAINT APPLICATION */}
+        {/* 4. PAINT APPLICATION */}
         <div>
-          <h4 className="text-sm font-bold text-gray-700 mb-2">3. PAINT APPLICATION</h4>
+          <h4 className="text-sm font-bold text-gray-700 mb-2">4. PAINT APPLICATION</h4>
           <div className="overflow-x-auto">
             <table className="w-full text-xs border-collapse">
               <thead>
@@ -2586,9 +2649,9 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           <button onClick={() => bpAdd('paint')} className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-300 transition font-medium mt-2">+ Tambah Baris</button>
         </div>
 
-        {/* 4. DFT INSPECTION RESULT */}
+        {/* 5. DFT INSPECTION RESULT */}
         <div>
-          <h4 className="text-sm font-bold text-gray-700 mb-2">4. DFT INSPECTION RESULT</h4>
+          <h4 className="text-sm font-bold text-gray-700 mb-2">5. DFT INSPECTION RESULT</h4>
           <div className="overflow-x-auto">
             <table className="w-full text-xs border-collapse">
               <thead>
@@ -2619,9 +2682,9 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           <button onClick={() => bpAdd('dft')} className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-300 transition font-medium mt-2">+ Tambah Baris</button>
         </div>
 
-        {/* 5. DFT MEASUREMENT PHOTO RECORDS */}
+        {/* 6. DFT MEASUREMENT PHOTO RECORDS */}
         <div>
-          <h4 className="text-sm font-bold text-gray-700 mb-2">5. DFT MEASUREMENT PHOTO RECORDS</h4>
+          <h4 className="text-sm font-bold text-gray-700 mb-2">6. DFT MEASUREMENT PHOTO RECORDS</h4>
           <div className="space-y-4">
             {blasting.photos.map((row, i) => (
               <div key={row.id} className="border rounded-lg p-3 bg-gray-50">

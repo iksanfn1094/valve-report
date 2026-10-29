@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
+import autoTable, { type RowInput } from 'jspdf-autotable'
 import { SubDatasheet, DatasheetGroupKey, datasheetLabels, DATASHEET_GROUPS, datasheetGroupTitle } from './datasheet'
 
 type ReportData = {
@@ -95,6 +95,11 @@ type BlastingDftRow = {
 type BlastingPhotoRow = {
   id?: string; photos?: string[]
 }
+type BlastingPheonwjRow = {
+  id?: string; layer_coat?: string; spec?: string; type?: string; brand?: string; colour?: string; dft?: string | number
+  object_painted?: string; object_checked?: boolean
+  direction?: string; direction_checked?: boolean
+}
 type DptCondition = {
   joint?: string; base_metal?: string; base_metal_spec?: string
   weld_gaw?: boolean; weld_smaw?: boolean; weld_casting?: boolean; weld_other?: boolean; weld_other_text?: string
@@ -113,11 +118,19 @@ type LiquidPenetrantData = {
 
 type BlastingPaintingData = {
   surface?: BlastingSurface
+  pheonwj?: BlastingPheonwjRow[]
   environment?: BlastingEnvRow[]
   paint?: BlastingPaintRow[]
   dft?: BlastingDftRow[]
   photos?: BlastingPhotoRow[]
 }
+
+const DEFAULT_PHEONWJ_ROWS: BlastingPheonwjRow[] = [
+  { layer_coat: 'Primer Coat', spec: 'Inorganic Zinc Silicate', type: 'Interzinc 22', brand: 'International Paint', colour: 'Green Grey', dft: '75', object_painted: 'Flat', object_checked: true, direction: 'Vertical-Down', direction_checked: true },
+  { layer_coat: 'Intermediate Coat', spec: 'Mio 2 Pack Epoxy', type: 'Intergard 475 HS', brand: 'International Paint', colour: 'Light Grey Mio', dft: '125', object_painted: 'Convex', object_checked: true, direction: 'Vertical-Up', direction_checked: true },
+  { layer_coat: 'Intermediate Coat', spec: 'Mio 2 Pack Epoxy', type: 'Intergard 475 HS', brand: 'International Paint', colour: 'Light Grey Mio', dft: '125', object_painted: 'Concave', object_checked: true, direction: 'Horizontal', direction_checked: true },
+  { layer_coat: 'Top Coat', spec: 'Polyurethane', type: 'Interthane 990', brand: 'International Paint', colour: 'Signal Grey RAL 7004', dft: '50', object_painted: '', object_checked: false, direction: '', direction_checked: false },
+]
 
 type PackagingPhotoData = {
   id?: string
@@ -1493,34 +1506,84 @@ async function drawBlastingPaintingSection(doc: jsPDF, report: ReportData, M: nu
     ['Dust Level', sv(surface.dust_level)],
   ], [70, CW - 70])
 
-  // 2. ENVIRONMENTAL CONDITION
+  // 2. PHEONWJ PAINTING SYSTEM (Atmospheric Zone System B3-1)
+  {
+    const rows = ((bp.pheonwj && bp.pheonwj.length ? bp.pheonwj : DEFAULT_PHEONWJ_ROWS) as BlastingPheonwjRow[])
+      .map((r, i) => ({ ...(DEFAULT_PHEONWJ_ROWS[i] ?? {}), ...r }))
+    heading('2. PHEONWJ PAINTING SYSTEM (Atmospheric Zone System B3-1)')
+    const total = rows.reduce((s, r) => s + (parseFloat(String(r.dft ?? '')) || 0), 0)
+    const body: RowInput[] = rows.map((r) => [
+      r.layer_coat || '', r.spec || '', r.type || '', r.brand || '', r.colour || '',
+      r.dft != null && r.dft !== '' ? String(r.dft) : '', r.object_painted || '', r.direction || '',
+    ])
+    body.push([
+      { content: 'Total DFT (µm)', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } },
+      { content: String(Number(total.toFixed(2))), styles: { fontStyle: 'bold' } },
+      '', '',
+    ])
+    const colW = [24, 26, 24, 22, 26, 16, 26, 26]
+    autoTable(doc, {
+      startY: y,
+      margin: { left: M, right: M },
+      head: [['Layer Coat', 'Spec.', 'Type', 'Brand', 'Colour', 'DFT', 'Object Painted', 'Direction']],
+      body,
+      styles: { fontSize: 6, cellPadding: 1.2, lineColor: GRID, lineWidth: 0.2, valign: 'middle' },
+      headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontSize: 6, fontStyle: 'bold', halign: 'center' },
+      alternateRowStyles: { fillColor: LIGHT_BG },
+      columnStyles: colW.reduce((acc, w, i) => {
+        acc[i] = { cellWidth: w, halign: i === 6 || i === 7 ? 'left' : 'center' }
+        return acc
+      }, {} as Record<number, { cellWidth: number; halign: 'center' | 'left' }>),
+      didDrawCell: (data) => {
+        if (data.section !== 'body' || data.row.index >= 3) return
+        if (data.column.index !== 6 && data.column.index !== 7) return
+        const row = rows[data.row.index]
+        const checked = data.column.index === 6 ? row.object_checked : row.direction_checked
+        const s = 2.3
+        const x = data.cell.x + data.cell.width - s - 2
+        const by = data.cell.y + data.cell.height / 2 - s / 2
+        doc.setDrawColor(60, 70, 90)
+        doc.setLineWidth(0.2)
+        doc.rect(x, by, s, s, 'S')
+        if (checked) {
+          doc.setDrawColor(...BLUE)
+          doc.setLineWidth(0.4)
+          doc.line(x + 0.4, by + s / 2, x + s * 0.42, by + s - 0.4)
+          doc.line(x + s * 0.42, by + s - 0.4, x + s - 0.3, by + 0.5)
+        }
+      },
+    })
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4
+  }
+
+  // 3. ENVIRONMENTAL CONDITION
   if (envRows.length) {
-    heading('2. ENVIRONMENTAL CONDITION')
+    heading('3. ENVIRONMENTAL CONDITION')
     table(
       ['Activity', 'Date', 'Time', 'Surface Temp (°C)', 'Air Temp (°C)', 'Dewpoint Temp (°C)', 'Relative Humidity (%)'],
       envRows.map((r) => [r.activity || '-', r.date || '-', r.time || '-', r.surface_temp || '-', r.air_temp || '-', r.dewpoint || '-', r.humidity || '-']),
     )
   }
 
-  // 3. PAINT APPLICATION
+  // 4. PAINT APPLICATION
   if (paintRows.length) {
-    heading('3. PAINT APPLICATION')
+    heading('4. PAINT APPLICATION')
     table(
       ['Paint System', 'Type of Paint', 'Product', 'Batch No.', 'Thinner', 'Date', 'Paint Application', 'DFT Required (µm)', 'Final Color'],
       paintRows.map((r) => [r.system || '-', r.type || '-', r.product || '-', r.batch_no || '-', r.thinner || '-', r.date || '-', r.application || '-', r.dft_required || '-', r.final_color || '-']),
     )
   }
 
-  // 4. DFT INSPECTION RESULT
+  // 5. DFT INSPECTION RESULT
   if (dftRows.length) {
-    heading('4. DFT INSPECTION RESULT')
+    heading('5. DFT INSPECTION RESULT')
     table(
       ['No', 'Serial Number', 'Avg DFT Actual (µm)', 'Avg DFT Intermediate Coat (µm)', 'Avg DFT Top Coat (µm)', 'Final Colour', 'Result'],
       dftRows.map((r, i) => [String(i + 1), r.serial || '-', r.dft_primer || '-', r.dft_intermediate || '-', r.dft_top || '-', r.final_color || '-', r.result || '-']),
     )
   }
 
-  // 5. DFT MEASUREMENT PHOTO RECORDS
+  // 6. DFT MEASUREMENT PHOTO RECORDS
   if (photoRows.length) {
     const rowsB64: (string | null)[][] = []
     for (const r of photoRows) {
@@ -1541,7 +1604,7 @@ async function drawBlastingPaintingSection(doc: jsPDF, report: ReportData, M: nu
       drawSectionContinuationHeader(doc, report, M, CW, PW, BLASTING_PAINTING_TITLE, false)
       y = CONTENT_TOP + REPEAT_BLOCK_H
     }
-    heading('5. DFT MEASUREMENT PHOTO RECORDS')
+    heading('6. DFT MEASUREMENT PHOTO RECORDS')
     for (const [i] of rowsB64.entries()) {
       const imgs = rowsB64[i].filter((b): b is string => !!b)
       const GAP = 2
