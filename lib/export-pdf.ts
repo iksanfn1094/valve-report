@@ -118,12 +118,15 @@ type LiquidPenetrantData = {
 
 type BlastingPaintingData = {
   surface?: BlastingSurface
+  pheonwj_title?: string
   pheonwj?: BlastingPheonwjRow[]
   environment?: BlastingEnvRow[]
   paint?: BlastingPaintRow[]
   dft?: BlastingDftRow[]
   photos?: BlastingPhotoRow[]
 }
+
+const DEFAULT_PHEONWJ_TITLE = '2. PHEONWJ PAINTING SYSTEM (Atmospheric Zone System B3-1)'
 
 const DEFAULT_PHEONWJ_ROWS: BlastingPheonwjRow[] = [
   { layer_coat: 'Primer Coat', spec: 'Inorganic Zinc Silicate', type: 'Interzinc 22', brand: 'International Paint', colour: 'Green Grey', dft: '75', object_painted: 'Flat', object_checked: true, direction: 'Vertical-Down', direction_checked: true },
@@ -1474,8 +1477,9 @@ async function drawBlastingPaintingSection(doc: jsPDF, report: ReportData, M: nu
     doc.setTextColor(...BLUE)
     doc.setFontSize(8)
     doc.setFont('helvetica', 'bold')
-    doc.text(txt, M, y)
-    y += 3
+    const lines = doc.splitTextToSize(txt, CW)
+    doc.text(lines, M, y)
+    y += 3 * lines.length
   }
 
   const table = (head: string[], body: string[][], colW?: number[]) => {
@@ -1510,7 +1514,7 @@ async function drawBlastingPaintingSection(doc: jsPDF, report: ReportData, M: nu
   {
     const rows = ((bp.pheonwj && bp.pheonwj.length ? bp.pheonwj : DEFAULT_PHEONWJ_ROWS) as BlastingPheonwjRow[])
       .map((r, i) => ({ ...(DEFAULT_PHEONWJ_ROWS[i] ?? {}), ...r }))
-    heading('2. PHEONWJ PAINTING SYSTEM (Atmospheric Zone System B3-1)')
+    heading(bp.pheonwj_title || DEFAULT_PHEONWJ_TITLE)
     const total = rows.reduce((s, r) => s + (parseFloat(String(r.dft ?? '')) || 0), 0)
     const body: RowInput[] = rows.map((r) => [
       r.layer_coat || '', r.spec || '', r.type || '', r.brand || '', r.colour || '',

@@ -106,6 +106,7 @@ type BlastingPheonwjRow = {
 }
 type BlastingPainting = {
   surface: BlastingSurface
+  pheonwj_title: string
   pheonwj: BlastingPheonwjRow[]
   environment: BlastingEnvRow[]
   paint: BlastingPaintRow[]
@@ -544,6 +545,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
       grade: 'SP10', abrasive: '', cleaning_fluid: '', cleaning_method: '',
       profile_required: '', profile_actual: '', rust_grade: '', dust_level: '',
     },
+    pheonwj_title: '2. PHEONWJ PAINTING SYSTEM (Atmospheric Zone System B3-1)',
     pheonwj: [
       { id: crypto.randomUUID(), layer_coat: 'Primer Coat', spec: 'Inorganic Zinc Silicate', type: 'Interzinc 22', brand: 'International Paint', colour: 'Green Grey', dft: '75', object_painted: 'Flat', object_checked: true, direction: 'Vertical-Down', direction_checked: true },
       { id: crypto.randomUUID(), layer_coat: 'Intermediate Coat', spec: 'Mio 2 Pack Epoxy', type: 'Intergard 475 HS', brand: 'International Paint', colour: 'Light Grey Mio', dft: '125', object_painted: 'Convex', object_checked: true, direction: 'Vertical-Up', direction_checked: true },
@@ -962,6 +964,7 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
           const def = defaultBlastingPainting()
           setBlasting({
             surface: { ...def.surface, ...(bp.surface ?? {}) },
+            pheonwj_title: bp.pheonwj_title ?? def.pheonwj_title,
             pheonwj: def.pheonwj.map((d, i) => ({ ...d, ...((bp.pheonwj ?? [])[i] ?? {}) })),
             environment: (bp.environment ?? []).map((r) => ({ ...blankBlastingRow('environment'), ...r })) as BlastingEnvRow[],
             paint: (bp.paint ?? []).map((r) => ({ ...blankBlastingRow('paint') as BlastingPaintRow, ...r })),
@@ -2543,7 +2546,12 @@ export default function ReportDetail({ params }: { params: Promise<{ id: string 
 
         {/* 2. PHEONWJ PAINTING SYSTEM */}
         <div>
-          <h4 className="text-sm font-bold text-gray-700 mb-2">2. PHEONWJ PAINTING SYSTEM (Atmospheric Zone System B3-1)</h4>
+          <input
+            className="w-full border-0 bg-transparent text-sm font-bold text-gray-700 mb-2 focus:outline-none"
+            value={blasting.pheonwj_title}
+            onChange={(e) => updateBlasting(b => ({ ...b, pheonwj_title: e.target.value }))}
+            aria-label="PHEONWJ painting system title"
+          />
           <div className="overflow-x-auto">
             <table className="w-full text-xs border-collapse">
               <thead>
