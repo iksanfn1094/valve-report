@@ -238,8 +238,8 @@ const BLASTING_PAINTING_TITLE = 'BLASTING & PAINTING REPORT'
 const DPT_TITLE = 'DYE PENETRANT TEST (DPT) REPORT'
 const TORQUE_TITLE = 'TORQUE TEST & ANTI-STATIC TEST REPORT'
 const DOC_INSPECTION_TITLE = 'DOCUMENTATION INSPECTION'
-const DOC_MINOR_TITLE = 'DOCUMENTATION MINOR'
-const DOC_MAJOR_TITLE = 'DOCUMENTATION MAJOR'
+const DOC_MINOR_TITLE = 'DOCUMENTATION MINOR REPAIR'
+const DOC_MAJOR_TITLE = 'DOCUMENTATION MAJOR REPAIR'
 // height of one signature box, used to reserve the bottom strip that repeats
 // on every inspection page
 const SIG_BOX_H = 32
@@ -1954,8 +1954,8 @@ export async function exportReportPDF(
       const norm = (t?: string) => (t === 'major' ? 'major' : t === 'inspection' ? 'inspection' : 'minor')
       const groups: { type: string; title: string; heading: string }[] = [
         { type: 'inspection', title: DOC_INSPECTION_TITLE, heading: 'DOCUMENTATION INSPECTION' },
-        { type: 'minor', title: DOC_MINOR_TITLE, heading: 'DOCUMENTATION MINOR' },
-        { type: 'major', title: DOC_MAJOR_TITLE, heading: 'DOCUMENTATION MAJOR' },
+        { type: 'minor', title: DOC_MINOR_TITLE, heading: 'DOCUMENTATION MINOR REPAIR' },
+        { type: 'major', title: DOC_MAJOR_TITLE, heading: 'DOCUMENTATION MAJOR REPAIR' },
       ]
       for (const g of groups) {
         const groupItems = docItems.filter((d) => norm(d.doc_type) === g.type)
@@ -2103,7 +2103,7 @@ export async function exportReportPDF(
     if (isDocTab) {
       const g = docTabGroup
       const groupItems = docItems.filter((d) => (d.doc_type === 'major' ? 'major' : d.doc_type === 'inspection' ? 'inspection' : 'minor') === g)
-      const heading = g === 'inspection' ? 'DOCUMENTATION INSPECTION' : g === 'major' ? 'DOCUMENTATION MAJOR' : 'DOCUMENTATION MINOR'
+      const heading = g === 'inspection' ? 'DOCUMENTATION INSPECTION' : g === 'major' ? 'DOCUMENTATION MAJOR REPAIR' : 'DOCUMENTATION MINOR REPAIR'
       const title = g === 'inspection' ? DOC_INSPECTION_TITLE : g === 'major' ? DOC_MAJOR_TITLE : DOC_MINOR_TITLE
       y = await drawDocumentationSection(doc, report, groupItems, M, CW, PW, PH, y, heading, title)
     }
